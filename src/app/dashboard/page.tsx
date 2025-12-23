@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { subscribeToAuthChanges, logout } from "@/lib/firebase/auth";
 import { subscribeToJobs } from "@/lib/firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { JobApplication } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, Loader2 } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 
@@ -34,8 +35,8 @@ export default function DashboardPage() {
         
         const sanitizedData = data.map((job) => ({
           ...job,
-          createdAt: job.createdAt ? (job.createdAt as any).toMillis() : Date.now(),
-          updatedAt: job.updatedAt ? (job.updatedAt as any).toMillis() : Date.now(),
+          createdAt: job.createdAt ? (job.createdAt as unknown as Timestamp).toMillis() : Date.now(),
+          updatedAt: job.updatedAt ? (job.updatedAt as unknown as Timestamp).toMillis() : Date.now(),
         }));
         setJobs(sanitizedData as unknown as JobApplication[]);
         setLoading(false);
