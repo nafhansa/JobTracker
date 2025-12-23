@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
+    <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] px-6 text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
       <Navbar />
       {}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -20,14 +20,14 @@ export default function LandingPage() {
 
       <main className="flex-1 relative z-10 flex flex-col items-center">
         {}
-        <section className="pt-55 pb-33 px-6 text-center max-w-5xl mx-auto space-y-8 flex flex-col items-center">
+        <section className="pt-24 md:pt-58 pb-23 md:pb-40 px-6 text-center max-w-5xl mx-auto space-y-8 flex flex-col items-center">
           
           {}
           <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border border-[#8C1007]/50 rounded-full text-[#FFF0C4] bg-[#8C1007]/20 shadow-[0_0_15px_rgba(140,16,7,0.4)] backdrop-blur-sm">
             <Star className="w-3 h-3 text-[#8C1007] fill-current" /> Premium Career Management
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-serif font-bold tracking-tight leading-[1.1] text-[#FFF0C4] drop-shadow-2xl">
+          <h1 className="mb-6 text-4xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tight leading-[1.1] text-[#FFF0C4] drop-shadow-2xl">
             Stop Using Spreadsheets <br/>
             <span className="relative whitespace-nowrap">
               <span className="absolute -inset-1 bg-[#8C1007]/20 blur-xl rounded-full"></span>
