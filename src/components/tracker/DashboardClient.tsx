@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
-import AddJobModal from "@/components/forms/AddJobModal";
-import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle } from "lucide-react";
+import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru tadi
+import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface DashboardClientProps {
   initialJobs: JobApplication[];
@@ -16,6 +17,23 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const jobs = initialJobs; 
+
+  // --- STATE MODAL & EDIT ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
+
+  // Fungsi buka modal Add
+  const handleAddNew = () => {
+    setEditingJob(null); // Reset mode jadi Add
+    setIsModalOpen(true);
+  };
+
+  // Fungsi buka modal Edit (dipanggil dari JobCard)
+  const handleEditJob = (job: JobApplication) => {
+    setEditingJob(job); // Set data yg mau diedit
+    setIsModalOpen(true);
+  };
+  // --------------------------
 
   const getJobStage = (status: JobStatus) => {
     if (status.rejected) return "rejected";
@@ -54,9 +72,9 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
 
   return (
     <div className="max-w-5xl mx-auto">      
-      {}
+      
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">        
-        {}
+        
         <div className="relative w-full md:w-1/3">
           <Search className="absolute left-3 top-3 h-4 w-4 text-[#FFF0C4]/50" />
           <Input 
@@ -66,10 +84,19 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        {}
-        <AddJobModal userId={userId} />
+
+        {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
+        <Button 
+          onClick={handleAddNew}
+          className="bg-[#FFF0C4] text-[#3E0703] hover:bg-white border border-[#FFF0C4] font-bold tracking-wide shadow-[0_0_15px_rgba(255,240,196,0.3)] transition-all"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Application
+        </Button>
+
       </div>
-      {}
+      
+      {/* TABS (Tidak berubah) */}
       <div className="flex flex-wrap gap-2 mb-8 pb-2 overflow-x-auto">
         {tabs.map((tab) => {
           const isActive = filterStatus === tab.id;
@@ -97,7 +124,8 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
           );
         })}
       </div>
-      {}
+      
+      {/* List Jobs */}
       {filteredJobs.length === 0 ? (
         <div className="border-2 border-dashed border-[#FFF0C4]/30 bg-[#3E0703]/20 rounded-xl p-12 text-center">
           <div className="flex justify-center mb-4">
@@ -115,10 +143,23 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard 
+              key={job.id} 
+              job={job} 
+              onEdit={handleEditJob} // <--- Oper Fungsi Edit ke Card
+            />
           ))}
         </div>
       )}
+
+      {/* --- MODAL DIRENDER DI SINI (SATU UNTUK SEMUA) --- */}
+      <JobFormModal 
+        userId={userId} 
+        isOpen={isModalOpen} 
+        onOpenChange={setIsModalOpen}
+        jobToEdit={editingJob} // Kirim data kalau lagi ngedit
+      />
+
     </div>
   );
 }

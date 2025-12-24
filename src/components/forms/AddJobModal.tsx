@@ -1,28 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { addJob } from "@/lib/firebase/firestore";
+import { useEffect, useState } from "react";
+import { addJob, updateJob } from "@/lib/firebase/firestore"; // Pastikan import updateJob
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2 } from "lucide-react";
-import { JobStatus } from "@/types";
+import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil } from "lucide-react";
+import { JobApplication, JobStatus } from "@/types";
 
-export default function AddJobModal({ userId }: { userId: string }) {
-  const [open, setOpen] = useState(false);
+interface JobModalProps {
+  userId: string;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  jobToEdit?: JobApplication | null; // Data job kalau mau edit
+}
+
+export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }: JobModalProps) {
   const [loading, setLoading] = useState(false);
   
-  
+  // State Form
   const [formData, setFormData] = useState({
     jobTitle: "",
-    industry: "",
+    industry: "", // Dianggap sebagai Company Name berdasarkan konteks sebelumnya
     potentialSalary: "",
     applicationUrl: "",
     recruiterEmail: "",
@@ -35,23 +40,19 @@ export default function AddJobModal({ userId }: { userId: string }) {
     } as JobStatus
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await addJob({
-        userId,
-        jobTitle: formData.jobTitle,
-        industry: formData.industry,
-        potentialSalary: Number(formData.potentialSalary) || 0,
-        applicationUrl: formData.applicationUrl,
-        recruiterEmail: formData.recruiterEmail,
-        currency: "IDR",
-        status: formData.status,
+  // Efek: Kalau jobToEdit berubah (misal tombol edit diklik), isi form
+  useEffect(() => {
+    if (jobToEdit) {
+      setFormData({
+        jobTitle: jobToEdit.jobTitle,
+        industry: jobToEdit.industry,
+        potentialSalary: jobToEdit.potentialSalary?.toString() || "",
+        applicationUrl: jobToEdit.applicationUrl || "",
+        recruiterEmail: jobToEdit.recruiterEmail || "",
+        status: jobToEdit.status,
       });
-      
-      setOpen(false); 
-      
+    } else {
+      // Reset kalau mode Add
       setFormData({
         jobTitle: "",
         industry: "",
@@ -60,6 +61,33 @@ export default function AddJobModal({ userId }: { userId: string }) {
         recruiterEmail: "",
         status: { applied: true, emailed: false, cvResponded: false, interviewEmail: false, contractEmail: false }
       });
+    }
+  }, [jobToEdit, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = {
+        userId,
+        jobTitle: formData.jobTitle,
+        industry: formData.industry,
+        potentialSalary: Number(formData.potentialSalary) || 0,
+        applicationUrl: formData.applicationUrl,
+        recruiterEmail: formData.recruiterEmail,
+        currency: "IDR",
+        status: formData.status,
+      };
+
+      if (jobToEdit && jobToEdit.id) {
+        // --- MODE EDIT ---
+        await updateJob(jobToEdit.id, payload);
+      } else {
+        // --- MODE ADD ---
+        await addJob(payload);
+      }
+      
+      onOpenChange(false); // Tutup Modal
     } catch (error) {
       console.error(error);
       alert("Error saving job");
@@ -68,31 +96,23 @@ export default function AddJobModal({ userId }: { userId: string }) {
     }
   };
 
+  const isEditMode = !!jobToEdit;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {}
-      <DialogTrigger asChild>
-        <Button className="bg-[#FFF0C4] text-[#3E0703] hover:bg-white border border-[#FFF0C4] font-bold tracking-wide shadow-[0_0_15px_rgba(255,240,196,0.3)] transition-all">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Application
-        </Button>
-      </DialogTrigger>
-      
-      {}
-      {}
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-[#FFF0C4] text-[#3E0703] border-[#8C1007]/20 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-serif font-bold text-[#3E0703] flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-[#8C1007] flex items-center justify-center text-white shadow-md">
-              <Plus className="w-5 h-5" />
+              {isEditMode ? <Pencil className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
             </span>
-            Track New Job
+            {isEditMode ? "Edit Application" : "Track New Job"}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="grid gap-5 py-4">
           
-          {}
+          {/* Job Title */}
           <div className="grid gap-2">
             <Label htmlFor="title" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Job Title *</Label>
             <div className="relative">
@@ -108,7 +128,7 @@ export default function AddJobModal({ userId }: { userId: string }) {
             </div>
           </div>
 
-          {}
+          {/* Company */}
           <div className="grid gap-2">
             <Label htmlFor="industry" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Company / Industry *</Label>
             <div className="relative">
@@ -124,8 +144,8 @@ export default function AddJobModal({ userId }: { userId: string }) {
             </div>
           </div>
 
-          {}
           <div className="grid grid-cols-2 gap-4">
+            {/* Salary */}
             <div className="grid gap-2">
               <Label htmlFor="salary" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Salary (IDR)</Label>
               <div className="relative">
@@ -141,6 +161,7 @@ export default function AddJobModal({ userId }: { userId: string }) {
               </div>
             </div>
             
+            {/* Email (OPSIONAL - required dihapus) */}
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Recruiter Email</Label>
               <div className="relative">
@@ -148,7 +169,7 @@ export default function AddJobModal({ userId }: { userId: string }) {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="hr@mail.com"
+                  placeholder="hr@mail.com (Optional)" 
                   className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
                   value={formData.recruiterEmail}
                   onChange={(e) => setFormData({ ...formData, recruiterEmail: e.target.value })}
@@ -157,7 +178,7 @@ export default function AddJobModal({ userId }: { userId: string }) {
             </div>
           </div>
 
-          {}
+          {/* URL */}
           <div className="grid gap-2">
             <Label htmlFor="url" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Job Link</Label>
             <div className="relative">
@@ -172,13 +193,12 @@ export default function AddJobModal({ userId }: { userId: string }) {
             </div>
           </div>
 
-          {}
           <Button 
             type="submit" 
             disabled={loading}
             className="w-full bg-[#8C1007] hover:bg-[#a31208] text-white font-bold py-6 mt-2 shadow-[0_4px_14px_0_rgba(140,16,7,0.39)] transition-all"
           >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Start Tracking"}
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? "Update Application" : "Start Tracking")}
           </Button>
         </form>
       </DialogContent>
