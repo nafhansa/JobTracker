@@ -4,6 +4,7 @@ export interface JobStatus {
   cvResponded: boolean;
   interviewEmail: boolean;
   contractEmail: boolean;
+  rejected?: boolean;
 }
 
 export interface JobApplication {

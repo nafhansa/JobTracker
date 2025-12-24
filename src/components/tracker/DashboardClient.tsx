@@ -4,7 +4,7 @@ import { useState } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
 import AddJobModal from "@/components/forms/AddJobModal";
-import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText } from "lucide-react";
+import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface DashboardClientProps {
@@ -18,6 +18,7 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
   const jobs = initialJobs; 
 
   const getJobStage = (status: JobStatus) => {
+    if (status.rejected) return "rejected";
     if (status.contractEmail) return "offer";
     if (status.interviewEmail) return "interview";
     if (status.cvResponded) return "response";
@@ -48,6 +49,7 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
     { id: "response", label: "Responded", icon: MessageSquare }, 
     { id: "interview", label: "Interview", icon: UserCheck },
     { id: "offer", label: "Offers", icon: ScrollText },
+    { id: "rejected", label: "Rejected", icon: XCircle },
   ];
 
   return (
