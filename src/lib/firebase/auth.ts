@@ -1,35 +1,41 @@
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User 
-} from "firebase/auth";
-import { auth } from "./config";
 
-const googleProvider = new GoogleAuthProvider();
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged as _onAuthStateChanged,
+  NextOrObserver,
+  User,
+  signOut,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "./config";
+
+const provider = new GoogleAuthProvider();
+
+export function onAuthStateChanged(cb: NextOrObserver<User>) {
+  return _onAuthStateChanged(auth, cb);
+}
 
 export const loginWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    const { user } = await signInWithPopup(auth, provider);
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(
+      userRef,
+      {
+        email: user.email,
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return user;
   } catch (error) {
-    console.error("Error logging in", error);
-    throw error;
+    console.error("Error logging in with Google:", error);
+    return null;
   }
 };
 
-export const logout = async () => {
-  try {
-    await firebaseSignOut(auth);
-  } catch (error) {
-    console.error("Error logging out", error);
-  }
-};
-
-
-export const subscribeToAuthChanges = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, (user) => {
-    callback(user);
-  });
+export const logout = () => {
+  return signOut(auth);
 };
