@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       }
 
       await userRef.update({
-        "subscription.status": "cancelled",
+        "subscription.status": "canceled",
         "subscription.renewsAt": null, // Hapus tanggal tagihan
         "subscription.endsAt": endDate, // ✅ SIMPAN TANGGAL INI AGAR UI TETAP PRO
         "updatedAt": new Date().toISOString()

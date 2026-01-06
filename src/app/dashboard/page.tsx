@@ -30,8 +30,8 @@ export default function DashboardPage() {
       subscription.status === "active" || 
       subscription.plan === "lifetime" ||
       // Handle grace period jika status cancelled tapi belum expired
-      (subscription.status === "cancelled" && subscription.endsAt && new Date(subscription.endsAt) > new Date())
-    ));
+      (subscription.status === "cancelled" || subscription.status === "canceled") && subscription.endsAt && new Date(subscription.endsAt) > new Date())
+    );
 
   useEffect(() => {
     if (!authLoading && !user) {
