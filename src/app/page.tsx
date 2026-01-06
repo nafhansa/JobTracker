@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] px-6 text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
+    <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
       <Navbar />
       
       {/* --- Background Effects --- */}
