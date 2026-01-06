@@ -1,4 +1,3 @@
-// src/app/api/webhook/route.ts
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase/admin";
@@ -25,6 +24,12 @@ export async function POST(req: Request) {
     }
 
     const payload = JSON.parse(rawBody);
+
+    // ============================================================
+    // 🔥 DEBUGGING LOG: Tempel baris ini untuk melihat isi data asli
+    // ============================================================
+    console.log("🔥 DEBUG FULL PAYLOAD:", JSON.stringify(payload, null, 2));
+    
     const events = payload.events;
 
     for (const event of events) {
@@ -32,10 +37,10 @@ export async function POST(req: Request) {
       let userId = event.data.buyerReference || event.data.tags?.user_id;
       let userRef;
 
-      // --- PERUBAHAN PENTING: LOGIKA PENCARIAN EMAIL ---
+      // --- LOGIKA PENCARIAN EMAIL ---
       if (!userId) {
-        // Ambil email dari data webhook (nafhangojek@gmail.com)
-        const customerEmail = event.data.customer?.email;
+        // Coba ambil email. Note: Nanti cek di LOG Vercel apakah posisinya benar di event.data.customer.email
+        const customerEmail = event.data.customer?.email || event.data.recipient?.email || event.data.contact?.email;
         
         if (customerEmail) {
           console.log(`User ID kosong. Mencoba mencari via email: ${customerEmail}`);
@@ -54,9 +59,10 @@ export async function POST(req: Request) {
             console.log(`User ditemukan via email! Menggunakan ID: ${userId}`);
           } else {
             console.error(`Email ${customerEmail} tidak ditemukan di database users.`);
-            continue; // Kalau email gak ketemu juga, baru kita menyerah
+            continue; // Kalau email gak ketemu juga, skip
           }
         } else {
+          // Kalau masuk sini, berarti kodingan di atas gagal nemu field email di dalam JSON
           console.warn("Webhook event skip: Tidak ada ID dan tidak ada Email.", event.id);
           continue; 
         }
