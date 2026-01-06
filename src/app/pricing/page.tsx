@@ -16,39 +16,28 @@ export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const handleSubscribe = (plan: "monthly" | "lifetime") => {
+const handleSubscribe = (plan: "monthly" | "lifetime") => {
     if (!user) {
       router.push("/login");
       return;
     }
 
-    alert(`DEBUG: User ID saya adalah = ${user.uid}`);
+    const productPath = plan === 'monthly' ? 'job-tracker-monthly-plan' : 'job-tracker-lifetime-plan';
 
-    const productPath = plan === 'monthly' 
-      ? 'job-tracker-monthly-plan' 
-      : 'job-tracker-lifetime-plan';
-
-    // Menggunakan FastSpring Popup Checkout
-    if (window.fastspring) {
-      window.fastspring.builder.reset();
-      window.fastspring.builder.push({
-        products: [{ path: productPath, quantity: 1 }],
-        checkout: true,
-        contact: {
-          email: user.email,
-        },
-        buyerReference: user.uid, // <-- TAMBAHKAN INI
-        tags: {
-          user_id: user.uid, // Tetap sertakan tags sebagai fallback
-        },
-      });
-    } else {
-      // Fallback jika SBL gagal dimuat
-      console.error("FastSpring SBL not loaded.");
-      const baseUrl = "https://jobtracker.test.onfastspring.com/";
-      const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}`;
-      window.open(checkoutUrl, "_blank");
-    }
+    // --- MODIFIKASI SEMENTARA UNTUK DEBUGGING ---
+    
+    // Kita "pura-pura" window.fastspring tidak ada, biar masuk ke blok ELSE
+    // if (window.fastspring) { ... } 
+    
+    // Langsung jalankan logika fallback ini:
+    console.log("TESTING: Menggunakan Direct Link untuk kirim Tags");
+    const baseUrl = "https://jobtracker.test.onfastspring.com/";
+    // Pastikan tags user_id ditempel di URL
+    const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}&buyerReference=${user.uid}`;
+    
+    window.open(checkoutUrl, "_self"); // Buka di tab yang sama biar kelihatan
+    
+    // ---------------------------------------------
   };
 
   return (
