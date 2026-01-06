@@ -9,7 +9,7 @@ export default function TermsPolicyPage() {
     { id: "acceptable-use", title: "Acceptable Use" },
     { id: "privacy", title: "Privacy Policy" },
     { id: "cookies", title: "Cookie Policy" },
-    { id: "refund", title: "No Refund Policy" },
+    { id: "refund", title: "Refund Policy" }, // Updated title
     { id: "contact", title: "Contact Us" },
   ];
 
@@ -67,7 +67,7 @@ export default function TermsPolicyPage() {
             {/* Main Content Area */}
             <div className="lg:col-span-9 space-y-16 text-[#FFF0C4]/90 leading-relaxed">
               
-              {/* 1. Terms of Service (UPDATED FOR PADDLE) */}
+              {/* 1. Terms of Service */}
               <section id="terms" className="scroll-mt-32">
                 <h2 className="text-2xl font-bold mb-6 text-[#FFF0C4] border-l-4 border-[#8C1007] pl-4">
                   Terms of Service
@@ -145,29 +145,34 @@ export default function TermsPolicyPage() {
                 </div>
               </section>
 
-              {/* 5. NO REFUND POLICY */}
+              {/* 5. REFUND POLICY (UPDATED FOR PADDLE) */}
               <section id="refund" className="scroll-mt-32">
                 <h2 className="text-2xl font-bold mb-6 text-[#FFF0C4] border-l-4 border-[#8C1007] pl-4">
-                  Cancellation & No Refund Policy
+                  Refund Policy
                 </h2>
                 <div className="space-y-4 text-base md:text-lg text-[#FFF0C4]/80">
                   <div className="p-5 border border-[#8C1007]/50 bg-[#8C1007]/20 rounded-lg shadow-[0_0_15px_rgba(140,16,7,0.1)]">
                     <p className="font-bold text-[#FFF0C4] uppercase tracking-wide text-sm mb-2">
-                      Please Read Carefully
+                      15-Day Money-Back Guarantee
                     </p>
                     <p className="font-medium text-white/90">
-                      All purchases are final. We do not offer refunds for partial subscription periods or unused services.
+                      In accordance with our payment provider (Paddle) guidelines, you have the right to cancel your agreement and return the product within 15 days of purchase without giving any reason.
                     </p>
                   </div>
                   
-                  <h3 className="text-xl font-semibold text-[#FFF0C4] mt-4 mb-2">Digital Services</h3>
+                  <h3 className="text-xl font-semibold text-[#FFF0C4] mt-4 mb-2">Right of Withdrawal</h3>
                   <p>
-                    Because JobTracker provides instant access to digital tools and premium features upon purchase, <strong>we do not offer a money-back guarantee</strong>. By subscribing, you acknowledge and agree that you are purchasing a non-refundable digital product.
+                    If you are not satisfied with JobTracker for any reason, you may request a full refund within 15 days of your initial transaction. This cooling-off period is designed to ensure you are comfortable with your purchase.
                   </p>
                   
-                  <h3 className="text-xl font-semibold text-[#FFF0C4] mt-4 mb-2">Cancellation</h3>
+                  <h3 className="text-xl font-semibold text-[#FFF0C4] mt-4 mb-2">How to Request a Refund</h3>
                   <p>
-                    You may cancel your subscription at any time via your account settings. Upon cancellation, you will retain access to premium features until the end of your current billing cycle. After that period ends, you will not be charged again, but no refunds will be issued for the previous payments.
+                    To exercise your right of withdrawal, you must inform us of your decision to cancel this agreement by an unequivocal statement (e.g., via email). Please contact us at <strong className="text-[#FFF0C4]">official.jobtrackerapp@gmail.com</strong>.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-[#FFF0C4] mt-4 mb-2">Effects of Withdrawal</h3>
+                  <p>
+                     If you withdraw from this agreement, we will reimburse all payments received from you without undue delay and in any event not later than 15 days from the day on which we are informed about your decision to withdraw. We will carry out such reimbursement using the same means of payment as you used for the initial transaction, unless you have expressly agreed otherwise.
                   </p>
                 </div>
               </section>
@@ -178,7 +183,7 @@ export default function TermsPolicyPage() {
                   Contact Us
                 </h2>
                 <p className="text-lg text-[#FFF0C4]/80 mb-4">
-                  If you have any questions about these Terms, Privacy Policy, or Cancellation Policy, please contact us at:
+                  If you have any questions about these Terms, Privacy Policy, or Refund Policy, please contact us at:
                 </p>
                 <a 
                   href="mailto:official.jobtrackerapp@gmail.com" 
