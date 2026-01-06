@@ -9,7 +9,7 @@ export default function TermsPolicyPage() {
     { id: "acceptable-use", title: "Acceptable Use" },
     { id: "privacy", title: "Privacy Policy" },
     { id: "cookies", title: "Cookie Policy" },
-    { id: "refund", title: "No Refund Policy" }, // Updated title
+    { id: "refund", title: "No Refund Policy" },
     { id: "contact", title: "Contact Us" },
   ];
 
@@ -67,14 +67,17 @@ export default function TermsPolicyPage() {
             {/* Main Content Area */}
             <div className="lg:col-span-9 space-y-16 text-[#FFF0C4]/90 leading-relaxed">
               
-              {/* 1. Terms of Service */}
+              {/* 1. Terms of Service (UPDATED FOR PADDLE) */}
               <section id="terms" className="scroll-mt-32">
                 <h2 className="text-2xl font-bold mb-6 text-[#FFF0C4] border-l-4 border-[#8C1007] pl-4">
                   Terms of Service
                 </h2>
                 <div className="space-y-4 text-base md:text-lg text-[#FFF0C4]/80">
                   <p>
-                    Welcome to <strong className="text-[#FFF0C4]">JobTracker</strong>. By accessing or using our website and services, you agree to be bound by these terms. If you represent an organization, you agree to these terms on behalf of that organization.
+                    Welcome to <strong className="text-[#FFF0C4]">JobTracker</strong>. 
+                    These Terms of Service are a binding legal agreement between you and 
+                    <strong className="text-[#FFF0C4] bg-[#8C1007]/20 px-1 mx-1 rounded">Nafhan Shafy Aulia (Founder of JobTracker)</strong> 
+                    . By accessing or using our website and services, you agree to be bound by these terms.
                   </p>
                   <p>
                     We reserve the right to modify these terms at any time. Continued use of the service after any such changes constitutes your acceptance of the new terms.
@@ -142,7 +145,7 @@ export default function TermsPolicyPage() {
                 </div>
               </section>
 
-              {/* 5. NO REFUND POLICY (UPDATED) */}
+              {/* 5. NO REFUND POLICY */}
               <section id="refund" className="scroll-mt-32">
                 <h2 className="text-2xl font-bold mb-6 text-[#FFF0C4] border-l-4 border-[#8C1007] pl-4">
                   Cancellation & No Refund Policy
