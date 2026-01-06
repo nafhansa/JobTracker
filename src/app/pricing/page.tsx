@@ -8,11 +8,7 @@ import Navbar from "@/components/Navbar";
 
 declare global {
   interface Window {
-    LemonSqueezy?: {
-      Url: {
-        Open: (url: string) => void;
-      };
-    };
+    fastspring?: any;
   }
 }
 
@@ -26,34 +22,35 @@ export default function PricingPage() {
       return;
     }
 
-    let checkoutUrl = "";
-    if (plan === "monthly") {
-      checkoutUrl = "https://jtracker.lemonsqueezy.com/checkout/buy/d50af3c2-2d61-4d6f-9c3d-6e8bca694bd9?embed=1";
+    const productPath = plan === 'monthly' 
+      ? 'job-tracker-monthly-plan' 
+      : 'job-tracker-lifetime-plan';
+
+    // Menggunakan FastSpring Popup Checkout
+    if (window.fastspring) {
+      window.fastspring.builder.reset();
+      window.fastspring.builder.push({
+        products: [{ path: productPath, quantity: 1 }],
+        checkout: true,
+        contact: {
+          email: user.email,
+        },
+        buyerReference: user.uid, // <-- TAMBAHKAN INI
+        tags: {
+          user_id: user.uid, // Tetap sertakan tags sebagai fallback
+        },
+      });
     } else {
-      checkoutUrl = "https://jtracker.lemonsqueezy.com/checkout/buy/8ab34be2-ce1a-4527-85d1-99b11534f82c?embed=1";
-    }
-
-    const returnUrl = `${window.location.origin}/dashboard`;
-
-    checkoutUrl += `&checkout[email]=${user.email}`;
-    checkoutUrl += `&checkout[custom][user_id]=${user.uid}`;
-    checkoutUrl += `&checkout[redirect_url]=${returnUrl}`; 
-
-    if (window.LemonSqueezy) {
-      window.LemonSqueezy.Url.Open(checkoutUrl);
-    } else {
+      // Fallback jika SBL gagal dimuat
+      console.error("FastSpring SBL not loaded.");
+      const baseUrl = "https://jobtracker.test.onfastspring.com/";
+      const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}`;
       window.open(checkoutUrl, "_blank");
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
-      {/* Script Lemon Squeezy */}
-      <Script 
-        src="https://assets.lemonsqueezy.com/lemon.js" 
-        strategy="lazyOnload" 
-      />
-      
       <Navbar />
       
       {/* Background Effect */}

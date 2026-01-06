@@ -3,75 +3,97 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase/admin";
 
-const LEMONSQUEEZY_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
+const FASTSPRING_WEBHOOK_SECRET = process.env.FASTSPRING_WEBHOOK_SECRET;
 
 export async function POST(req: Request) {
   try {
-    if (!LEMONSQUEEZY_WEBHOOK_SECRET) {
-      return NextResponse.json({ error: "LEMONSQUEEZY_WEBHOOK_SECRET not set" }, { status: 500 });
+    if (!FASTSPRING_WEBHOOK_SECRET) {
+      return NextResponse.json({ error: "FASTSPRING_WEBHOOK_SECRET not set" }, { status: 500 });
     }
 
     const rawBody = await req.text();
-    const signature = req.headers.get("x-signature") || "";
-    const hmac = crypto.createHmac("sha256", LEMONSQUEEZY_WEBHOOK_SECRET);
-    const digest = Buffer.from(hmac.update(rawBody).digest("hex"), "utf8");
-    
-    if (!crypto.timingSafeEqual(digest, Buffer.from(signature, "utf8"))) {
+    const signature = req.headers.get("X-FS-Signature") || "";
+
+    // Verifikasi signature dari FastSpring
+    const expectedSignature = crypto
+      .createHmac("sha256", FASTSPRING_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest("base64");
+
+    if (signature !== expectedSignature) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const payload = JSON.parse(rawBody);
-    const { meta, data } = payload;
-    const eventName = meta.event_name;
-    const userId = meta.custom_data?.user_id;
+    const events = payload.events;
 
-    if (!userId) return NextResponse.json({ message: "No user_id found" }, { status: 200 });
+    for (const event of events) {
+      // GANTI BARIS INI
+      const userId = event.data.buyerReference || event.data.tags?.user_id;
 
-    // --- LOGIKA UPDATE DATA ---
-    
-    // 1. LIFETIME (Order)
-    if (eventName === "order_created") {
-      await adminDb.collection("users").doc(userId).set({
-        isPro: true,
-        subscription: {
-          plan: "lifetime",
-          status: "active",
-          period: "lifetime",
-          provider: "lemonsqueezy",
-          lemonSqueezyId: data.id,
-          // Lifetime gak punya renewal date & portal update
-        },
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+      if (!userId) {
+        console.warn("Webhook event received without user_id in tags:", event.id);
+        continue; // Lanjut ke event berikutnya jika tidak ada user_id
+      }
+
+      const userRef = adminDb.collection("users").doc(userId);
+
+      switch (event.type) {
+        case "order.completed": {
+          // Hanya tangani jika ini adalah pembelian lifetime (bukan bagian dari langganan)
+          if (event.data.subscription) continue;
+
+          await userRef.set({
+            isPro: true,
+            subscription: {
+              plan: "lifetime",
+              status: "active",
+              provider: "fastspring",
+              fastspringId: null, // Lifetime tidak punya ID langganan
+              renewsAt: null,
+              endsAt: null,
+              customerPortalUrl: null,
+            },
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          break;
+        }
+        case "subscription.activated": {
+          await userRef.set({
+            isPro: true,
+            subscription: {
+              plan: "monthly", // Asumsi, bisa disesuaikan jika perlu
+              status: "active",
+              provider: "fastspring",
+              fastspringId: event.data.id,
+              renewsAt: event.data.next, // Tanggal tagihan berikutnya
+              endsAt: event.data.end, // Kapan berakhir (kalau dicancel)
+              customerPortalUrl: event.data.accountManagementUrl,
+            },
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          break;
+        }
+        case "subscription.deactivated":
+        case "subscription.canceled": {
+          await userRef.set({
+            isPro: false,
+            subscription: {
+              status: event.data.state, // 'deactivated' atau 'canceled'
+            },
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          break;
+        }
+        default:
+          // Tipe event tidak dikenal, abaikan.
+          break;
+      }
     }
 
-    // 2. SUBSCRIPTION (Monthly)
-    else if (eventName.startsWith("subscription_")) {
-      const attrs = data.attributes;
-      
-      // Ambil Customer Portal URL (buat user cancel/update kartu)
-      const updatePaymentUrl = attrs.urls?.update_payment_method; 
-      const customerPortalUrl = attrs.urls?.customer_portal; 
-
-      await adminDb.collection("users").doc(userId).set({
-        isPro: attrs.status === "active",
-        subscription: {
-          plan: "monthly",
-          status: attrs.status, 
-          period: "monthly",
-          provider: "lemonsqueezy",
-          lemonSqueezyId: data.id,
-          renewsAt: attrs.renews_at, // 👈 PENTING: Tanggal tagihan berikutnya
-          endsAt: attrs.ends_at,     // Kapan berakhir (kalau dicancel)
-          customerPortalUrl: customerPortalUrl || updatePaymentUrl // Link buat manage
-        },
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-    }
-
-    return NextResponse.json({ status: "ok" });
+    return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error("Webhook Error:", error);
+    console.error("Webhook error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
