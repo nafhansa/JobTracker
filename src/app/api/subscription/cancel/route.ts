@@ -1,47 +1,63 @@
-// src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
+import { getAuth } from "firebase-admin/auth"; // Jika pakai cookie session, sesuaikan auth check-nya
 
 export async function POST(req: Request) {
   try {
-    const { subscriptionId, userId } = await req.json();
+    const { subscriptionId } = await req.json();
 
-    if (!subscriptionId || !userId) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    if (!subscriptionId) {
+      return NextResponse.json({ error: "Subscription ID is required" }, { status: 400 });
     }
 
-    // 1. Panggil Lemon Squeezy API untuk cancel
-    const apiKey = process.env.LEMONSQUEEZY_API_KEY; // Pastikan ada di .env.local
-    
-    if (!apiKey) {
-        return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    // 1. Cek Credentials FastSpring di ENV
+    const username = process.env.FASTSPRING_USERNAME;
+    const password = process.env.FASTSPRING_PASSWORD;
+
+    if (!username || !password) {
+      console.error("❌ FastSpring API Credentials missing");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }
 
-    const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
-      method: "DELETE", // Method DELETE = Cancel di Lemon Squeezy
+    // 2. Panggil API FastSpring untuk Cancel (DELETE request)
+    // Dokumentasi: DELETE /subscriptions/{id}
+    const response = await fetch(`https://api.fastspring.com/subscriptions/${subscriptionId}`, {
+      method: "DELETE",
       headers: {
-        "Accept": "application/vnd.api+json",
-        "Content-Type": "application/vnd.api+json",
-        "Authorization": `Bearer ${apiKey}`
-      }
+        "Authorization": "Basic " + Buffer.from(`${username}:${password}`).toString("base64"),
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.errors?.[0]?.detail || "Failed to cancel subscription");
+      const errorText = await response.text();
+      console.error("❌ FastSpring API Error:", errorText);
+      return NextResponse.json({ error: "Failed to cancel subscription at FastSpring" }, { status: response.status });
     }
 
-    // 2. Update Firebase manual (Supaya UI langsung berubah tanpa nunggu webhook)
-    await adminDb.collection("users").doc(userId).set({
-      subscription: {
-        status: "cancelled", // Ubah status jadi cancelled (akses tetap jalan sampai endsAt)
-      }
-    }, { merge: true });
+    // 3. Update Status di Firebase (Optimistic Update)
+    // Sebenarnya Webhook 'subscription.canceled' akan masuk nanti, 
+    // tapi kita update status jadi 'canceled' (pending end of period) biar UI langsung berubah.
+    
+    // Cari user pemilik subscription ini
+    const usersSnapshot = await adminDb
+      .collection("users")
+      .where("subscription.fastspringId", "==", subscriptionId)
+      .limit(1)
+      .get();
 
-    return NextResponse.json({ success: true });
+    if (!usersSnapshot.empty) {
+      const userRef = usersSnapshot.docs[0].ref;
+      await userRef.update({
+        "subscription.status": "cancelled", // Status 'cancelled' berarti aktif sampai periode habis
+      });
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ success: true, data });
 
   } catch (error: any) {
-    console.error("Cancel Error:", error);
+    console.error("Cancel API Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

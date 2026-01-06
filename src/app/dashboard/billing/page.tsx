@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ArrowLeft, 
   CalendarDays, 
-  CreditCard, 
   Loader2, 
   AlertTriangle, 
   CheckCircle2,
-  XCircle 
+  XCircle,
+  X // 👈 Tambahkan import icon X
 } from "lucide-react";
 import {
   AlertDialog,
@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Pastikan component ini ada
+} from "@/components/ui/alert-dialog"; 
 import { Timestamp } from "firebase/firestore";
 
 export default function BillingPage() {
@@ -39,7 +39,6 @@ export default function BillingPage() {
 
   if (authLoading || !user) return null;
 
-  // Fungsi ini sekarang dipanggil OLEH AlertDialogAction, bukan tombol langsung
   const performCancellation = async () => {
     setIsCancelling(true);
     setMessage(null);
@@ -48,7 +47,8 @@ export default function BillingPage() {
       const res = await fetch("/api/subscription/cancel", {
         method: "POST",
         body: JSON.stringify({
-            subscriptionId: subscription?.lemonSqueezyId,
+            // ⚠️ FIX: Ganti lemonSqueezyId jadi fastspringId agar sesuai database
+            subscriptionId: subscription?.fastspringId, 
             userId: user.uid
         }),
       });
@@ -168,6 +168,14 @@ export default function BillingPage() {
                                 </AlertDialogTrigger>
                                 
                                 <AlertDialogContent className="bg-[#1a0201] border border-[#8C1007]/50 text-[#FFF0C4]">
+                                    
+                                    {/* 👇 INI TOMBOL X (CLOSE) YANG DITAMBAHKAN 👇 */}
+                                    {/* Menggunakan AlertDialogCancel sebagai wrapper agar fungsinya menutup modal */}
+                                    <AlertDialogCancel className="absolute right-4 top-4 p-0 w-auto h-auto border-none bg-transparent hover:bg-transparent text-[#FFF0C4]/50 hover:text-[#FFF0C4] focus:ring-0">
+                                        <X className="w-5 h-5" />
+                                        <span className="sr-only">Close</span>
+                                    </AlertDialogCancel>
+
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="font-serif text-2xl text-[#FFF0C4] flex items-center gap-3">
                                             <AlertTriangle className="text-[#8C1007]" />
@@ -185,7 +193,7 @@ export default function BillingPage() {
                                         </AlertDialogCancel>
                                         <AlertDialogAction 
                                             onClick={(e) => {
-                                                e.preventDefault(); // Prevent auto-close biar bisa show loading if needed, tapi di sini kita fire action
+                                                e.preventDefault(); 
                                                 performCancellation();
                                             }}
                                             className="bg-[#8C1007] text-white hover:bg-[#680903] border-none"
@@ -209,7 +217,7 @@ export default function BillingPage() {
                             <span>Your subscription has been cancelled.</span>
                         </div>
                         <p className="text-[#FFF0C4]/60 text-xs">
-                            You can still use Pro features until <b>{formatDate(subscription?.endsAt)}</b>.
+                            You can still use Pro features until <b>{formatDate(subscription?.endsAt || subscription?.renewsAt)}</b>.
                         </p>
                         <Button 
                             className="mt-2 bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e0d2aa] font-bold"
