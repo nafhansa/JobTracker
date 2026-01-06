@@ -1,34 +1,68 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles } from "lucide-react"; // Opsional: Tambah ikon biar lebih cantik
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
-export const SubscriptionBanner = () => {
+export function SubscriptionBanner() {
+  
+  const handleSubscribe = () => {
+    // Ganti dengan Link Checkout Lemon Squeezy kamu
+    window.location.href = "https://store.lemonsqueezy.com/checkout/buy/...."; 
+  };
+
   return (
-    // 1. Card Background disamakan dengan Pricing Card (#2a0401)
-    <Card className="w-full border-[#FFF0C4]/10 bg-[#2a0401] shadow-lg shadow-[#8C1007]/10">
-      <CardHeader>
-        {/* 2. Font disamakan (Serif) & Warna Teks Cream */}
-        <CardTitle className="flex items-center gap-2 font-serif text-xl font-bold tracking-wide text-[#FFF0C4]">
-          <Sparkles className="h-5 w-5 text-[#8C1007]" />
-          Upgrade to Unlock Full Access
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* 3. Warna paragraf dibuat agak transparan (opacity 80%) */}
-        <p className="mb-6 text-[#FFF0C4]/80">
-          You are currently on the free plan. To add and manage more job
-          applications, please upgrade to a premium plan.
+    <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-8 md:p-12 text-center shadow-2xl">
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8C1007] to-transparent opacity-50"></div>
+      <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#8C1007] rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
+
+      <div className="relative z-10 flex flex-col items-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4] text-xs font-bold tracking-wider uppercase mb-6">
+          <Sparkles className="w-3 h-3" />
+          Premium Access Required
+        </div>
+
+        <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#FFF0C4] mb-4 drop-shadow-md">
+          Unlock Your Career Potential
+        </h2>
+        
+        <p className="text-[#FFF0C4]/70 text-lg mb-8 leading-relaxed">
+          Track unlimited jobs, get analytics insights, and organize your job search like a pro. 
+          Stop guessing, start landing interviews.
         </p>
-        <Link href="/pricing">
-          {/* 4. Button merah (#8C1007) dengan hover effect yang sesuai */}
-          <Button className="w-full bg-[#8C1007] font-bold tracking-widest text-[#FFF0C4] hover:bg-[#a31208] sm:w-auto">
-            UPGRADE NOW
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-8 w-full max-w-lg">
+           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
+             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
+             <span>Unlimited Job Tracking</span>
+           </div>
+           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
+             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
+             <span>Lifetime Access</span>
+           </div>
+           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
+             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
+             <span>Priority Support</span>
+           </div>
+           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
+             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
+             <span>Future Updates Included</span>
+           </div>
+        </div>
+
+        <Button 
+          size="lg" 
+          onClick={handleSubscribe}
+          className="bg-[#8C1007] hover:bg-[#a11d13] text-[#FFF0C4] font-bold px-8 py-6 text-lg shadow-lg shadow-[#8C1007]/20 transition-all hover:scale-105"
+        >
+          Get Access Now - $10
+        </Button>
+        
+        <p className="mt-4 text-xs text-[#FFF0C4]/40">
+          Secure payment via Lemon Squeezy. One-time payment.
+        </p>
+      </div>
+    </div>
   );
-};
+}

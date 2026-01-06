@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { getAuth } from "firebase-admin/auth"; // Jika pakai cookie session, sesuaikan auth check-nya
 
 export async function POST(req: Request) {
   try {
@@ -10,17 +9,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Subscription ID is required" }, { status: 400 });
     }
 
-    // 1. Cek Credentials FastSpring di ENV
     const username = process.env.FASTSPRING_API_USERNAME;
     const password = process.env.FASTSPRING_API_PASSWORD;
 
     if (!username || !password) {
       console.error("❌ FastSpring API Credentials missing");
-      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+      return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
-    // 2. Panggil API FastSpring untuk Cancel (DELETE request)
-    // Dokumentasi: DELETE /subscriptions/{id}
+    // 1. Cancel di FastSpring
     const response = await fetch(`https://api.fastspring.com/subscriptions/${subscriptionId}`, {
       method: "DELETE",
       headers: {
@@ -29,17 +26,14 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ FastSpring API Error:", errorText);
-      return NextResponse.json({ error: "Failed to cancel subscription at FastSpring" }, { status: response.status });
+    if (!response.ok && response.status !== 404 && response.status !== 400) {
+      return NextResponse.json({ error: "Failed to cancel at FastSpring" }, { status: response.status });
     }
 
-    // 3. Update Status di Firebase (Optimistic Update)
-    // Sebenarnya Webhook 'subscription.canceled' akan masuk nanti, 
-    // tapi kita update status jadi 'canceled' (pending end of period) biar UI langsung berubah.
-    
-    // Cari user pemilik subscription ini
+    // Ambil data JSON dari FastSpring (opsional, untuk tanggal)
+    const fastSpringData = await response.json().catch(() => null);
+
+    // 2. Update Firebase
     const usersSnapshot = await adminDb
       .collection("users")
       .where("subscription.fastspringId", "==", subscriptionId)
@@ -47,14 +41,37 @@ export async function POST(req: Request) {
       .get();
 
     if (!usersSnapshot.empty) {
-      const userRef = usersSnapshot.docs[0].ref;
+      const userDoc = usersSnapshot.docs[0];
+      const userData = userDoc.data();
+      const userRef = userDoc.ref;
+
+      // --- LOGIC PENTING: Tentukan kapan akses berakhir ---
+      let endDate = null;
+
+      // Opsi A: Ambil dari FastSpring (deactivationDate)
+      if (fastSpringData && fastSpringData.deactivationDate) {
+          endDate = new Date(fastSpringData.deactivationDate).toISOString();
+      }
+      // Opsi B: Ambil dari 'renewsAt' user saat ini (Tanggal tagihan berikutnya jadi tanggal putus)
+      else if (userData.subscription?.renewsAt) {
+          endDate = userData.subscription.renewsAt;
+      }
+      // Opsi C: Fallback hari ini
+      else {
+          endDate = new Date().toISOString();
+      }
+
       await userRef.update({
-        "subscription.status": "cancelled", // Status 'cancelled' berarti aktif sampai periode habis
+        "subscription.status": "cancelled",
+        "subscription.renewsAt": null, // Hapus tanggal tagihan
+        "subscription.endsAt": endDate, // ✅ SIMPAN TANGGAL INI AGAR UI TETAP PRO
+        "updatedAt": new Date().toISOString()
       });
+      
+      console.log(`✅ Sub cancelled. Access until: ${endDate}`);
     }
 
-    const data = await response.json();
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true });
 
   } catch (error: any) {
     console.error("Cancel API Error:", error);

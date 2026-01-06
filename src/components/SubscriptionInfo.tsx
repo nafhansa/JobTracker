@@ -2,70 +2,78 @@
 
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Crown, CreditCard, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Crown, Calendar, CreditCard } from "lucide-react";
 
 export function SubscriptionInfo() {
   const { subscription } = useAuth();
-  const router = useRouter();
 
-  // Tampilkan hanya jika status active atau cancelled (tapi belum expired secara tanggal)
-  if (!subscription || (subscription.status !== "active" && subscription.status !== "cancelled")) return null;
+  if (!subscription) return null;
 
-  const isLifetime = subscription.plan === "lifetime";
-  const isCancelled = subscription.status === "cancelled";
+  // Format tanggal endsAt
+  const endDate = subscription.endsAt 
+    ? new Date(subscription.endsAt).toLocaleDateString("id-ID", {
+        day: "numeric", month: "long", year: "numeric"
+      })
+    : null;
+
+  // Fungsi untuk membuka customer portal (opsional, jika kamu punya link portal)
+  const handleManage = () => {
+    // Jika menggunakan Lemon Squeezy, biasanya ada URL customer portal
+    if (subscription.customerPortalUrl) {
+        window.open(subscription.customerPortalUrl, "_blank");
+    } else {
+        alert("Redirecting to billing portal...");
+    }
+  };
 
   return (
-    <Card className="mb-8 border border-[#FFF0C4]/10 bg-gradient-to-r from-[#2a0401] to-[#3E0703] shadow-lg relative overflow-hidden group">
+    <div className="relative overflow-hidden rounded-xl border border-[#FFF0C4]/20 bg-[#3E0703]/40 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-[#3E0703]/60">
       
-      {/* Decorative Glow */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-[#8C1007]/20 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none"></div>
+      {/* Background Glow */}
+      <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[#8C1007]/40 blur-3xl"></div>
 
-      <CardContent className="flex flex-col md:flex-row items-center justify-between p-6 gap-4 relative z-10">
+      <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
-        {/* Kiri: Info */}
-        <div className="flex items-center gap-5 w-full">
-          <div className={`p-3.5 rounded-xl border ${isLifetime ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-[#FFF0C4]/10 border-[#FFF0C4]/20 text-[#FFF0C4]"}`}>
-            {isLifetime ? <Crown className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+        {/* Left Side: Status Info */}
+        <div className="flex items-start gap-4">
+          <div className="p-3 rounded-lg bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4]">
+            <Crown className="w-6 h-6" />
           </div>
-          
-          <div className="flex-1">
-            <h3 className="text-[#FFF0C4] font-serif font-bold text-lg flex items-center gap-3">
-              {isLifetime ? "Lifetime Pro" : "Monthly Plan"}
-              
-              {/* Status Badge */}
-              {!isLifetime && (
-                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isCancelled ? "border-red-500/30 bg-red-500/10 text-red-300" : "border-green-500/30 bg-green-500/10 text-green-300"} uppercase tracking-wider font-sans`}>
-                    {isCancelled ? "Ending Soon" : "Active"}
-                 </span>
-              )}
-            </h3>
-            
-            <p className="text-[#FFF0C4]/50 text-sm mt-0.5">
-              {isLifetime 
-                ? "You have permanent access to all Pro features." 
-                : isCancelled 
-                  ? "Your subscription is set to expire soon."
-                  : "Your next billing is automated."
-              }
-            </p>
+          <div>
+            <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-[#FFF0C4]">
+                Plan: {subscription.plan === "lifetime" ? "Lifetime Access" : "Pro Membership"}
+                </h3>
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                    subscription.status === 'active' 
+                    ? "bg-green-500/10 text-green-400 border-green-500/20" 
+                    : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+                }`}>
+                    {subscription.status}
+                </span>
+            </div>
+
+            {endDate && (
+                <div className="flex items-center gap-2 mt-1 text-sm text-[#FFF0C4]/60">
+                    <Calendar className="w-3 h-3" />
+                    <span>
+                        {subscription.status === 'active' ? "Renews on" : "Expires on"}: {endDate}
+                    </span>
+                </div>
+            )}
           </div>
         </div>
 
-        {/* Kanan: Action Button (Internal Link) */}
-        {!isLifetime && (
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push("/dashboard/billing")}
-            className="w-full md:w-auto border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/5 hover:text-white hover:border-[#FFF0C4]/40 transition-all duration-300 group-hover:translate-x-1"
-          >
-            Billing Details
-            <ChevronRight className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-          </Button>
-        )}
-
-      </CardContent>
-    </Card>
+        {/* Right Side: Action Button */}
+        <Button 
+            variant="outline"
+            onClick={handleManage}
+            className="border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10 hover:border-[#FFF0C4]/50"
+        >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Manage Subscription
+        </Button>
+      </div>
+    </div>
   );
 }

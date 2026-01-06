@@ -8,7 +8,7 @@ import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { JobApplication } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react"; // Added ShieldCheck for Admin icon
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -19,13 +19,18 @@ export default function DashboardPage() {
   const { user, loading: authLoading, subscription } = useAuth();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Daftar email admin
   const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
-  const isSubscribed = ADMIN_EMAILS.includes(user?.email || "") || (subscription && (
-    subscription.status === "active" || 
-    subscription.plan === "lifetime" ||
-    (subscription.status === "cancelled" && subscription.endsAt && new Date(subscription.endsAt) > new Date())
-  ));
+  // Logic: User dianggap "subscribed" jika dia ADMIN atau punya status subscription aktif
+  const isSubscribed = 
+    ADMIN_EMAILS.includes(user?.email || "") || 
+    (subscription && (
+      subscription.status === "active" || 
+      subscription.plan === "lifetime" ||
+      (subscription.status === "cancelled" && subscription.endsAt && new Date(subscription.endsAt) > new Date())
+    ));
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -34,7 +39,7 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    // Hanya ambil data jobs kalau user SUDAH subscribe
+    // 1. Jika User Login & Subscribed (atau Admin): Ambil Data
     if (user && isSubscribed) {
       const unsubscribeDocs = subscribeToJobs(user.uid, (data) => {
         const sanitizedData = data.map((job) => ({
@@ -46,8 +51,9 @@ export default function DashboardPage() {
         setLoading(false);
       });
       return () => unsubscribeDocs();
-    } else if (user && !isSubscribed) {
-      // Kalau user login tapi belum subscribe, stop loading biar banner muncul
+    } 
+    // 2. Jika User Login tapi BELUM Subscribe: Stop loading agar Banner muncul
+    else if (user && !isSubscribed) {
       setLoading(false);
     }
   }, [user, isSubscribed]);
@@ -57,6 +63,7 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  // --- Render Loading Screen ---
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4]">
@@ -64,8 +71,9 @@ export default function DashboardPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#500905] via-[#1a0201] to-[#000000]"></div>
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
         </div>
-        <div className="flex items-center justify-center h-screen">
-          <p>Loading...</p>
+        <div className="flex items-center justify-center h-screen flex-col gap-4">
+          <div className="w-8 h-8 border-4 border-[#8C1007] border-t-[#FFF0C4] rounded-full animate-spin"></div>
+          <p className="text-[#FFF0C4]/60 animate-pulse">Loading experience...</p>
         </div>
       </div>
     );
@@ -73,6 +81,7 @@ export default function DashboardPage() {
 
   if (!user) return null; 
 
+  // --- Render Main Dashboard ---
   return (
     <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4]">
       {/* Background Effect */}
@@ -98,6 +107,7 @@ export default function DashboardPage() {
               onClick={() => router.push("/admin")}
               className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50 transition-all duration-300"
             >
+              <ShieldCheck className="w-4 h-4 mr-2" />
               Admin
             </Button>
           )}
@@ -129,7 +139,11 @@ export default function DashboardPage() {
         </div>
 
         {/* ✅ FITUR BARU: Info Langganan (Hanya muncul jika subscribed dan bukan admin) */}
-        {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && <SubscriptionInfo />}
+        {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
+          <div className="mb-8">
+            <SubscriptionInfo />
+          </div>
+        )}
 
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
