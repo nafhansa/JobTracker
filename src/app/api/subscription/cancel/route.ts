@@ -11,8 +11,8 @@ export async function POST(req: Request) {
     }
 
     // 1. Cek Credentials FastSpring di ENV
-    const username = process.env.FASTSPRING_USERNAME;
-    const password = process.env.FASTSPRING_PASSWORD;
+    const username = process.env.FASTSPRING_API_USERNAME;
+    const password = process.env.FASTSPRING_API_PASSWORD;
 
     if (!username || !password) {
       console.error("❌ FastSpring API Credentials missing");
