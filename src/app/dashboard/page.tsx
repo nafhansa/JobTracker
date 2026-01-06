@@ -131,7 +131,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Info Langganan (Hanya muncul jika subscribed dan bukan admin) */}
-        {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
+        {(isSubscribed && subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
           <div className="mb-8">
             <SubscriptionInfo />
           </div>
