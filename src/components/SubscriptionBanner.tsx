@@ -6,8 +6,9 @@ import { Sparkles, CheckCircle2 } from "lucide-react";
 export function SubscriptionBanner() {
   
   const handleSubscribe = () => {
-    // Ganti dengan Link Checkout Lemon Squeezy kamu
-    window.location.href = "https://store.lemonsqueezy.com/checkout/buy/...."; 
+    // ⚠️ PENTING: GANTI URL DI BAWAH INI DENGAN LINK FASTSPRING KAMU
+    // Contoh: "https://namatoko.onfastspring.com/checkout/job-tracker-pro"
+    window.location.href = "https://YOUR-STORE-NAME.onfastspring.com/checkout/YOUR-PRODUCT-PATH"; 
   };
 
   return (
@@ -28,8 +29,7 @@ export function SubscriptionBanner() {
         </h2>
         
         <p className="text-[#FFF0C4]/70 text-lg mb-8 leading-relaxed">
-          Track unlimited jobs, get analytics insights, and organize your job search like a pro. 
-          Stop guessing, start landing interviews.
+          Track unlimited jobs, get analytics insights, and organize your job search like a pro.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-8 w-full max-w-lg">
@@ -41,14 +41,6 @@ export function SubscriptionBanner() {
              <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
              <span>Lifetime Access</span>
            </div>
-           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
-             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
-             <span>Priority Support</span>
-           </div>
-           <div className="flex items-center gap-3 text-[#FFF0C4]/80">
-             <CheckCircle2 className="w-5 h-5 text-[#8C1007]" />
-             <span>Future Updates Included</span>
-           </div>
         </div>
 
         <Button 
@@ -56,11 +48,11 @@ export function SubscriptionBanner() {
           onClick={handleSubscribe}
           className="bg-[#8C1007] hover:bg-[#a11d13] text-[#FFF0C4] font-bold px-8 py-6 text-lg shadow-lg shadow-[#8C1007]/20 transition-all hover:scale-105"
         >
-          Get Access Now - $10
+          Get Access Now
         </Button>
         
         <p className="mt-4 text-xs text-[#FFF0C4]/40">
-          Secure payment via Lemon Squeezy. One-time payment.
+          Secure payment via FastSpring.
         </p>
       </div>
     </div>

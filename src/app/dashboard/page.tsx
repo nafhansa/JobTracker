@@ -8,11 +8,11 @@ import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { JobApplication } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck } from "lucide-react"; // Added ShieldCheck for Admin icon
+import { LogOut, ShieldCheck } from "lucide-react"; 
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
-import { SubscriptionInfo } from "@/components/SubscriptionInfo"; // ✅ Component Info Langganan
+import { SubscriptionInfo } from "@/components/SubscriptionInfo"; 
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Daftar email admin
+  // Masukkan email admin di sini
   const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
   // Logic: User dianggap "subscribed" jika dia ADMIN atau punya status subscription aktif
@@ -29,6 +29,7 @@ export default function DashboardPage() {
     (subscription && (
       subscription.status === "active" || 
       subscription.plan === "lifetime" ||
+      // Handle grace period jika status cancelled tapi belum expired
       (subscription.status === "cancelled" && subscription.endsAt && new Date(subscription.endsAt) > new Date())
     ));
 
@@ -39,7 +40,7 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    // 1. Jika User Login & Subscribed (atau Admin): Ambil Data
+    // 1. Jika User Login & Subscribed (atau Admin): Ambil Data Jobs
     if (user && isSubscribed) {
       const unsubscribeDocs = subscribeToJobs(user.uid, (data) => {
         const sanitizedData = data.map((job) => ({
@@ -63,32 +64,23 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // --- Render Loading Screen ---
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4]">
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#500905] via-[#1a0201] to-[#000000]"></div>
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
-        </div>
-        <div className="flex items-center justify-center h-screen flex-col gap-4">
+      <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] flex items-center justify-center flex-col gap-4">
           <div className="w-8 h-8 border-4 border-[#8C1007] border-t-[#FFF0C4] rounded-full animate-spin"></div>
           <p className="text-[#FFF0C4]/60 animate-pulse">Loading experience...</p>
-        </div>
       </div>
     );
   }
 
   if (!user) return null; 
 
-  // --- Render Main Dashboard ---
   return (
     <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4]">
       {/* Background Effect */}
       <div className="fixed inset-0 z-0 pointer-events-none">
          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#500905] via-[#1a0201] to-[#000000]"></div>
          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
-         <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255, 240, 196, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 240, 196, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       </div>
 
       {/* Navbar */}
@@ -105,7 +97,7 @@ export default function DashboardPage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push("/admin")}
-              className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50 transition-all duration-300"
+              className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50"
             >
               <ShieldCheck className="w-4 h-4 mr-2" />
               Admin
@@ -118,7 +110,7 @@ export default function DashboardPage() {
             variant="ghost" 
             size="sm" 
             onClick={handleLogout}
-            className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50 transition-all duration-300"
+            className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
@@ -138,7 +130,7 @@ export default function DashboardPage() {
             </p>
         </div>
 
-        {/* ✅ FITUR BARU: Info Langganan (Hanya muncul jika subscribed dan bukan admin) */}
+        {/* Info Langganan (Hanya muncul jika subscribed dan bukan admin) */}
         {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
           <div className="mb-8">
             <SubscriptionInfo />
