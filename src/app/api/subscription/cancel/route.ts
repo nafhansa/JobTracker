@@ -54,7 +54,9 @@ export async function POST(req: Request) {
       }
       // Opsi B: Ambil dari 'renewsAt' user saat ini (Tanggal tagihan berikutnya jadi tanggal putus)
       else if (userData.subscription?.renewsAt) {
-          endDate = userData.subscription.renewsAt;
+          // Konversi Firestore Timestamp ke ISO String
+          const renewsAtTimestamp = userData.subscription.renewsAt;
+          endDate = new Date(renewsAtTimestamp.seconds * 1000).toISOString();
       }
       // Opsi C: Fallback hari ini
       else {
