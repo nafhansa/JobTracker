@@ -193,18 +193,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-    const subscriptionData: any = {
-      status: data.attributes.status,
-      plan: planName,
-      fastspringId: data.attributes.first_subscription_item.subscription_id,
-      orderId: data.attributes.order_id,
-      productId: data.attributes.product_id,
-      renewsAt: data.attributes.renews_at ? new Date(data.attributes.renews_at) : null,
-      endsAt: data.attributes.ends_at ? new Date(data.attributes.ends_at) : null,
-      trialEndsAt: data.attributes.trial_ends_at ? new Date(data.attributes.trial_ends_at) : null,
-      customerPortalUrl: data.attributes.urls.customer_portal,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // 2. Update data user di Firestore
