@@ -24,20 +24,18 @@ const handleSubscribe = (plan: "monthly" | "lifetime") => {
 
     const productPath = plan === 'monthly' ? 'job-tracker-monthly-plan' : 'job-tracker-lifetime-plan';
 
-    // --- MODIFIKASI SEMENTARA UNTUK DEBUGGING ---
-    
-    // Kita "pura-pura" window.fastspring tidak ada, biar masuk ke blok ELSE
-    // if (window.fastspring) { ... } 
-    
-    // Langsung jalankan logika fallback ini:
-    console.log("TESTING: Menggunakan Direct Link untuk kirim Tags");
-    const baseUrl = "https://jobtracker.test.onfastspring.com/";
-    // Pastikan tags user_id ditempel di URL
-    const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}&buyerReference=${user.uid}`;
-    
-    window.open(checkoutUrl, "_self"); // Buka di tab yang sama biar kelihatan
-    
-    // ---------------------------------------------
+    if (window.fastspring) {
+      window.fastspring.builder.push({
+        products: [{ path: productPath, quantity: 1 }],
+        checkout: true,
+        tags: { user_id: user.uid },
+      });
+    } else {
+      // Fallback if FastSpring script fails to load
+      const baseUrl = "https://jobtracker.test.onfastspring.com/";
+      const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}&buyerReference=${user.uid}`;
+      window.open(checkoutUrl, "_self");
+    }
   };
 
   return (

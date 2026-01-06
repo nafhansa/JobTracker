@@ -2,15 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Sparkles, CheckCircle2, Zap } from "lucide-react";
+import { useAuth } from "@/lib/firebase/auth-context";
+import { useRouter } from "next/navigation";
 
 export function SubscriptionBanner() {
-  
-  const handleMonthly = () => {
-    window.location.href = "https://jobtracker.test.onfastspring.com/job-tracker-monthly-plan"; 
-  };
+  const { user } = useAuth();
+  const router = useRouter();
 
-  const handleLifetime = () => {
-    window.location.href = "https://jobtracker.test.onfastspring.com/job-tracker-lifetime-plan"; 
+  const handleSubscribe = (plan: "monthly" | "lifetime") => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const productPath = plan === 'monthly' ? 'job-tracker-monthly-plan' : 'job-tracker-lifetime-plan';
+    const checkoutUrl = `https://jobtracker.test.onfastspring.com/${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}&buyerReference=${user.uid}`;
+    
+    window.open(checkoutUrl, "_self");
   };
 
   return (
@@ -56,7 +64,7 @@ export function SubscriptionBanner() {
             </div>
 
             <Button 
-              onClick={handleMonthly}
+              onClick={() => handleSubscribe("monthly")}
               // Hapus variant="outline" atau "default" biar kita bisa custom full lewat className
               className="w-full py-6 
               bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] 
@@ -93,7 +101,7 @@ export function SubscriptionBanner() {
             </div>
 
             <Button 
-              onClick={handleLifetime}
+              onClick={() => handleSubscribe("lifetime")}
               className="w-full bg-[#8C1007] hover:bg-[#a11d13] text-[#FFF0C4] font-bold py-6 shadow-md transition-all hover:scale-105"
             >
               Get Lifetime Access
