@@ -107,59 +107,6 @@ export default function LandingPage() {
               />
             </div>
         </section>
-
-        {/* --- PRICING SECTION (NEW & REQUIRED BY PADDLE) --- */}
-        {/* Paddle Point #2: Link to pricing page (or clearly displayed pricing) */}
-        <section id="pricing" className="py-24 w-full relative z-10 border-t border-[#FFF0C4]/5 bg-[#1a0201]/50">
-           <div className="max-w-6xl mx-auto px-6">
-              <div className="text-center mb-16">
-                 <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#FFF0C4] mb-6">Simple, Transparent Pricing</h2>
-                 <p className="text-[#FFF0C4]/60 max-w-xl mx-auto">
-                   Start for free, upgrade for power. No hidden fees.
-                 </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                 {/* Free Plan */}
-                 <div className="p-8 rounded-2xl border border-[#FFF0C4]/10 bg-[#2a0401]/50 hover:bg-[#2a0401] transition-all">
-                    <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Starter</h3>
-                    <div className="flex items-baseline gap-1 mb-6">
-                       <span className="text-4xl font-bold text-[#FFF0C4]">$0</span>
-                       <span className="text-[#FFF0C4]/40">/month</span>
-                    </div>
-                    <ul className="space-y-4 mb-8 text-[#FFF0C4]/70">
-                       <li className="flex items-center gap-3"><Check className="w-4 h-4 text-[#8C1007]" /> Track up to 10 Jobs</li>
-                       <li className="flex items-center gap-3"><Check className="w-4 h-4 text-[#8C1007]" /> Basic Board View</li>
-                       <li className="flex items-center gap-3"><Check className="w-4 h-4 text-[#8C1007]" /> 7-Day History</li>
-                    </ul>
-                    <Link href="/login" className="block w-full py-3 text-center border border-[#FFF0C4]/20 rounded text-[#FFF0C4] hover:bg-[#FFF0C4]/5 transition-all uppercase tracking-widest text-sm font-bold">
-                       Get Started
-                    </Link>
-                 </div>
-
-                 {/* Pro Plan */}
-                 <div className="relative p-8 rounded-2xl border border-[#8C1007] bg-[#3E0703]/20 shadow-[0_0_30px_rgba(140,16,7,0.15)]">
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
-                       Most Popular
-                    </div>
-                    <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Pro Career</h3>
-                    <div className="flex items-baseline gap-1 mb-6">
-                       <span className="text-4xl font-bold text-[#FFF0C4]">$9</span>
-                       <span className="text-[#FFF0C4]/40">/month</span>
-                    </div>
-                    <ul className="space-y-4 mb-8 text-[#FFF0C4]/80">
-                       <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-[#8C1007]" /> <span className="text-[#FFF0C4]">Unlimited</span> Job Tracking</li>
-                       <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-[#8C1007]" /> Advanced Analytics</li>
-                       <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-[#8C1007]" /> Priority Support</li>
-                       <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-[#8C1007]" /> Lifetime Data Retention</li>
-                    </ul>
-                    <Link href="/login" className="block w-full py-3 text-center bg-[#8C1007] rounded text-[#FFF0C4] hover:bg-[#a31208] shadow-lg transition-all uppercase tracking-widest text-sm font-bold">
-                       Subscribe Now
-                    </Link>
-                 </div>
-              </div>
-           </div>
-        </section>
       </main>
 
       {/* --- FOOTER (UPDATED: EXPLICIT LINKS) --- */}
