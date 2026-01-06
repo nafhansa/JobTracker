@@ -133,7 +133,15 @@ export default function LandingPage() {
 
       {}
       <footer className="py-10 border-t border-[#FFF0C4]/10 text-center text-sm text-[#FFF0C4]/40 relative z-10">
-        <p>&copy; {new Date().getFullYear()} JobTracker.</p>
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+          <p>&copy; {new Date().getFullYear()} JobTracker.</p>
+          <Link href="/terms-policy" className="hover:text-[#FFF0C4]">
+            Terms & Policy
+          </Link>
+          <a href="mailto:official.jobtrackerapp@gmail.com" className="hover:text-[#FFF0C4]">
+            official.jobtrackerapp@gmail.com
+          </a>
+        </div>
       </footer>
     </div>
   );
