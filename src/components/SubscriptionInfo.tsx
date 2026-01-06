@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation"; // 1. Import router
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
 import { Crown, Calendar, CreditCard } from "lucide-react";
 
 export function SubscriptionInfo() {
+  const router = useRouter(); // 2. Init router
   const { subscription } = useAuth();
 
   if (!subscription) return null;
@@ -15,22 +17,16 @@ export function SubscriptionInfo() {
       })
     : null;
 
+  // 3. Update fungsi handleManage
   const handleManage = () => {
-    // 1. Jika di database tersimpan link portal spesifik (dari webhook)
-    if (subscription.customerPortalUrl) {
-        window.open(subscription.customerPortalUrl, "_blank");
-    } 
-    // 2. Fallback: Link umum ke Portal Akun FastSpring toko kamu
-    // ⚠️ PENTING: Ganti dengan URL akun FastSpring kamu
-    else {
-        window.open("https://YOUR-STORE-NAME.onfastspring.com/account", "_blank");
-    }
+    router.push("/dashboard/billing");
   };
+
+  // Cek apakah plan lifetime atau monthly untuk display text
+  const isLifetime = subscription.plan?.toLowerCase().includes('lifetime');
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-[#FFF0C4]/20 bg-[#3E0703]/40 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-[#3E0703]/60">
-      
-      {/* Background Glow */}
       <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[#8C1007]/40 blur-3xl"></div>
 
       <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -42,7 +38,7 @@ export function SubscriptionInfo() {
           <div>
             <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-[#FFF0C4]">
-                Current Plan: {subscription.plan || "Pro"}
+                Plan: {isLifetime ? "Lifetime Access" : "Monthly Pro"}
                 </h3>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
                     subscription.status === 'active' 
@@ -65,12 +61,11 @@ export function SubscriptionInfo() {
         </div>
 
         <Button 
-            variant="outline"
-            onClick={handleManage}
-            className="border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10 hover:border-[#FFF0C4]/50"
+          onClick={handleManage}
+          className="bg-[#FFF0C4] text-[#3E0703] hover:bg-[#FFF0C4]/90 hover:scale-105 transition-all font-bold shadow-lg shadow-[#FFF0C4]/10"
         >
-            <CreditCard className="w-4 h-4 mr-2" />
-            Manage Subscription
+        <CreditCard className="w-4 h-4 mr-2" />
+          Manage Subscription
         </Button>
       </div>
     </div>
