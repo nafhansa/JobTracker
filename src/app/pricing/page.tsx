@@ -22,6 +22,8 @@ export default function PricingPage() {
       return;
     }
 
+    alert(`DEBUG: User ID saya adalah = ${user.uid}`);
+
     const productPath = plan === 'monthly' 
       ? 'job-tracker-monthly-plan' 
       : 'job-tracker-lifetime-plan';
