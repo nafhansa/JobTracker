@@ -13,7 +13,6 @@ export async function POST(req: Request) {
     const rawBody = await req.text();
     const signature = req.headers.get("X-FS-Signature") || "";
 
-    // 1. Verifikasi signature (Wajib)
     const expectedSignature = crypto
       .createHmac("sha256", FASTSPRING_WEBHOOK_SECRET)
       .update(rawBody)
@@ -24,28 +23,43 @@ export async function POST(req: Request) {
     }
 
     const payload = JSON.parse(rawBody);
+    console.log("🔥 DEBUG PAYLOAD TYPE:", payload.events?.[0]?.type);
 
-    // ============================================================
-    // 🔥 DEBUGGING LOG: Tempel baris ini untuk melihat isi data asli
-    // ============================================================
-    console.log("🔥 DEBUG FULL PAYLOAD:", JSON.stringify(payload, null, 2));
-    
     const events = payload.events;
 
     for (const event of events) {
-      // Prioritas 1: Ambil ID dari Tags atau Reference
       let userId = event.data.buyerReference || event.data.tags?.user_id;
       let userRef;
 
-      // --- LOGIKA PENCARIAN EMAIL ---
+      // ==========================================
+      // 🕵️‍♂️ LOGIC PENCARIAN USER (DIPERBARUI)
+      // ==========================================
+      
+      // 1. Jika UserId belum ketemu, Coba cari via Subscription ID (FastSpring ID)
+      // Ini berguna untuk event 'subscription.activated' yang TIDAK punya email di payloadnya
+      if (!userId && (event.data.subscription || event.data.id)) {
+        const subId = event.data.subscription || event.data.id;
+        console.log(`Mencari user dengan FastSpring Subscription ID: ${subId}`);
+        
+        const snapshot = await adminDb
+          .collection("users")
+          .where("subscription.fastspringId", "==", subId)
+          .limit(1)
+          .get();
+          
+        if (!snapshot.empty) {
+          userId = snapshot.docs[0].id;
+          console.log(`✅ User ditemukan via Subscription ID: ${userId}`);
+        }
+      }
+
+      // 2. Jika masih belum ketemu, Coba cari via Email
+      // Ini biasanya didapat dari event 'order.completed'
       if (!userId) {
-        // Coba ambil email. Note: Nanti cek di LOG Vercel apakah posisinya benar di event.data.customer.email
         const customerEmail = event.data.customer?.email || event.data.recipient?.email || event.data.contact?.email;
         
         if (customerEmail) {
-          console.log(`User ID kosong. Mencoba mencari via email: ${customerEmail}`);
-          
-          // Query ke Firestore: Siapa user yang punya email ini?
+          console.log(`Mencari user via email: ${customerEmail}`);
           const usersSnapshot = await adminDb
             .collection("users")
             .where("email", "==", customerEmail)
@@ -53,71 +67,92 @@ export async function POST(req: Request) {
             .get();
 
           if (!usersSnapshot.empty) {
-            // KETEMU! Kita pakai ID asli dari database
-            const userDoc = usersSnapshot.docs[0];
-            userId = userDoc.id; 
-            console.log(`User ditemukan via email! Menggunakan ID: ${userId}`);
+            userId = usersSnapshot.docs[0].id;
+            console.log(`✅ User ditemukan via Email: ${userId}`);
           } else {
-            console.error(`Email ${customerEmail} tidak ditemukan di database users.`);
-            continue; // Kalau email gak ketemu juga, skip
+            console.error(`❌ Email ${customerEmail} tidak ditemukan di database.`);
+            // Kita tidak continue disini, biarkan logic switch case memutuskan apakah ini order baru atau bukan
           }
-        } else {
-          // Kalau masuk sini, berarti kodingan di atas gagal nemu field email di dalam JSON
-          console.warn("Webhook event skip: Tidak ada ID dan tidak ada Email.", event.id);
-          continue; 
         }
       }
-      // ----------------------------------------------------
 
-      // Definisikan userRef setelah kita PASTI punya userId
+      // Jika UserId masih null, kita cek apakah ini order baru yang perlu dibuat usernya?
+      // (Opsional, tergantung logic app kamu. Disini kita asumsikan user SUDAH daftar via Auth)
+      if (!userId) {
+          console.warn(`⚠️ SKIP: Tidak bisa mengidentifikasi User untuk Event ID: ${event.id}`);
+          continue; 
+      }
+
       userRef = adminDb.collection("users").doc(userId);
 
       switch (event.type) {
+        // ==========================================
+        // 🛒 ORDER COMPLETED (Kunci Utama)
+        // ==========================================
         case "order.completed": {
-          // Cek apakah ini langganan bulanan
-          const isSubscriptionOrder = event.data.items?.some((item: any) => item.subscription);
-
-          if (isSubscriptionOrder) {
-             console.log("Order completed skip: Ini adalah order subscription.");
-             continue;
-          }
-
-          // UPDATE FIREBASE UNTUK LIFETIME
-          await userRef.set({
-            isPro: true,
-            subscription: {
-              plan: "lifetime",
-              status: "active",
-              provider: "fastspring",
-              fastspringId: event.data.id, 
-              renewsAt: null,
-              endsAt: null,
-              customerPortalUrl: null,
-            },
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
+          // HAPUS LOGIC SKIP SUBSCRIPTION DISINI.
+          // Kita butuh event ini jalan karena event inilah yang membawa EMAIL.
           
-          console.log(`SUCCESS: User ${userId} active LIFETIME.`);
+          const items = event.data.items || [];
+          const subscriptionItem = items.find((item: any) => item.subscription);
+          
+          if (subscriptionItem) {
+            // Ini Order Subscription Baru
+            console.log(`Processing New Subscription Order for User: ${userId}`);
+            
+            await userRef.set({
+              isPro: true,
+              subscription: {
+                plan: "monthly", // Asumsi default, atau cek product path
+                status: "active",
+                provider: "fastspring",
+                fastspringId: subscriptionItem.subscription, // PENTING: Simpan ID ini buat lookup nanti
+                renewsAt: null, // Nanti diupdate oleh event subscription.activated
+                endsAt: null,
+              },
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+          } else {
+            // Ini Lifetime Deal (Non-subscription)
+            await userRef.set({
+              isPro: true,
+              subscription: {
+                plan: "lifetime",
+                status: "active",
+                provider: "fastspring",
+                fastspringId: event.data.id, 
+              },
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          }
+          
+          console.log(`SUCCESS: Order Processed for ${userId}`);
           break;
         }
 
-        case "subscription.activated": {
-          // UPDATE FIREBASE UNTUK BULANAN
-          await userRef.set({
+        // ==========================================
+        // 📅 SUBSCRIPTION EVENTS
+        // ==========================================
+        case "subscription.activated": 
+        case "subscription.charge.completed": {
+            // Event ini mungkin tidak punya email, tapi karena step 'order.completed'
+            // sudah menyimpan fastspringId ke DB, logic pencarian ID di atas harusnya berhasil.
+            
+            await userRef.set({
             isPro: true,
             subscription: {
-              plan: "monthly", 
               status: "active",
-              provider: "fastspring",
-              fastspringId: event.data.id,
-              renewsAt: event.data.next, 
+              // Pastikan update tanggal perpanjangan
+              renewsAt: event.data.next || event.data.nextChargeDate, 
               endsAt: event.data.end, 
-              customerPortalUrl: event.data.accountManagementUrl, 
+              fastspringId: event.data.id, // Update ID lagi untuk memastikan
+              customerPortalUrl: event.data.accountManagementUrl || null
             },
             updatedAt: new Date().toISOString()
           }, { merge: true });
 
-          console.log(`SUCCESS: User ${userId} active MONTHLY.`);
+          console.log(`SUCCESS: Subscription Activated/Updated for ${userId}`);
           break;
         }
 
@@ -126,10 +161,11 @@ export async function POST(req: Request) {
           await userRef.set({
             isPro: false,
             subscription: {
-              status: event.data.state, 
+              status: event.data.state || "canceled", 
             },
             updatedAt: new Date().toISOString()
           }, { merge: true });
+          console.log(`SUCCESS: Subscription Canceled for ${userId}`);
           break;
         }
         
