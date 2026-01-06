@@ -68,7 +68,23 @@ export async function POST(req: Request) {
             userId = usersSnapshot.docs[0].id;
             console.log(`✅ User ditemukan via Email: ${userId}`);
           } else {
-            console.error(`❌ Email ${customerEmail} tidak ditemukan di database.`);
+            // JIKA TIDAK ADA USER, DAN EVENTNYA ADALAH PEMBELIAN BARU, BUAT USER BARU
+            if (event.type === 'order.completed') {
+              console.log(`User baru dengan email ${customerEmail}, membuat user baru...`);
+              // Kita akan gunakan email sebagai ID sementara, atau generate ID baru
+              const newUserId = crypto.randomUUID(); 
+              userId = newUserId;
+              userRef = adminDb.collection("users").doc(newUserId);
+              await userRef.set({
+                uid: newUserId, // Ini akan diupdate saat user login pertama kali
+                email: customerEmail,
+                createdAt: new Date().toISOString(),
+                subscription: null, // Inisialisasi subscription
+              });
+              console.log(`✅ User baru berhasil dibuat dengan ID: ${newUserId}`);
+            } else {
+              console.error(`❌ Email ${customerEmail} tidak ditemukan di database.`);
+            }
           }
         }
       }
