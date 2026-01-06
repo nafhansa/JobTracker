@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const rawBody = await req.text();
     const signature = req.headers.get("X-FS-Signature") || "";
 
-    // 1. Verifikasi signature dari FastSpring (KEAMANAN)
+    // 1. Verifikasi signature (Wajib)
     const expectedSignature = crypto
       .createHmac("sha256", FASTSPRING_WEBHOOK_SECRET)
       .update(rawBody)
@@ -32,14 +32,15 @@ export async function POST(req: Request) {
       let userId = event.data.buyerReference || event.data.tags?.user_id;
       let userRef;
 
-      // --- PLAN B: Jika ID Kosong, Cari User via Email ---
+      // --- PERUBAHAN PENTING: LOGIKA PENCARIAN EMAIL ---
       if (!userId) {
+        // Ambil email dari data webhook (nafhangojek@gmail.com)
         const customerEmail = event.data.customer?.email;
         
         if (customerEmail) {
           console.log(`User ID kosong. Mencoba mencari via email: ${customerEmail}`);
           
-          // Query ke Firestore cari user dengan email ini
+          // Query ke Firestore: Siapa user yang punya email ini?
           const usersSnapshot = await adminDb
             .collection("users")
             .where("email", "==", customerEmail)
@@ -47,13 +48,13 @@ export async function POST(req: Request) {
             .get();
 
           if (!usersSnapshot.empty) {
-            // KETEMU! Pakai ID user yang ada di database
+            // KETEMU! Kita pakai ID asli dari database
             const userDoc = usersSnapshot.docs[0];
             userId = userDoc.id; 
             console.log(`User ditemukan via email! Menggunakan ID: ${userId}`);
           } else {
-            console.error(`Gawat! Email ${customerEmail} tidak ditemukan di database users.`);
-            continue; // Skip event ini karena user tidak ketemu
+            console.error(`Email ${customerEmail} tidak ditemukan di database users.`);
+            continue; // Kalau email gak ketemu juga, baru kita menyerah
           }
         } else {
           console.warn("Webhook event skip: Tidak ada ID dan tidak ada Email.", event.id);
@@ -62,20 +63,20 @@ export async function POST(req: Request) {
       }
       // ----------------------------------------------------
 
+      // Definisikan userRef setelah kita PASTI punya userId
       userRef = adminDb.collection("users").doc(userId);
 
       switch (event.type) {
         case "order.completed": {
-          // Cek apakah di dalam item ada field 'subscription'
-          // Jika ada, berarti ini langganan bulanan (jangan diproses sebagai lifetime)
+          // Cek apakah ini langganan bulanan
           const isSubscriptionOrder = event.data.items?.some((item: any) => item.subscription);
 
           if (isSubscriptionOrder) {
-             console.log("Order completed skip: Ini adalah order subscription (akan dihandle event subscription.activated)");
+             console.log("Order completed skip: Ini adalah order subscription.");
              continue;
           }
 
-          // PROSES LIFETIME
+          // UPDATE FIREBASE UNTUK LIFETIME
           await userRef.set({
             isPro: true,
             subscription: {
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
         }
 
         case "subscription.activated": {
-          // PROSES BULANAN
+          // UPDATE FIREBASE UNTUK BULANAN
           await userRef.set({
             isPro: true,
             subscription: {
@@ -103,9 +104,9 @@ export async function POST(req: Request) {
               status: "active",
               provider: "fastspring",
               fastspringId: event.data.id,
-              renewsAt: event.data.next, // Tanggal tagihan berikutnya (timestamp)
+              renewsAt: event.data.next, 
               endsAt: event.data.end, 
-              customerPortalUrl: event.data.accountManagementUrl, // URL buat user manage langganan
+              customerPortalUrl: event.data.accountManagementUrl, 
             },
             updatedAt: new Date().toISOString()
           }, { merge: true });
@@ -116,16 +117,13 @@ export async function POST(req: Request) {
 
         case "subscription.deactivated":
         case "subscription.canceled": {
-          // PROSES PEMBATALAN
           await userRef.set({
             isPro: false,
             subscription: {
-              status: event.data.state, // 'deactivated' atau 'canceled'
+              status: event.data.state, 
             },
             updatedAt: new Date().toISOString()
           }, { merge: true });
-          
-          console.log(`User ${userId} subscription CANCELED/DEACTIVATED.`);
           break;
         }
         
