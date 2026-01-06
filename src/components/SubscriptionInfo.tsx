@@ -11,8 +11,10 @@ export function SubscriptionInfo() {
 
   if (!subscription) return null;
 
-  const endDate = subscription.endsAt 
-    ? new Date(subscription.endsAt).toLocaleDateString("id-ID", {
+  const dateToShow = subscription.status === 'active' ? subscription.renewsAt : subscription.endsAt;
+
+  const displayDate = dateToShow
+    ? new Date(dateToShow).toLocaleDateString("id-ID", {
         day: "numeric", month: "long", year: "numeric"
       })
     : null;
@@ -49,11 +51,11 @@ export function SubscriptionInfo() {
                 </span>
             </div>
 
-            {endDate && (
+            {displayDate && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-[#FFF0C4]/60">
                     <Calendar className="w-3 h-3" />
                     <span>
-                        {subscription.status === 'active' ? "Renews on" : "Expires on"}: {endDate}
+                        {subscription.status === 'active' ? "Renews on" : "Expires on"}: {displayDate}
                     </span>
                 </div>
             )}
