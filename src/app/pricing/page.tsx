@@ -10,6 +10,10 @@ export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // Replace these with your actual PayPal plan/product IDs
+  const MONTHLY_PLAN_ID = "P-13B09030DE7786940NFPJG5Y"; 
+  const LIFETIME_PRODUCT_ID = "PROD-UMUXPHUVRXF9G";
+
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
       <Navbar />
@@ -40,7 +44,7 @@ export default function PricingPage() {
         <section className="w-full max-w-5xl mx-auto px-6 mt-16">
           <div className="grid md:grid-cols-2 gap-8 items-start">
             
-            {/* PLAN 1: MONTHLY */}
+            {/* MONTHLY PLAN */}
             <PricingCard
               plan="Monthly"
               price="$2.99"
@@ -53,10 +57,11 @@ export default function PricingPage() {
                 "Priority Email Support",
               ]}
               buttonText="Start Monthly"
-              planId="P-78X93838SP354644LMM454MY" // Pakai Plan ID Monthly
+              planId={MONTHLY_PLAN_ID}
+              planType="subscription"
             />
 
-            {/* PLAN 2: LIFETIME */}
+            {/* LIFETIME PLAN */}
             <PricingCard
               plan="Lifetime Pro"
               price="$17.99"
@@ -71,7 +76,8 @@ export default function PricingPage() {
               ]}
               buttonText="Get Lifetime Access"
               isFeatured
-              planId="P-53901953J46636835MM4553I" // Pakai Plan ID Lifetime
+              planId={LIFETIME_PRODUCT_ID}
+              planType="lifetime"
             />
           </div>
         </section>
@@ -94,6 +100,7 @@ function PricingCard({
   buttonText,
   isFeatured = false,
   planId,
+  planType,
 }: {
   plan: string;
   price: string;
@@ -104,6 +111,7 @@ function PricingCard({
   buttonText: string;
   isFeatured?: boolean;
   planId: string;
+  planType: "subscription" | "lifetime";
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -129,19 +137,19 @@ function PricingCard({
       
       <div className="mt-6">
         {originalPrice && (
-            <div className="flex items-center gap-2 mb-1 animate-pulse">
-                <span className="text-lg text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2 font-medium">
-                    {originalPrice}
-                </span>
-                <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
-                    <Tag className="w-3 h-3" /> Save 30%
-                </span>
-            </div>
+          <div className="flex items-center gap-2 mb-1 animate-pulse">
+            <span className="text-lg text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2 font-medium">
+              {originalPrice}
+            </span>
+            <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
+              <Tag className="w-3 h-3" /> Save 30%
+            </span>
+          </div>
         )}
 
         <div className="flex items-baseline gap-1">
-            <span className="text-4xl md:text-5xl font-bold text-[#FFF0C4]">{price}</span>
-            <span className="text-[#FFF0C4]/60 font-medium">{period}</span>
+          <span className="text-4xl md:text-5xl font-bold text-[#FFF0C4]">{price}</span>
+          <span className="text-[#FFF0C4]/60 font-medium">{period}</span>
         </div>
       </div>
 
@@ -149,34 +157,71 @@ function PricingCard({
         {features.map((feature, index) => (
           <li key={index} className="flex items-start gap-3">
             <div className={`mt-0.5 p-0.5 rounded-full ${isFeatured ? "bg-[#8C1007]/20 text-[#8C1007]" : "text-[#FFF0C4]/40"}`}>
-               <CheckCircle2 className={`w-5 h-5 ${isFeatured ? "text-[#FF4D4D]" : "text-[#FFF0C4]/60"}`} />
+              <CheckCircle2 className={`w-5 h-5 ${isFeatured ? "text-[#FF4D4D]" : "text-[#FFF0C4]/60"}`} />
             </div>
             <span className={`text-sm ${isFeatured ? "text-[#FFF0C4] font-medium" : "text-[#FFF0C4]/80"}`}>
-                {feature}
+              {feature}
             </span>
           </li>
         ))}
       </ul>
 
-      <div className="mt-8 relative z-20"> {/* Tambah z-20 agar tombol PayPal bisa diklik */}
+      <div className="mt-8 relative z-20">
         {user ? (
-          <PayPalButtons
-            style={{ layout: 'vertical', shape: 'rect', color: isFeatured ? 'gold' : 'silver' }}
-            createSubscription={(data, actions) => {
-              return actions.subscription.create({
-                plan_id: planId,
-                custom_id: user.uid // Sangat penting untuk Webhook!
-              });
-            }}
-            onApprove={async (data, actions) => {
-              alert("Transaksi Berhasil! Akun Anda akan segera aktif otomatis.");
-              router.push("/dashboard");
-            }}
-            onError={(err) => {
-              console.error("PayPal Error:", err);
-              alert("Gagal memproses pembayaran. Silakan coba lagi.");
-            }}
-          />
+          planType === "subscription" ? (
+            // Monthly Subscription Button
+            <PayPalButtons
+              style={{ layout: 'vertical', shape: 'rect', color: 'silver' }}
+              createSubscription={(data, actions) => {
+                return actions.subscription.create({
+                  plan_id: planId,
+                  custom_id: user.uid
+                });
+              }}
+              onApprove={async (data, actions) => {
+                console.log("Subscription approved:", data.subscriptionID);
+                alert("Subscription activated! Redirecting to dashboard...");
+                router.push("/dashboard");
+              }}
+              onError={(err) => {
+                console.error("PayPal Error:", err);
+                alert("Payment failed. Please try again.");
+              }}
+            />
+          ) : (
+            // Lifetime One-Time Purchase Button
+            <PayPalButtons
+              style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
+              createOrder={(data, actions) => {
+                return actions.order.create({
+                  intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
+                  purchase_units: [{
+                    amount: {
+                      value: "17.99",
+                      currency_code: "USD"
+                    },
+                    description: "JobTracker Lifetime Pro Access",
+                    custom_id: user.uid // CRITICAL: Pass user ID for webhook
+                  }],
+                  application_context: {
+                    shipping_preference: "NO_SHIPPING"
+                  }
+                });
+              }}
+              onApprove={async (data, actions) => {
+                if (actions.order) {
+                  const details = await actions.order.capture();
+                  console.log("Order completed:", details);
+                  alert("Lifetime purchase successful! Redirecting to dashboard...");
+                  router.push("/dashboard");
+                }
+              }}
+              onError={(err) => {
+                console.error("PayPal Error:", err);
+                alert("Payment failed. Please try again.");
+              }}
+            />
+          )
         ) : (
           <button
             onClick={() => router.push("/login")}
@@ -194,7 +239,7 @@ function PricingCard({
       
       {isFeatured && (
         <p className="text-center text-[10px] text-[#FFF0C4]/30 mt-4">
-            30-day money-back guarantee
+          30-day money-back guarantee
         </p>
       )}
     </div>

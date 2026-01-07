@@ -1,83 +1,124 @@
-// /home/nafhan/Documents/projek/job/src/app/api/subscription/cancel/route.ts
+// src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
+import { adminDb, adminAuth } from "@/lib/firebase/admin";
 
 export async function POST(req: Request) {
   try {
     const { subscriptionId } = await req.json();
 
     if (!subscriptionId) {
-      return NextResponse.json({ error: "Subscription ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Subscription ID is required" }, 
+        { status: 400 }
+      );
     }
 
-    const username = process.env.FASTSPRING_API_USERNAME;
-    const password = process.env.FASTSPRING_API_PASSWORD;
+    // Get PayPal credentials
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-    if (!username || !password) {
-      console.error("❌ FastSpring API Credentials missing");
-      return NextResponse.json({ error: "Server config error" }, { status: 500 });
+    if (!clientId || !clientSecret) {
+      console.error("❌ PayPal credentials missing");
+      return NextResponse.json(
+        { error: "Server configuration error" }, 
+        { status: 500 }
+      );
     }
 
-    // 1. Cancel di FastSpring
-    const response = await fetch(`https://api.fastspring.com/subscriptions/${subscriptionId}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": "Basic " + Buffer.from(`${username}:${password}`).toString("base64"),
-        "Content-Type": "application/json",
-      },
-    });
+    // Get PayPal Access Token
+    const authResponse = await fetch(
+      `https://api-m.paypal.com/v1/oauth2/token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${Buffer.from(
+            `${clientId}:${clientSecret}`
+          ).toString("base64")}`,
+        },
+        body: "grant_type=client_credentials",
+      }
+    );
 
-    if (!response.ok && response.status !== 404 && response.status !== 400) {
-      return NextResponse.json({ error: "Failed to cancel at FastSpring" }, { status: response.status });
+    if (!authResponse.ok) {
+      throw new Error("Failed to get PayPal access token");
     }
 
-    // Ambil data JSON dari FastSpring (opsional, untuk tanggal)
-    const fastSpringData = await response.json().catch(() => null);
+    const { access_token } = await authResponse.json();
 
-    // 2. Update Firebase
+    // Cancel subscription in PayPal
+    const cancelResponse = await fetch(
+      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}/cancel`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({
+          reason: "Customer requested cancellation"
+        })
+      }
+    );
+
+    // PayPal returns 204 on successful cancellation
+    if (!cancelResponse.ok && cancelResponse.status !== 204) {
+      const errorData = await cancelResponse.json().catch(() => ({}));
+      console.error("PayPal cancel error:", errorData);
+      throw new Error("Failed to cancel subscription in PayPal");
+    }
+
+    // Get subscription details to find end date
+    const detailsResponse = await fetch(
+      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    let endDate = null;
+    if (detailsResponse.ok) {
+      const subDetails = await detailsResponse.json();
+      // billing_info.next_billing_time is when the current period ends
+      endDate = subDetails.billing_info?.next_billing_time 
+        ? new Date(subDetails.billing_info.next_billing_time).toISOString()
+        : new Date().toISOString();
+    } else {
+      endDate = new Date().toISOString();
+    }
+
+    // Update Firebase
     const usersSnapshot = await adminDb
       .collection("users")
-      .where("subscription.fastspringId", "==", subscriptionId)
+      .where("subscription.paypalSubscriptionId", "==", subscriptionId)
       .limit(1)
       .get();
 
     if (!usersSnapshot.empty) {
       const userDoc = usersSnapshot.docs[0];
-      const userData = userDoc.data();
-      const userRef = userDoc.ref;
-
-      // --- LOGIC PENTING: Tentukan kapan akses berakhir ---
-      let endDate = null;
-
-      // Opsi A: Ambil dari FastSpring (deactivationDate)
-      if (fastSpringData && fastSpringData.deactivationDate) {
-          endDate = new Date(fastSpringData.deactivationDate).toISOString();
-      }
-      // Opsi B: Ambil dari 'renewsAt' user saat ini (Tanggal tagihan berikutnya jadi tanggal putus)
-      else if (userData.subscription?.renewsAt) {
-          // Konversi Firestore Timestamp ke ISO String
-          const renewsAtTimestamp = userData.subscription.renewsAt;
-          endDate = new Date(renewsAtTimestamp.seconds * 1000).toISOString();
-      }
-      // Opsi C: Fallback hari ini
-      else {
-          endDate = new Date().toISOString();
-      }
-
-      await userRef.update({
-        "subscription.status": "canceled",
-        "subscription.renewsAt": null, // Hapus tanggal tagihan
-        "subscription.endsAt": endDate, // ✅ SIMPAN TANGGAL INI AGAR UI TETAP PRO
+      await userDoc.ref.update({
+        "subscription.status": "cancelled",
+        "subscription.endsAt": endDate,
+        "subscription.renewsAt": null,
         "updatedAt": new Date().toISOString()
       });
-      
-      console.log(`✅ Sub cancelled. Access until: ${endDate}`);
+
+      console.log(`✅ Subscription ${subscriptionId} cancelled. Access until: ${endDate}`);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: "Subscription cancelled successfully",
+      endsAt: endDate
+    });
 
   } catch (error: any) {
     console.error("Cancel API Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal server error" }, 
+      { status: 500 }
+    );
   }
 }
