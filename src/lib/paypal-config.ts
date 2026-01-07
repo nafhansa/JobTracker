@@ -35,8 +35,13 @@ export const PAYPAL_CREDENTIALS = {
 
 // Plan IDs (sama untuk semua environment)
 export const PAYPAL_PLANS = {
-  monthly: 'P-13B09030DE7786940NFPJG5Y',
-  lifetime: 'PROD-UMUXPHUVRXF9G',
+  monthly: PAYPAL_ENV.isSandbox 
+    ? 'P-9LY96685M0375121ANFPLFLQ'  // ✅ Sandbox Plan ID
+    : 'P-13B09030DE7786940NFPJG5Y',  // Live Plan ID
+  
+  lifetime: PAYPAL_ENV.isSandbox
+    ? 'PROD-4SM98455X6025103P'  // ✅ Sandbox Product ID
+    : 'PROD-UMUXPHUVRXF9G',  // Live Product ID
 };
 
 // Debug logging
