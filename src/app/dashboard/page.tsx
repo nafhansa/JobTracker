@@ -65,6 +65,15 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  console.log('🔥 DASHBOARD DEBUG:', {
+  userEmail: user?.email,
+  isAdmin: ADMIN_EMAILS.includes(user?.email || ""),
+  subscription: subscription,
+  subscriptionStatus: subscription?.status,
+  subscriptionPlan: subscription?.plan,
+  isSubscribed: isSubscribed
+});
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] flex items-center justify-center flex-col gap-4">
