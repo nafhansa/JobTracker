@@ -1,42 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Script from "next/script"; 
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
-
-declare global {
-  interface Window {
-    fastspring?: any;
-  }
-}
+import { PayPalButtons } from "@paypal/react-paypal-js";
 
 export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
-
-const handleSubscribe = (plan: "monthly" | "lifetime") => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const productPath = plan === 'monthly' ? 'job-tracker-monthly-plan' : 'job-tracker-lifetime-plan';
-
-    if (window.fastspring) {
-      window.fastspring.builder.push({
-        products: [{ path: productPath, quantity: 1 }],
-        checkout: true,
-        tags: { user_id: user.uid },
-      });
-    } else {
-      // Fallback if FastSpring script fails to load
-      const baseUrl = "https://jobtracker.test.onfastspring.com/";
-      const checkoutUrl = `${baseUrl}${productPath}?contact_email=${encodeURIComponent(user.email || "")}&tags=user_id=${user.uid}&buyerReference=${user.uid}`;
-      window.open(checkoutUrl, "_self");
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
@@ -81,14 +53,14 @@ const handleSubscribe = (plan: "monthly" | "lifetime") => {
                 "Priority Email Support",
               ]}
               buttonText="Start Monthly"
-              onButtonClick={() => handleSubscribe("monthly")}
+              planId="P-78X93838SP354644LMM454MY" // Pakai Plan ID Monthly
             />
 
-            {/* PLAN 2: LIFETIME (DISCOUNT ADDED) */}
+            {/* PLAN 2: LIFETIME */}
             <PricingCard
               plan="Lifetime Pro"
               price="$17.99"
-              originalPrice="$24.99" // 👈 Harga Asli (Coret)
+              originalPrice="$24.99"
               period="one-time"
               description="Pay once, own it forever."
               features={[
@@ -98,8 +70,8 @@ const handleSubscribe = (plan: "monthly" | "lifetime") => {
                 "Supporter Badge on Profile",
               ]}
               buttonText="Get Lifetime Access"
-              onButtonClick={() => handleSubscribe("lifetime")}
-              isFeatured 
+              isFeatured
+              planId="P-53901953J46636835MM4553I" // Pakai Plan ID Lifetime
             />
           </div>
         </section>
@@ -112,28 +84,30 @@ const handleSubscribe = (plan: "monthly" | "lifetime") => {
   );
 }
 
-// --- REUSABLE CARD COMPONENT ---
 function PricingCard({
   plan,
   price,
-  originalPrice, // 👈 Prop baru
+  originalPrice,
   period,
   description,
   features,
   buttonText,
-  onButtonClick,
   isFeatured = false,
+  planId,
 }: {
   plan: string;
   price: string;
-  originalPrice?: string; // Optional
+  originalPrice?: string;
   period: string;
   description: string;
   features: string[];
   buttonText: string;
-  onButtonClick: () => void;
   isFeatured?: boolean;
+  planId: string;
 }) {
+  const { user } = useAuth();
+  const router = useRouter();
+
   return (
     <div
       className={`group relative p-8 rounded-2xl transition-all duration-300 ${
@@ -142,7 +116,6 @@ function PricingCard({
           : "border border-[#FFF0C4]/10 bg-[#2a0401]/80 hover:border-[#8C1007]/30 hover:bg-[#3E0703]/30"
       }`}
     >
-      {/* BADGE BEST VALUE */}
       {isFeatured && (
         <div className="absolute -top-4 right-6">
           <span className="bg-[#8C1007] text-[#FFF0C4] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
@@ -154,10 +127,7 @@ function PricingCard({
       <h3 className="text-2xl font-serif font-bold text-[#FFF0C4]">{plan}</h3>
       <p className="text-[#FFF0C4]/50 text-sm mt-2">{description}</p>
       
-      {/* HARGA SECTION */}
       <div className="mt-6">
-        
-        {/* LOGIKA DISKON (JIKA ADA ORIGINAL PRICE) */}
         {originalPrice && (
             <div className="flex items-center gap-2 mb-1 animate-pulse">
                 <span className="text-lg text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2 font-medium">
@@ -188,17 +158,39 @@ function PricingCard({
         ))}
       </ul>
 
-      <button
-        onClick={onButtonClick}
-        className={`relative mt-8 w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
-          isFeatured
-            ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
-            : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
-        }`}
-      >
-        {buttonText}
-        <ArrowRight className={`ml-2 w-4 h-4 transition-transform group-hover:translate-x-1 ${isFeatured ? "text-[#3E0703]" : "text-[#FFF0C4]"}`} />
-      </button>
+      <div className="mt-8 relative z-20"> {/* Tambah z-20 agar tombol PayPal bisa diklik */}
+        {user ? (
+          <PayPalButtons
+            style={{ layout: 'vertical', shape: 'rect', color: isFeatured ? 'gold' : 'silver' }}
+            createSubscription={(data, actions) => {
+              return actions.subscription.create({
+                plan_id: planId,
+                custom_id: user.uid // Sangat penting untuk Webhook!
+              });
+            }}
+            onApprove={async (data, actions) => {
+              alert("Transaksi Berhasil! Akun Anda akan segera aktif otomatis.");
+              router.push("/dashboard");
+            }}
+            onError={(err) => {
+              console.error("PayPal Error:", err);
+              alert("Gagal memproses pembayaran. Silakan coba lagi.");
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => router.push("/login")}
+            className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
+              isFeatured
+                ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
+                : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
+            }`}
+          >
+            {buttonText}
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </button>
+        )}
+      </div>
       
       {isFeatured && (
         <p className="text-center text-[10px] text-[#FFF0C4]/30 mt-4">

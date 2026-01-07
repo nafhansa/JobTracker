@@ -1,3 +1,4 @@
+// /home/nafhan/Documents/projek/job/src/app/page.tsx
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
 import { ArrowRight, CheckCircle2, LayoutDashboard, ShieldCheck, Star, CreditCard, Check } from "lucide-react";

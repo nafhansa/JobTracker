@@ -1,3 +1,4 @@
+// /home/nafhan/Documents/projek/job/src/app/admin/page.tsx
 "use client"; // ✅ Wajib ada karena pakai useEffect
 
 import { useEffect, useState } from "react";

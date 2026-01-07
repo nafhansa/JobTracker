@@ -1,3 +1,4 @@
+// /home/nafhan/Documents/projek/job/src/app/terms-policy/page.tsx
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 

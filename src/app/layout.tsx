@@ -1,38 +1,21 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// src/app/layout.tsx
 import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Job Tracker",
-  description: "Created by Nafhan",
-};
+import { PayPalProvider } from "@/components/providers/PayPalProvider"; // Import yang baru
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <AuthProvider>{children}</AuthProvider>
-        <script
-          src="https://assets.lemonsqueezy.com/lemon.js"
-          defer
-        ></script>
+      <body>
+        <AuthProvider>
+          <PayPalProvider>
+            {children}
+          </PayPalProvider>
+        </AuthProvider>
       </body>
     </html>
   );

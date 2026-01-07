@@ -1,3 +1,4 @@
+// /home/nafhan/Documents/projek/job/src/app/login/page.tsx
 "use client";
 
 import { loginWithGoogle } from "@/lib/firebase/auth";
