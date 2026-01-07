@@ -29,9 +29,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('🔥 AUTH STATE CHANGED, User:', user?.email);
       setUser(user);
       if (user) {
         const sub = await getSubscription(user.uid);
+        console.log('🔥 SUBSCRIPTION LOADED:', sub);
         setSubscription(sub);
       } else {
         setSubscription(null);
@@ -41,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+  console.log('🔥 CURRENT AUTH STATE:', { user, subscription, isPro });
 
   return (
     // Masukkan isPro ke dalam value provider
