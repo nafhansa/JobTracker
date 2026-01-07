@@ -60,47 +60,43 @@ export function SubscriptionBanner() {
             </div>
           </div>
 
-          {/* --- PAKET LIFETIME (ONE-TIME PAYMENT) --- */}
-          <div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-               <Zap className="w-3 h-3 inline mr-1" /> Best Value
-            </div>
+          {/* --- PAKET LIFETIME (ONE-TIME PAYMENT - REDIRECT) --- */}
+<div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
+  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+     <Zap className="w-3 h-3 inline mr-1" /> Best Value
+  </div>
 
-            <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
-            <p className="text-sm text-[#FFF0C4]/60 mb-6">One-time payment.</p>
-            
-            <div className="flex-1 space-y-3 mb-6">
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Pay Once, Own Forever</span>
-               </div>
-            </div>
+  <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
+  <p className="text-sm text-[#FFF0C4]/60 mb-6">One-time payment.</p>
+  
+  <div className="flex-1 space-y-3 mb-6">
+     <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+       <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+       <span>Pay Once, Own Forever</span>
+     </div>
+  </div>
 
-            <div className="relative z-20">
-              {/* Gunakan createOrder untuk Hosted Button ID Lifetime */}
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-                createOrder={(data, actions) => {
-                  return actions.order.create({
-                    intent: "CAPTURE",
-                    purchase_units: [{
-                      reference_id: LIVE_LIFETIME_HOSTED_ID,
-                      description: "Job Tracker Lifetime Access",
-                      amount: { currency_code: "USD", value: "17.99" },
-                      custom_id: user?.uid
-                    }]
-                  });
-                }}
-                onApprove={async (data, actions) => {
-                  if (actions.order) {
-                    await actions.order.capture();
-                    alert("Lifetime Access Activated!");
-                    router.push("/dashboard");
-                  }
-                }}
-              />
-            </div>
-          </div>
+  <div className="relative z-20">
+    <button
+      onClick={() => {
+        // Redirect ke Link Payment resmi PayPal
+        // Kita tambahkan custom_id (UID) lewat parameter jika link mendukung, 
+        // namun link NCP standar biasanya tidak mendukung passing UID langsung.
+        const checkoutUrl = `https://www.paypal.com/ncp/payment/UMUXPHUVRXF9G`;
+        window.open(checkoutUrl, "_blank");
+      }}
+      className="w-full py-3 px-4 bg-[#ffc439] hover:bg-[#f2ba36] text-[#111] font-bold rounded-md transition-colors flex items-center justify-center gap-2 shadow-md"
+    >
+      {/* Icon PayPal (Opsional) */}
+      <svg className="w-20 h-5" viewBox="0 0 100 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15.4 4.5h-8.2c-.5 0-1 .4-1.1.9L2.6 27.2c-.1.3 0 .6.2.8.2.2.4.3.7.3h4.1c.5 0 1-.4 1.1-.9l1.1-7.1c.1-.5.5-.9 1-.9h2.9c5 0 8.2-2.5 8.9-7.3.4-2.8-.2-4.9-1.8-6.1-1.1-.8-2.6-1.5-4.8-1.5z" fill="#003087"/>
+        <path d="M54.5 4.5h-8.2c-.5 0-1 .4-1.1.9L41.7 27.2c-.1.3 0 .6.2.8.2.2.4.3.7.3h4.1c.5 0 1-.4 1.1-.9l1.1-7.1c.1-.5.5-.9 1-.9h2.9c5 0 8.2-2.5 8.9-7.3.4-2.8-.2-4.9-1.8-6.1-1.1-.8-2.6-1.5-4.8-1.5z" fill="#003087"/>
+        <path d="M84.5 4.5h-8.2c-.5 0-1 .4-1.1.9L71.7 27.2c-.1.3 0 .6.2.8.2.2.4.3.7.3h4.1c.5 0 1-.4 1.1-.9l1.1-7.1c.1-.5.5-.9 1-.9h2.9c5 0 8.2-2.5 8.9-7.3.4-2.8-.2-4.9-1.8-6.1-1.1-.8-2.6-1.5-4.8-1.5z" fill="#009cde"/>
+      </svg>
+      Buy Now
+    </button>
+  </div>
+</div>
 
         </div>
       </div>
