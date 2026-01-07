@@ -1,37 +1,56 @@
 // src/lib/paypal-config.ts
 /**
- * PayPal Config - Simplified Version
- * Auto-detects environment based on Vercel deployment
+ * PayPal Config - Fixed Version
+ * Uses NEXT_PUBLIC_APP_ENV for client-side detection
  */
 
-const isVercelProduction = process.env.VERCEL_ENV === 'production';
-const isVercelPreview = process.env.VERCEL_ENV === 'preview';
-const isDevelopment = process.env.NODE_ENV === 'development';
+// VERCEL_ENV tidak tersedia di client-side, jadi pakai NEXT_PUBLIC
+const appEnv = process.env.NEXT_PUBLIC_APP_ENV;
+const nodeEnv = process.env.NODE_ENV;
+
+// Fallback: Check URL jika di browser
+const isPreviewByURL = typeof window !== 'undefined' && 
+  (window.location.hostname.includes('-git-') || 
+   window.location.hostname.includes('preview') ||
+   window.location.hostname.includes('vercel.app'));
 
 export const PAYPAL_ENV = {
-  isSandbox: isDevelopment || isVercelPreview,
-  isLive: isVercelProduction,
-  environment: (isDevelopment || isVercelPreview) ? 'sandbox' : 'live',
+  // Sandbox jika: development, atau appEnv === preview, atau URL adalah preview
+  isSandbox: nodeEnv === 'development' || appEnv === 'preview' || isPreviewByURL,
+  isLive: appEnv === 'production',
+  environment: (nodeEnv === 'development' || appEnv === 'preview' || isPreviewByURL) ? 'sandbox' : 'live',
+  deploymentType: appEnv || 'unknown',
 };
 
-// API URL (for cancellation API)
+// API URL
 export const PAYPAL_API_URL = PAYPAL_ENV.isSandbox
   ? 'https://api-m.sandbox.paypal.com'
   : 'https://api-m.paypal.com';
 
-// Credentials - Vercel will load the correct ones based on environment
+// Credentials
 export const PAYPAL_CREDENTIALS = {
   clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
   clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
 };
 
-// Plan IDs - SAME for both sandbox and live
+// Plan IDs (sama untuk semua environment)
 export const PAYPAL_PLANS = {
   monthly: 'P-13B09030DE7786940NFPJG5Y',
   lifetime: 'PROD-UMUXPHUVRXF9G',
 };
 
-// Debug log
+// Debug logging
 if (typeof window === 'undefined') {
-  console.log(`🔧 PayPal: ${PAYPAL_ENV.environment} mode`);
+  // Server-side
+  console.log('🔧 [Server] PayPal Config:');
+  console.log('  APP_ENV:', appEnv);
+  console.log('  NODE_ENV:', nodeEnv);
+  console.log('  Mode:', PAYPAL_ENV.environment);
+} else {
+  // Client-side
+  console.log('🔧 [Client] PayPal Config:');
+  console.log('  APP_ENV:', appEnv);
+  console.log('  URL:', window.location.hostname);
+  console.log('  isPreviewByURL:', isPreviewByURL);
+  console.log('  Mode:', PAYPAL_ENV.environment);
 }
