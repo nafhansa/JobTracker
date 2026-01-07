@@ -66,7 +66,7 @@ export function SubscriptionBanner() {
                   alert(`Subscription activated! ID: ${data.subscriptionID}`);
                   // Wait a bit for webhook to process
                   setTimeout(() => {
-                    window.location.reload();
+                    router.refresh();
                   }, 2000);
                 }}
                 onError={(err) => {
@@ -123,7 +123,7 @@ export function SubscriptionBanner() {
                     console.log("✅ Lifetime purchase:", details);
                     alert("Lifetime purchase successful!");
                     setTimeout(() => {
-                      window.location.reload();
+                      router.refresh();
                     }, 2000);
                   }
                 }}
