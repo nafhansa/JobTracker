@@ -1,6 +1,7 @@
 // src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase/admin";
+import { PAYPAL_API_URL, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 
 export async function POST(req: Request) {
   try {
@@ -14,8 +15,7 @@ export async function POST(req: Request) {
     }
 
     // Get PayPal credentials
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+    const { clientId, clientSecret } = PAYPAL_CREDENTIALS;
 
     if (!clientId || !clientSecret) {
       console.error("❌ PayPal credentials missing");
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     // Get PayPal Access Token
     const authResponse = await fetch(
-      `https://api-m.paypal.com/v1/oauth2/token`,
+      `${PAYPAL_API_URL}/v1/oauth2/token`,
       {
         method: "POST",
         headers: {
