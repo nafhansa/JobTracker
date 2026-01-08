@@ -104,23 +104,88 @@ export async function POST(req: Request) {
     // ==========================================
     else if (eventType === "BILLING.SUBSCRIPTION.CANCELLED") {
       console.log("[PayPal Webhook] Handling CANCELLED event for subscription:", resource.id);
-      // User or system cancelled the subscription
-      const nextBillingTime = resource.billing_info?.next_billing_time;
+      
+      // Get current subscription data from Firebase first
+      const userDoc = await userRef.get();
+      const currentData = userDoc.data();
+      const currentSub = currentData?.subscription;
+      const existingEndsAt = currentSub?.endsAt;
       
       // #region agent log
       console.log("[DEBUG] Webhook CANCELLED: Received event", {
         subscriptionId: resource.id,
         userId,
-        nextBillingTime,
-        hasNextBillingTime: !!nextBillingTime,
+        nextBillingTime: resource.billing_info?.next_billing_time,
+        hasNextBillingTime: !!resource.billing_info?.next_billing_time,
+        existingEndsAt: existingEndsAt ? (existingEndsAt.toDate ? existingEndsAt.toDate().toISOString() : existingEndsAt) : null,
         billingInfo: resource.billing_info
       });
-      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:108',message:'Webhook CANCELLED: Received event',data:{subscriptionId:resource.id,nextBillingTime,hasNextBillingTime:!!nextBillingTime,fullResource:JSON.stringify(resource).substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:108',message:'Webhook CANCELLED: Received event',data:{subscriptionId:resource.id,nextBillingTime:resource.billing_info?.next_billing_time,hasNextBillingTime:!!resource.billing_info?.next_billing_time,existingEndsAt,fullResource:JSON.stringify(resource).substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
       // #endregion
       
-      const endDate = nextBillingTime 
-        ? Timestamp.fromDate(new Date(nextBillingTime))
-        : Timestamp.now();
+      // Determine endDate with priority:
+      // 1. next_billing_time from PayPal webhook (if available)
+      // 2. existing endsAt from Firebase (if available and in future)
+      // 3. existing renewsAt from Firebase (if available and in future)
+      // 4. Timestamp.now() as last resort
+      let endDate: Timestamp;
+      const nextBillingTime = resource.billing_info?.next_billing_time;
+      
+      if (nextBillingTime) {
+        // Priority 1: Use next_billing_time from PayPal
+        endDate = Timestamp.fromDate(new Date(nextBillingTime));
+        console.log("[DEBUG] Webhook CANCELLED: Using next_billing_time from PayPal:", endDate.toDate().toISOString());
+      } else if (existingEndsAt) {
+        // Priority 2: Use existing endsAt from Firebase
+        if (existingEndsAt.toDate) {
+          // Firebase Timestamp
+          const existingDate = existingEndsAt.toDate();
+          if (existingDate > new Date()) {
+            endDate = existingEndsAt;
+            console.log("[DEBUG] Webhook CANCELLED: Using existing endsAt from Firebase:", endDate.toDate().toISOString());
+          } else {
+            endDate = Timestamp.now();
+            console.log("[DEBUG] Webhook CANCELLED: Existing endsAt is in past, using now()");
+          }
+        } else if (typeof existingEndsAt === 'string') {
+          // String ISO format
+          const existingDate = new Date(existingEndsAt);
+          if (existingDate > new Date()) {
+            endDate = Timestamp.fromDate(existingDate);
+            console.log("[DEBUG] Webhook CANCELLED: Using existing endsAt (string) from Firebase:", endDate.toDate().toISOString());
+          } else {
+            endDate = Timestamp.now();
+            console.log("[DEBUG] Webhook CANCELLED: Existing endsAt (string) is in past, using now()");
+          }
+        } else {
+          endDate = Timestamp.now();
+          console.log("[DEBUG] Webhook CANCELLED: Could not parse existing endsAt, using now()");
+        }
+      } else if (currentSub?.renewsAt) {
+        // Priority 3: Use renewsAt from Firebase
+        let renewsAtDate: Date;
+        if (currentSub.renewsAt.toDate) {
+          renewsAtDate = currentSub.renewsAt.toDate();
+        } else if (typeof currentSub.renewsAt === 'string') {
+          renewsAtDate = new Date(currentSub.renewsAt);
+        } else if (currentSub.renewsAt._seconds) {
+          renewsAtDate = new Date(currentSub.renewsAt._seconds * 1000);
+        } else {
+          renewsAtDate = new Date();
+        }
+        
+        if (renewsAtDate > new Date()) {
+          endDate = Timestamp.fromDate(renewsAtDate);
+          console.log("[DEBUG] Webhook CANCELLED: Using renewsAt from Firebase:", endDate.toDate().toISOString());
+        } else {
+          endDate = Timestamp.now();
+          console.log("[DEBUG] Webhook CANCELLED: renewsAt is in past, using now()");
+        }
+      } else {
+        // Priority 4: Last resort - use now()
+        endDate = Timestamp.now();
+        console.log("[DEBUG] Webhook CANCELLED: No valid date found, using now() as fallback");
+      }
 
       // #region agent log
       console.log("[DEBUG] Webhook CANCELLED: Calculated endDate", {
@@ -129,7 +194,10 @@ export async function POST(req: Request) {
         nextBillingTime,
         endDateISO: endDate.toDate().toISOString(),
         endDateFormatted: endDate.toDate().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
-        usedFallback: !nextBillingTime
+        usedPayPalNextBilling: !!nextBillingTime,
+        usedExistingEndsAt: !nextBillingTime && !!existingEndsAt,
+        usedRenewsAt: !nextBillingTime && !existingEndsAt && !!currentSub?.renewsAt,
+        usedFallback: !nextBillingTime && !existingEndsAt && !currentSub?.renewsAt
       });
       fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:115',message:'Webhook CANCELLED: Calculated endDate',data:{subscriptionId:resource.id,nextBillingTime,endDateISO:endDate.toDate().toISOString(),endDateTimestamp:endDate.toDate().getTime(),usedFallback:!nextBillingTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
       // #endregion
