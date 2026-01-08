@@ -134,8 +134,16 @@ export async function POST(req: Request) {
 
         console.log(`✅ Subscription payment completed for user: ${userId}`);
       }
-    } else if (eventType === "CHECKOUT.ORDER.APPROVED" || eventType === "CHECKOUT.ORDER.COMPLETED") {
-      const orderId = resource.id;
+    } else if (
+      eventType === "CHECKOUT.ORDER.APPROVED" ||
+      eventType === "CHECKOUT.ORDER.COMPLETED" ||
+      eventType === "PAYMENT.CAPTURE.COMPLETED"
+    ) {
+      const orderId =
+        resource.supplementary_data?.related_ids?.order_id ||
+        resource.id ||
+        resource.invoice_id ||
+        "unknown-order";
 
       await userRef.set(
         {
@@ -153,7 +161,7 @@ export async function POST(req: Request) {
         { merge: true }
       );
 
-      console.log(`✅ Lifetime purchase completed for user: ${userId}`);
+      console.log(`✅ Lifetime purchase recorded for user: ${userId} (order: ${orderId})`);
     } else if (eventType === "BILLING.SUBSCRIPTION.CANCELLED") {
       const userDoc = await userRef.get();
       const currentData = userDoc.data();

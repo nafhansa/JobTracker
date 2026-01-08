@@ -34,7 +34,10 @@ export const PAYPAL_CREDENTIALS = {
 };
 
 // Webhook ID (required for signature verification)
-export const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '';
+// Use sandbox-specific ID in dev/preview to avoid signature mismatch.
+const sandboxWebhookId = process.env.PAYPAL_WEBHOOK_ID_SANDBOX || '';
+const liveWebhookId = process.env.PAYPAL_WEBHOOK_ID_LIVE || process.env.PAYPAL_WEBHOOK_ID || '';
+export const PAYPAL_WEBHOOK_ID = PAYPAL_ENV.isSandbox ? sandboxWebhookId : liveWebhookId;
 
 // Plan IDs (sama untuk semua environment)
 export const PAYPAL_PLANS = {

@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { PayPalButtons } from "@paypal/react-paypal-js";
-import { PAYPAL_PLANS, PAYPAL_ENV } from "@/lib/paypal-config";
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
+import { useState } from "react";
 
 export default function PricingPage() {
   const { user } = useAuth();
@@ -118,6 +119,8 @@ function PricingCard({
 }) {
   const { user } = useAuth();
   const router = useRouter();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
     <div
@@ -173,57 +176,91 @@ function PricingCard({
         {user ? (
           planType === "subscription" ? (
             // Monthly Subscription Button
-            <PayPalButtons
-              style={{ layout: 'vertical', shape: 'rect', color: 'silver' }}
-              createSubscription={(data, actions) => {
-                return actions.subscription.create({
-                  plan_id: planId,
-                  custom_id: user.uid
-                });
+            <PayPalScriptProvider
+              options={{
+                clientId: PAYPAL_CREDENTIALS.clientId,
+                intent: "subscription",
+                vault: true,
+                currency: "USD",
+                components: "buttons",
+                ...(PAYPAL_ENV.isSandbox && {
+                  "buyer-country": "US",
+                  "data-environment": "sandbox",
+                }),
               }}
-              onApprove={async (data, actions) => {
-                console.log("Subscription approved:", data.subscriptionID);
-                alert("Subscription activated! Redirecting to dashboard...");
-                router.push("/dashboard");
-              }}
-              onError={(err) => {
-                console.error("PayPal Error:", err);
-                alert("Payment failed. Please try again.");
-              }}
-            />
+            >
+              <PayPalButtons
+                style={{ layout: 'vertical', shape: 'rect', color: 'silver' }}
+                createSubscription={(data, actions) => {
+                  return actions.subscription.create({
+                    plan_id: planId,
+                    custom_id: user.uid
+                  });
+                }}
+                onApprove={async (data, actions) => {
+                  console.log("Subscription approved:", data.subscriptionID);
+                  setSuccessMessage("Monthly subscription activated!");
+                  setErrorMessage(null);
+                  setTimeout(() => {
+                    router.push("/dashboard");
+                  }, 1200);
+                }}
+                onError={(err) => {
+                  console.error("PayPal Error:", err);
+                  setErrorMessage("Payment failed. Please try again.");
+                }}
+              />
+            </PayPalScriptProvider>
           ) : (
             // Lifetime One-Time Purchase Button
-            <PayPalButtons
-              style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-              createOrder={(data, actions) => {
-                return actions.order.create({
-                  intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
-                  purchase_units: [{
-                    amount: {
-                      value: "17.99",
-                      currency_code: "USD"
-                    },
-                    description: "JobTracker Lifetime Pro Access",
-                    custom_id: user.uid // CRITICAL: Pass user ID for webhook
-                  }],
-                  application_context: {
-                    shipping_preference: "NO_SHIPPING"
+            <PayPalScriptProvider
+              options={{
+                clientId: PAYPAL_CREDENTIALS.clientId,
+                intent: "capture",
+                vault: false,
+                currency: "USD",
+                components: "buttons",
+                ...(PAYPAL_ENV.isSandbox && {
+                  "buyer-country": "US",
+                  "data-environment": "sandbox",
+                }),
+              }}
+            >
+              <PayPalButtons
+                style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
+                createOrder={(data, actions) => {
+                  return actions.order.create({
+                    intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
+                    purchase_units: [{
+                      amount: {
+                        value: "17.99",
+                        currency_code: "USD"
+                      },
+                      description: "JobTracker Lifetime Pro Access",
+                      custom_id: user.uid // CRITICAL: Pass user ID for webhook
+                    }],
+                    application_context: {
+                      shipping_preference: "NO_SHIPPING"
+                    }
+                  });
+                }}
+                onApprove={async (data, actions) => {
+                  if (actions.order) {
+                    const details = await actions.order.capture();
+                    console.log("Order completed:", details);
+                    setSuccessMessage("Lifetime purchase successful!");
+                    setErrorMessage(null);
+                    setTimeout(() => {
+                      router.push("/dashboard");
+                    }, 1200);
                   }
-                });
-              }}
-              onApprove={async (data, actions) => {
-                if (actions.order) {
-                  const details = await actions.order.capture();
-                  console.log("Order completed:", details);
-                  alert("Lifetime purchase successful! Redirecting to dashboard...");
-                  router.push("/dashboard");
-                }
-              }}
-              onError={(err) => {
-                console.error("PayPal Error:", err);
-                alert("Payment failed. Please try again.");
-              }}
-            />
+                }}
+                onError={(err) => {
+                  console.error("PayPal Error:", err);
+                  setErrorMessage("Payment failed. Please try again.");
+                }}
+              />
+            </PayPalScriptProvider>
           )
         ) : (
           <button
@@ -239,7 +276,30 @@ function PricingCard({
           </button>
         )}
       </div>
-      
+
+      {(successMessage || errorMessage) && (
+        <div className="mt-4">
+          <div
+            className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold shadow ${
+              successMessage
+                ? "bg-green-500/10 text-green-200 border border-green-500/30"
+                : "bg-red-500/10 text-red-200 border border-red-500/30"
+            }`}
+          >
+            <span>{successMessage || errorMessage}</span>
+            <button
+              onClick={() => {
+                setSuccessMessage(null);
+                setErrorMessage(null);
+              }}
+              className="uppercase tracking-wide opacity-80 hover:opacity-100"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {isFeatured && (
         <p className="text-center text-[10px] text-[#FFF0C4]/30 mt-4">
           30-day money-back guarantee
