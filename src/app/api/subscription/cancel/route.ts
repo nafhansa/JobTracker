@@ -1,54 +1,94 @@
 // src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase/admin";
+import { PAYPAL_API_URL, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 
 export async function POST(req: Request) {
   try {
     const { subscriptionId } = await req.json();
+    const authHeader = req.headers.get("authorization") || "";
+    const idToken = authHeader.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+
+    if (!idToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let requesterUid: string;
+    try {
+      const decoded = await adminAuth.verifyIdToken(idToken);
+      requesterUid = decoded.uid;
+    } catch (err) {
+      console.error("❌ Invalid ID token:", err);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     if (!subscriptionId) {
       return NextResponse.json(
-        { error: "Subscription ID is required" }, 
+        { error: "Subscription ID is required" },
         { status: 400 }
       );
     }
 
-    // Get PayPal credentials
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-
+    const { clientId, clientSecret } = PAYPAL_CREDENTIALS;
     if (!clientId || !clientSecret) {
       console.error("❌ PayPal credentials missing");
       return NextResponse.json(
-        { error: "Server configuration error" }, 
+        { error: "Server configuration error" },
         { status: 500 }
       );
     }
 
-    // Get PayPal Access Token
-    const authResponse = await fetch(
-      `https://api-m.paypal.com/v1/oauth2/token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(
-            `${clientId}:${clientSecret}`
-          ).toString("base64")}`,
-        },
-        body: "grant_type=client_credentials",
-      }
-    );
+    console.log(`🔧 Using PayPal API: ${PAYPAL_API_URL}`);
+
+    const usersSnapshot = await adminDb
+      .collection("users")
+      .where("subscription.paypalSubscriptionId", "==", subscriptionId)
+      .limit(1)
+      .get();
+
+    if (usersSnapshot.empty) {
+      return NextResponse.json(
+        { error: "Subscription not found in database" },
+        { status: 404 }
+      );
+    }
+
+    const userDoc = usersSnapshot.docs[0];
+    if (userDoc.id !== requesterUid) {
+      return NextResponse.json(
+        { error: "Forbidden: subscription does not belong to current user" },
+        { status: 403 }
+      );
+    }
+
+    const currentSub = userDoc.data().subscription;
+    if (!currentSub?.paypalSubscriptionId) {
+      return NextResponse.json(
+        { error: "No active PayPal subscription for this user" },
+        { status: 400 }
+      );
+    }
+
+    const authResponse = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      },
+      body: "grant_type=client_credentials",
+    });
 
     if (!authResponse.ok) {
+      const errorData = await authResponse.json().catch(() => ({}));
+      console.error("❌ PayPal Auth Error:", errorData);
       throw new Error("Failed to get PayPal access token");
     }
 
     const { access_token } = await authResponse.json();
+    console.log("✅ PayPal Access Token obtained");
 
-    // Cancel subscription in PayPal
     const cancelResponse = await fetch(
-      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}/cancel`,
+      `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}/cancel`,
       {
         method: "POST",
         headers: {
@@ -56,21 +96,23 @@ export async function POST(req: Request) {
           Authorization: `Bearer ${access_token}`,
         },
         body: JSON.stringify({
-          reason: "Customer requested cancellation"
-        })
+          reason: "Customer requested cancellation",
+        }),
       }
     );
 
-    // PayPal returns 204 on successful cancellation
     if (!cancelResponse.ok && cancelResponse.status !== 204) {
       const errorData = await cancelResponse.json().catch(() => ({}));
-      console.error("PayPal cancel error:", errorData);
+      console.error("❌ PayPal cancel error:", errorData);
       throw new Error("Failed to cancel subscription in PayPal");
     }
 
-    // Get subscription details to find end date
+    console.log("✅ Subscription cancelled in PayPal");
+
+    let endDate: string | null = null;
+
     const detailsResponse = await fetch(
-      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
+      `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -78,46 +120,55 @@ export async function POST(req: Request) {
       }
     );
 
-    let endDate = null;
     if (detailsResponse.ok) {
       const subDetails = await detailsResponse.json();
-      // billing_info.next_billing_time is when the current period ends
-      endDate = subDetails.billing_info?.next_billing_time 
-        ? new Date(subDetails.billing_info.next_billing_time).toISOString()
-        : new Date().toISOString();
-    } else {
-      endDate = new Date().toISOString();
+      if (subDetails.billing_info?.next_billing_time) {
+        endDate = new Date(subDetails.billing_info.next_billing_time).toISOString();
+        console.log("✅ Got end date from PayPal API:", endDate);
+      }
     }
 
-    // Update Firebase
-    const usersSnapshot = await adminDb
-      .collection("users")
-      .where("subscription.paypalSubscriptionId", "==", subscriptionId)
-      .limit(1)
-      .get();
-
-    if (!usersSnapshot.empty) {
-      const userDoc = usersSnapshot.docs[0];
-      await userDoc.ref.update({
-        "subscription.status": "cancelled",
-        "subscription.endsAt": endDate,
-        "subscription.renewsAt": null,
-        "updatedAt": new Date().toISOString()
-      });
-
-      console.log(`✅ Subscription ${subscriptionId} cancelled. Access until: ${endDate}`);
+    if (!endDate && currentSub?.renewsAt) {
+      if (typeof currentSub.renewsAt === "string") {
+        endDate = currentSub.renewsAt;
+      } else if (currentSub.renewsAt.toDate) {
+        endDate = currentSub.renewsAt.toDate().toISOString();
+      } else if (currentSub.renewsAt._seconds) {
+        endDate = new Date(currentSub.renewsAt._seconds * 1000).toISOString();
+      }
+      console.log("📅 Using renewsAt from Firebase:", endDate);
     }
 
-    return NextResponse.json({ 
-      success: true,
-      message: "Subscription cancelled successfully",
-      endsAt: endDate
+    if (!endDate) {
+      const baseDate = currentSub?.updatedAt
+        ? new Date(currentSub.updatedAt)
+        : new Date();
+
+      baseDate.setMonth(baseDate.getMonth() + 1);
+      endDate = baseDate.toISOString();
+      console.log("⚠️ Fallback: +1 month from base date:", endDate);
+    }
+
+    console.log(`📅 Final end date: ${endDate}`);
+
+    await userDoc.ref.update({
+      "subscription.status": "cancelled",
+      "subscription.endsAt": endDate,
+      // keep renewsAt for grace period checks
+      updatedAt: new Date().toISOString(),
     });
 
+    console.log(`✅ Firebase updated for subscription ${subscriptionId}`);
+
+    return NextResponse.json({
+      success: true,
+      message: "Subscription cancelled successfully",
+      endsAt: endDate,
+    });
   } catch (error: any) {
-    console.error("Cancel API Error:", error);
+    console.error("❌ Cancel API Error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" }, 
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }

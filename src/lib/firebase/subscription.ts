@@ -22,6 +22,7 @@ export const createSubscription = async (userId: string, plan: "monthly" | "life
       subscription: {
         plan,
         status: "active",
+        
       },
     });
     console.log("Subscription created successfully for user:", userId);
@@ -39,7 +40,12 @@ export const getSubscription = async (userId: string) => {
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        return userData.subscription || null;
+        return {
+        subscription: userData.subscription || null,
+        updatedAt: userData.updatedAt || null,
+        createdAt: userData.createdAt || null,
+        isPro: userData.isPro || false,
+      };
       }
       return null;
     } catch (error) {
@@ -53,7 +59,7 @@ export const getSubscription = async (userId: string) => {
 export const checkIsPro = (subscription: any): boolean => {
   if (!subscription) return false;
 
-  const { status, plan, endsAt } = subscription;
+  const { status, plan, renewsAt, endsAt } = subscription;
 
   // 1. Lifetime = Auto Pro
   if (plan === "lifetime") return true;
@@ -61,18 +67,34 @@ export const checkIsPro = (subscription: any): boolean => {
   // 2. Status Active = Pro
   if (status === "active") return true;
 
-  // 3. Status Cancelled = Cek Tanggal (Grace Period)
-  if (status === "cancelled" && endsAt) {
-    // Handle konversi tanggal karena Firebase bisa return Timestamp / String / Date
-    let endDate;
-    if (endsAt instanceof Timestamp) {
-      endDate = endsAt.toDate();
+  // 3. Status Cancelled = Cek Grace Period pakai endsAt (prioritas) atau renewsAt
+  if (status === "cancelled" || status === "canceled") {
+    const candidate = endsAt || renewsAt;
+    if (!candidate) return false;
+
+    let endDate: Date;
+    if (candidate instanceof Timestamp) {
+      endDate = candidate.toDate();
+    } else if (candidate instanceof Date) {
+      endDate = candidate;
+    } else if (typeof candidate === "string") {
+      endDate = new Date(candidate);
+    } else if ((candidate as any)?._seconds) {
+      endDate = new Date((candidate as any)._seconds * 1000);
     } else {
-      endDate = new Date(endsAt);
+      return false; // Format tidak dikenal
     }
-    
+
     const now = new Date();
-    // Jika hari ini belum melewati tanggal berakhir, berarti MASIH PRO
+
+    console.log("🔍 Grace Period Check:", {
+      status,
+      targetDate: endDate.toISOString(),
+      now: now.toISOString(),
+      isPro: now < endDate,
+    });
+
+    // Selama belum lewat target date, user masih Pro
     return now < endDate;
   }
 

@@ -5,14 +5,11 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { PayPalButtons } from "@paypal/react-paypal-js";
+import { PAYPAL_PLANS, PAYPAL_ENV } from "@/lib/paypal-config";
 
 export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
-
-  // Replace these with your actual PayPal plan/product IDs
-  const MONTHLY_PLAN_ID = "P-13B09030DE7786940NFPJG5Y"; 
-  const LIFETIME_PRODUCT_ID = "PROD-UMUXPHUVRXF9G";
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
@@ -32,6 +29,12 @@ export default function PricingPage() {
       </div>
 
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
+          {/* Sandbox Banner */}
+          {PAYPAL_ENV.isSandbox && (
+            <div className="fixed top-20 left-0 right-0 z-50 bg-yellow-500/90 text-black py-2 px-4 text-center text-sm font-bold">
+              🧪 SANDBOX MODE - Testing with Fake Money
+            </div>
+          )}
         <section className="text-center max-w-4xl mx-auto px-6 space-y-6">
           <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight text-[#FFF0C4]">
             Invest in Your Career
@@ -57,7 +60,7 @@ export default function PricingPage() {
                 "Priority Email Support",
               ]}
               buttonText="Start Monthly"
-              planId={MONTHLY_PLAN_ID}
+              planId={PAYPAL_PLANS.monthly}
               planType="subscription"
             />
 
@@ -76,7 +79,7 @@ export default function PricingPage() {
               ]}
               buttonText="Get Lifetime Access"
               isFeatured
-              planId={LIFETIME_PRODUCT_ID}
+              planId={PAYPAL_PLANS.lifetime}
               planType="lifetime"
             />
           </div>

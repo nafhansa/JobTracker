@@ -10,6 +10,7 @@ import { Timestamp } from "firebase/firestore";
 import { JobApplication } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck } from "lucide-react"; 
+import { checkIsPro } from "@/lib/firebase/subscription";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -24,15 +25,9 @@ export default function DashboardPage() {
   // Masukkan email admin di sini
   const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
-  // Logic: User dianggap "subscribed" jika dia ADMIN atau punya status subscription aktif
-  const isSubscribed = 
-    ADMIN_EMAILS.includes(user?.email || "") || 
-    (subscription && (
-      subscription.status === "active" || 
-      subscription.plan === "lifetime" ||
-      // Handle grace period jika status cancelled tapi belum expired
-      (subscription.status === "cancelled" || subscription.status === "canceled") && subscription.endsAt && new Date(subscription.endsAt) > new Date())
-    );
+  // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
+  const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
+  const isSubscribed = isAdmin || checkIsPro(subscription);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -64,6 +59,15 @@ export default function DashboardPage() {
     await logout();
     router.push("/login");
   };
+
+  console.log('🔥 DASHBOARD DEBUG:', {
+    userEmail: user?.email,
+    isAdmin,
+    subscription: subscription,
+    subscriptionStatus: subscription?.status,
+    subscriptionPlan: subscription?.plan,
+    isSubscribed: isSubscribed
+  });
 
   if (authLoading) {
     return (

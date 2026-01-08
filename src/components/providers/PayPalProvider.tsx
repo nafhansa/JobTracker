@@ -1,17 +1,29 @@
-// src/components/providers/PayPalProvider.tsx
-"use client"; // <--- INI KUNCINYA
+"use client";
 
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 
 export function PayPalProvider({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log(`🔧 PayPal: ${PAYPAL_ENV.environment}`);
+    }
+  }, []);
+
   return (
-    <PayPalScriptProvider options={{ 
-      clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!,
-      vault: true,
-      intent: "subscription",
-      currency: "USD"
-    }}>
+    <PayPalScriptProvider 
+      options={{ 
+        clientId: PAYPAL_CREDENTIALS.clientId,
+        vault: true,
+        intent: "subscription",
+        currency: "USD",
+        ...(PAYPAL_ENV.isSandbox && { 
+          "buyer-country": "US",
+          "data-environment": "sandbox" 
+        })
+      }}
+    >
       {children}
     </PayPalScriptProvider>
   );
