@@ -103,6 +103,7 @@ export async function POST(req: Request) {
     // SUBSCRIPTION CANCELLED
     // ==========================================
     else if (eventType === "BILLING.SUBSCRIPTION.CANCELLED") {
+      console.log("[PayPal Webhook] Handling CANCELLED event for subscription:", resource.id);
       // User or system cancelled the subscription
       const nextBillingTime = resource.billing_info?.next_billing_time;
       const endDate = nextBillingTime 
@@ -121,14 +122,14 @@ export async function POST(req: Request) {
         },
         updatedAt: Timestamp.now()
       }, { merge: true });
-
-      console.log(`✅ Subscription cancelled for user: ${userId}. Access until: ${endDate.toDate()}`);
+      console.log("[PayPal Webhook] Updating Firestore: status=cancelled, endsAt=", endDate.toDate(), "isPro remains:", stillHasAccess);
     }
 
     // ==========================================
     // SUBSCRIPTION EXPIRED
     // ==========================================
     else if (eventType === "BILLING.SUBSCRIPTION.EXPIRED") {
+      console.log("[PayPal Webhook] Handling EXPIRED event for subscription:", resource.id);
       await userRef.set({
         isPro: false,
         subscription: {
@@ -139,7 +140,7 @@ export async function POST(req: Request) {
         updatedAt: Timestamp.now()
       }, { merge: true });
 
-      console.log(`✅ Subscription expired for user: ${userId}`);
+      console.log("[PayPal Webhook] Updating Firestore: status=expired, endsAt=", Timestamp.now().toDate(), "isPro set to false");
     }
 
     // ==========================================
