@@ -13,8 +13,37 @@ export function SubscriptionInfo() {
 
   const dateToShow = subscription.status === 'active' ? subscription.renewsAt : subscription.endsAt;
 
-  const displayDate = dateToShow
-    ? new Date(dateToShow).toLocaleDateString("id-ID", {
+  function parseFirebaseDate(dateStr: string): Date | null {
+    // Contoh: "February 8, 2026 at 5:00:00 PM UTC+7"
+    const match = dateStr.match(
+      /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
+    );
+    if (!match) return null;
+
+    // Gabungkan jadi format yang bisa diparse JS Date
+    const [_, datePart, timePart, ampm, tz] = match;
+    let formatted = `${datePart} ${timePart}`;
+    if (ampm) formatted += ` ${ampm}`;
+    formatted += " GMT"; // UTC+7 jadi GMT+7, tapi JS Date bisa parse "GMT+7"
+    if (tz) formatted += tz;
+
+    const d = new Date(formatted);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  let parsedDate: Date | null = null;
+  if (dateToShow) {
+    if (typeof dateToShow === "string") {
+      parsedDate = parseFirebaseDate(dateToShow);
+    } else if (typeof dateToShow === "number") {
+      parsedDate = new Date(dateToShow);
+    } else if (typeof dateToShow === "object" && typeof dateToShow.toDate === "function") {
+      parsedDate = dateToShow.toDate();
+    }
+  }
+
+  const displayDate = parsedDate
+    ? parsedDate.toLocaleDateString("id-ID", {
         day: "numeric", month: "long", year: "numeric"
       })
     : null;

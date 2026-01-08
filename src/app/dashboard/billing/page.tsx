@@ -165,7 +165,9 @@ export default function BillingPage() {
                       {isCancelled ? "Access Ends" : "Next Billing"}
                     </span>
                     <span className="font-semibold text-[#FFF0C4]">
-                      {isCancelled ? (endsAt || "N/A") : (renewsAt || "N/A")}
+                      {isCancelled
+                        ? formatDate(endsAt ?? undefined)
+                        : formatDate(renewsAt ?? undefined)}
                     </span>
                   </div>
                 )}
@@ -280,4 +282,26 @@ export default function BillingPage() {
       </div>
     </div>
   );
+}
+
+function parseFirebaseDate(dateStr: string): Date | null {
+  const match = dateStr.match(
+    /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
+  );
+  if (!match) return null;
+  const [_, datePart, timePart, ampm, tz] = match;
+  let formatted = `${datePart} ${timePart}`;
+  if (ampm) formatted += ` ${ampm}`;
+  formatted += " GMT";
+  if (tz) formatted += tz;
+  const d = new Date(formatted);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "N/A";
+  const date = parseFirebaseDate(dateStr);
+  return date
+    ? date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+    : "N/A";
 }
