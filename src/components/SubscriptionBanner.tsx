@@ -8,41 +8,125 @@ import { useRouter } from "next/navigation";
 import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 import { useState } from "react";
 
+// ==========================================
+// 1. KOMPONEN KHUSUS MONTHLY (SUBSCRIPTION)
+// ==========================================
+const MonthlyCheckout = ({ 
+  userId, 
+  onSuccess, 
+  onError 
+}: { 
+  userId: string | undefined; 
+  onSuccess: () => void; 
+  onError: (msg: string) => void;
+}) => {
+  const initialOptions = {
+    clientId: PAYPAL_CREDENTIALS.clientId,
+    intent: "subscription" as const,
+    vault: true,
+    currency: "USD",
+    "data-namespace": "paypal_subscriber",
+    ...(PAYPAL_ENV.isSandbox && { 
+      "data-environment": "sandbox" as const, 
+      "buyer-country": "US" 
+    }),
+  };
+
+  return (
+    <PayPalScriptProvider options={initialOptions}>
+      <div className="animate-in fade-in zoom-in duration-300 w-full">
+        <PayPalButtons
+          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
+          createSubscription={(data, actions) => {
+            return actions.subscription.create({
+              plan_id: PAYPAL_PLANS.monthly,
+              custom_id: userId
+            });
+          }}
+          onApprove={async () => onSuccess()}
+          onError={(err) => {
+            console.error("Monthly Subscription Error:", err);
+            onError("Subscription process failed.");
+          }}
+        />
+      </div>
+    </PayPalScriptProvider>
+  );
+};
+
+// ==========================================
+// 2. KOMPONEN KHUSUS LIFETIME (ONE-TIME)
+// ==========================================
+const LifetimeCheckout = ({ 
+  userId, 
+  onSuccess, 
+  onError 
+}: { 
+  userId: string | undefined; 
+  onSuccess: () => void; 
+  onError: (msg: string) => void;
+}) => {
+  const initialOptions = {
+    clientId: PAYPAL_CREDENTIALS.clientId,
+    intent: "capture" as const,
+    currency: "USD",
+    "data-namespace": "paypal_lifetime",
+    ...(PAYPAL_ENV.isSandbox && { 
+      "data-environment": "sandbox" as const, 
+      "buyer-country": "US" 
+    }),
+  };
+
+  return (
+    <PayPalScriptProvider options={initialOptions}>
+      <div className="animate-in fade-in zoom-in duration-300 w-full">
+        <PayPalButtons
+          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'pay' }}
+          createOrder={(data, actions) => {
+            console.log("Creating Lifetime Order...");
+            return actions.order.create({
+              intent: "CAPTURE",
+              purchase_units: [{
+                amount: { value: "17.99", currency_code: "USD" },
+                description: "JobTracker Lifetime Pro Access",
+                custom_id: userId
+              }]
+            });
+          }}
+          onApprove={async (data, actions) => {
+            if (actions.order) {
+              await actions.order.capture();
+              onSuccess();
+            }
+          }}
+          onError={(err) => {
+            console.error("Lifetime Payment Error:", err);
+            onError("Payment execution failed.");
+          }}
+        />
+      </div>
+    </PayPalScriptProvider>
+  );
+};
+
+// ==========================================
+// 3. KOMPONEN UTAMA (BANNER)
+// ==========================================
 type PlanType = "monthly" | "lifetime" | null;
 
 export function SubscriptionBanner() {
   const { user } = useAuth();
   const router = useRouter();
-  
-  // State untuk mengontrol plan mana yang sedang dipilih user
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(null);
-  
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Opsi Monthly
-  const monthlyOptions = {
-    clientId: PAYPAL_CREDENTIALS.clientId,
-    intent: "subscription",
-    vault: true,
-    currency: "USD",
-    "data-namespace": "paypal_subscriber",
-    ...(PAYPAL_ENV.isSandbox && {
-      "buyer-country": "US",
-      "data-environment": "sandbox",
-    }),
+  const handleSuccess = (msg: string) => {
+    setStatusMsg({ type: 'success', text: msg });
+    setTimeout(() => router.refresh(), 1500);
   };
 
-  // Opsi Lifetime
-  const lifetimeOptions = {
-    clientId: PAYPAL_CREDENTIALS.clientId,
-    intent: "capture",
-    currency: "USD",
-    "data-namespace": "paypal_lifetime",
-    ...(PAYPAL_ENV.isSandbox && {
-      "buyer-country": "US",
-      "data-environment": "sandbox",
-    }),
+  const handleError = (msg: string) => {
+    setStatusMsg({ type: 'error', text: msg });
   };
 
   return (
@@ -90,34 +174,20 @@ export function SubscriptionBanner() {
                  </div>
               </div>
 
-              {/* LOGIKA TOMBOL: Jika belum dipilih, tampilkan tombol biasa. Jika dipilih, load PayPal. */}
-              <div className="min-h-[55px]">
+              <div className="min-h-[55px] flex items-end">
                 {selectedPlan !== 'monthly' ? (
                   <button
-                    onClick={() => setSelectedPlan('monthly')}
+                    onClick={() => { setSelectedPlan('monthly'); setStatusMsg(null); }}
                     className="w-full py-3 rounded-lg bg-[#FFF0C4]/10 hover:bg-[#FFF0C4]/20 text-[#FFF0C4] text-sm font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     Select Monthly <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <PayPalScriptProvider options={monthlyOptions}>
-                     <div className="animate-in fade-in zoom-in duration-300">
-                        <PayPalButtons
-                          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
-                          createSubscription={(data, actions) =>
-                            actions.subscription.create({
-                              plan_id: PAYPAL_PLANS.monthly,
-                              custom_id: user?.uid
-                            })
-                          }
-                          onApprove={async () => {
-                            setSuccessMessage("Monthly subscription activated!");
-                            setTimeout(() => router.refresh(), 1200);
-                          }}
-                          onError={() => setErrorMessage("Payment failed. Please try again.")}
-                        />
-                     </div>
-                  </PayPalScriptProvider>
+                  <MonthlyCheckout 
+                    userId={user?.uid} 
+                    onSuccess={() => handleSuccess("Monthly subscription activated!")} 
+                    onError={handleError}
+                  />
                 )}
               </div>
             </div>
@@ -148,65 +218,51 @@ export function SubscriptionBanner() {
                  </div>
               </div>
 
-              {/* LOGIKA TOMBOL LIFETIME */}
-              <div className="min-h-[55px]">
+              <div className="min-h-[55px] flex items-end">
                 {selectedPlan !== 'lifetime' ? (
                   <button
-                    onClick={() => setSelectedPlan('lifetime')}
+                    onClick={() => { setSelectedPlan('lifetime'); setStatusMsg(null); }}
                     className="w-full py-3 rounded-lg bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] text-sm font-semibold transition-colors shadow-lg flex items-center justify-center gap-2"
                   >
                     Select Lifetime <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <PayPalScriptProvider options={lifetimeOptions}>
-                     <div className="animate-in fade-in zoom-in duration-300">
-                        <PayPalButtons
-                          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'pay' }}
-                          createOrder={(data, actions) =>
-                            actions.order.create({
-                              intent: "CAPTURE",
-                              purchase_units: [{
-                                amount: { value: "17.99", currency_code: "USD" },
-                                description: "JobTracker Lifetime Pro Access",
-                                custom_id: user?.uid
-                              }]
-                            })
-                          }
-                          onApprove={async (_data, actions) => {
-                            if (actions.order) {
-                              await actions.order.capture();
-                              setSuccessMessage("Lifetime purchase successful!");
-                              setTimeout(() => router.refresh(), 2000);
-                            }
-                          }}
-                          onError={() => setErrorMessage("Payment failed. Please try again.")}
-                        />
-                     </div>
-                  </PayPalScriptProvider>
+                  <LifetimeCheckout 
+                    userId={user?.uid} 
+                    onSuccess={() => handleSuccess("Lifetime purchase successful!")} 
+                    onError={handleError}
+                  />
                 )}
               </div>
             </div>
 
         </div>
 
-        {/* Tombol Cancel Selection (Optional, kalau user mau ganti pikiran) */}
+        {/* Tombol Cancel Selection */}
         {selectedPlan && (
            <button 
-             onClick={() => setSelectedPlan(null)}
-             className="mt-6 text-[#FFF0C4]/50 hover:text-[#FFF0C4] text-xs underline"
+             onClick={() => { setSelectedPlan(null); setStatusMsg(null); }}
+             className="mt-6 text-[#FFF0C4]/50 hover:text-[#FFF0C4] text-xs underline cursor-pointer"
            >
              Compare plans again
            </button>
         )}
 
-        {/* Pesan Error/Sukses */}
-        {(successMessage || errorMessage) && (
-          <div className="mt-6 w-full max-w-2xl">
+        {/* Status Message */}
+        {statusMsg && (
+          <div className="mt-6 w-full max-w-2xl animate-in slide-in-from-bottom-2">
             <div className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold shadow-lg ${
-                successMessage ? "bg-green-500/10 text-green-200 border border-green-500/30" : "bg-red-500/10 text-red-200 border border-red-500/30"
+                statusMsg.type === 'success' 
+                  ? "bg-green-500/10 text-green-200 border border-green-500/30" 
+                  : "bg-red-500/10 text-red-200 border border-red-500/30"
               }`}>
-              <span>{successMessage || errorMessage}</span>
-              <button onClick={() => { setSuccessMessage(null); setErrorMessage(null); }} className="text-xs uppercase hover:opacity-100 opacity-80">Close</button>
+              <span>{statusMsg.text}</span>
+              <button 
+                onClick={() => setStatusMsg(null)} 
+                className="text-xs uppercase hover:opacity-100 opacity-80"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
