@@ -44,6 +44,17 @@ export async function POST(req: Request) {
     const userDoc = usersSnapshot.docs[0];
     const currentSub = userDoc.data().subscription;
     
+    // #region agent log
+    console.log("[DEBUG] Cancel endpoint: Current subscription data from Firebase", {
+      subscriptionId,
+      renewsAt: currentSub?.renewsAt,
+      endsAt: currentSub?.endsAt,
+      status: currentSub?.status,
+      fullSubscription: currentSub
+    });
+    fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'cancel/route.ts:45',message:'Cancel endpoint: Current subscription data from Firebase',data:{subscriptionId,currentSub:JSON.stringify(currentSub),renewsAt:currentSub?.renewsAt,endsAt:currentSub?.endsAt,status:currentSub?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+    // #endregion
+    
     console.log("📦 Current subscription data:", currentSub);
 
     // Get PayPal Access Token
@@ -109,6 +120,14 @@ export async function POST(req: Request) {
 
     if (detailsResponse.ok) {
       const subDetails = await detailsResponse.json();
+      // #region agent log
+      console.log("[DEBUG] Cancel endpoint: PayPal API response", {
+        subscriptionId,
+        nextBillingTime: subDetails.billing_info?.next_billing_time,
+        billingInfo: subDetails.billing_info
+      });
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'cancel/route.ts:111',message:'Cancel endpoint: PayPal API response',data:{subscriptionId,nextBillingTime:subDetails.billing_info?.next_billing_time,fullBillingInfo:subDetails.billing_info},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,D'})}).catch(()=>{});
+      // #endregion
       if (subDetails.billing_info?.next_billing_time) {
         endDate = new Date(subDetails.billing_info.next_billing_time).toISOString();
         console.log("✅ Got end date from PayPal API:", endDate);
@@ -143,6 +162,17 @@ export async function POST(req: Request) {
 
     console.log(`📅 Final end date: ${endDate}`);
 
+    // #region agent log
+    console.log("[DEBUG] Cancel endpoint: Final endDate calculated", {
+      subscriptionId,
+      endDate,
+      endDateFormatted: endDate ? new Date(endDate).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : null,
+      currentSubRenewsAt: currentSub?.renewsAt,
+      currentSubEndsAt: currentSub?.endsAt
+    });
+    fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'cancel/route.ts:144',message:'Cancel endpoint: Final endDate calculated',data:{endDate,endDateISO:endDate,subscriptionId,currentSubRenewsAt:currentSub?.renewsAt,currentSubEndsAt:currentSub?.endsAt},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,D'})}).catch(()=>{});
+    // #endregion
+
     // Update Firebase - SET endsAt, KEEP renewsAt untuk grace period check
     await userDoc.ref.update({
       "subscription.status": "cancelled",
@@ -150,6 +180,16 @@ export async function POST(req: Request) {
       // 👇 JANGAN set renewsAt jadi null! Biarkan tetap ada untuk checkIsPro
       "updatedAt": new Date().toISOString()
     });
+
+    // #region agent log
+    console.log("[DEBUG] Cancel endpoint: Firebase updated with endsAt", {
+      subscriptionId,
+      endDate,
+      endDateFormatted: endDate ? new Date(endDate).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : null,
+      status: 'cancelled'
+    });
+    fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'cancel/route.ts:152',message:'Cancel endpoint: Firebase updated with endsAt',data:{endDate,subscriptionId,status:'cancelled'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+    // #endregion
 
     console.log(`✅ Firebase updated for subscription ${subscriptionId}`);
 

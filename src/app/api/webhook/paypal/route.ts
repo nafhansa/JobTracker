@@ -106,12 +106,40 @@ export async function POST(req: Request) {
       console.log("[PayPal Webhook] Handling CANCELLED event for subscription:", resource.id);
       // User or system cancelled the subscription
       const nextBillingTime = resource.billing_info?.next_billing_time;
+      
+      // #region agent log
+      console.log("[DEBUG] Webhook CANCELLED: Received event", {
+        subscriptionId: resource.id,
+        userId,
+        nextBillingTime,
+        hasNextBillingTime: !!nextBillingTime,
+        billingInfo: resource.billing_info
+      });
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:108',message:'Webhook CANCELLED: Received event',data:{subscriptionId:resource.id,nextBillingTime,hasNextBillingTime:!!nextBillingTime,fullResource:JSON.stringify(resource).substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+      // #endregion
+      
       const endDate = nextBillingTime 
         ? Timestamp.fromDate(new Date(nextBillingTime))
         : Timestamp.now();
 
+      // #region agent log
+      console.log("[DEBUG] Webhook CANCELLED: Calculated endDate", {
+        subscriptionId: resource.id,
+        userId,
+        nextBillingTime,
+        endDateISO: endDate.toDate().toISOString(),
+        endDateFormatted: endDate.toDate().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
+        usedFallback: !nextBillingTime
+      });
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:115',message:'Webhook CANCELLED: Calculated endDate',data:{subscriptionId:resource.id,nextBillingTime,endDateISO:endDate.toDate().toISOString(),endDateTimestamp:endDate.toDate().getTime(),usedFallback:!nextBillingTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+      // #endregion
+
       // Check if we still have access (grace period)
       const stillHasAccess = endDate.toDate() > new Date();
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:120',message:'Webhook CANCELLED: Before Firebase update',data:{subscriptionId:resource.id,userId,endDateISO:endDate.toDate().toISOString(),stillHasAccess},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+      // #endregion
 
       await userRef.set({
         isPro: stillHasAccess, // Keep pro if still in grace period
@@ -122,6 +150,19 @@ export async function POST(req: Request) {
         },
         updatedAt: Timestamp.now()
       }, { merge: true });
+      
+      // #region agent log
+      console.log("[DEBUG] Webhook CANCELLED: Firebase updated", {
+        subscriptionId: resource.id,
+        userId,
+        endDateISO: endDate.toDate().toISOString(),
+        endDateFormatted: endDate.toDate().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
+        stillHasAccess,
+        status: 'cancelled'
+      });
+      fetch('http://127.0.0.1:7242/ingest/39deccfc-a667-4fb3-91cd-671c431fc418',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'webhook/paypal/route.ts:133',message:'Webhook CANCELLED: Firebase updated',data:{subscriptionId:resource.id,userId,endDateISO:endDate.toDate().toISOString(),stillHasAccess,status:'cancelled'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+      // #endregion
+      
       console.log("[PayPal Webhook] Updating Firestore: status=cancelled, endsAt=", endDate.toDate(), "isPro remains:", stillHasAccess);
     }
 
