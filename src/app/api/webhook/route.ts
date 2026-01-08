@@ -27,7 +27,6 @@ export async function POST(req: Request) {
     }
 
     const payload = JSON.parse(rawBody);
-    console.log(`🔥 DEBUG WEBHOOK EVENT: ${payload.events?.[0]?.type}`);
 
     const events = payload.events;
 
