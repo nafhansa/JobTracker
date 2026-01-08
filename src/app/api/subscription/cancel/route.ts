@@ -25,9 +25,11 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log(`🔧 Using PayPal API: ${PAYPAL_API_URL}`); // 👈 Debug log
+
     // Get PayPal Access Token
     const authResponse = await fetch(
-      `${PAYPAL_API_URL}/v1/oauth2/token`,
+      `${PAYPAL_API_URL}/v1/oauth2/token`, // ✅ Sudah benar
       {
         method: "POST",
         headers: {
@@ -41,14 +43,18 @@ export async function POST(req: Request) {
     );
 
     if (!authResponse.ok) {
+      const errorData = await authResponse.json().catch(() => ({}));
+      console.error("❌ PayPal Auth Error:", errorData);
       throw new Error("Failed to get PayPal access token");
     }
 
     const { access_token } = await authResponse.json();
+    console.log("✅ PayPal Access Token obtained");
 
     // Cancel subscription in PayPal
+    // 👇 FIX: Ganti hardcode jadi pakai PAYPAL_API_URL
     const cancelResponse = await fetch(
-      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}/cancel`,
+      `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}/cancel`,
       {
         method: "POST",
         headers: {
@@ -64,13 +70,16 @@ export async function POST(req: Request) {
     // PayPal returns 204 on successful cancellation
     if (!cancelResponse.ok && cancelResponse.status !== 204) {
       const errorData = await cancelResponse.json().catch(() => ({}));
-      console.error("PayPal cancel error:", errorData);
+      console.error("❌ PayPal cancel error:", errorData);
       throw new Error("Failed to cancel subscription in PayPal");
     }
 
+    console.log("✅ Subscription cancelled in PayPal");
+
     // Get subscription details to find end date
+    // 👇 FIX: Ganti hardcode jadi pakai PAYPAL_API_URL
     const detailsResponse = await fetch(
-      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
+      `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -89,6 +98,8 @@ export async function POST(req: Request) {
       endDate = new Date().toISOString();
     }
 
+    console.log(`📅 Subscription end date: ${endDate}`);
+
     // Update Firebase
     const usersSnapshot = await adminDb
       .collection("users")
@@ -105,7 +116,7 @@ export async function POST(req: Request) {
         "updatedAt": new Date().toISOString()
       });
 
-      console.log(`✅ Subscription ${subscriptionId} cancelled. Access until: ${endDate}`);
+      console.log(`✅ Firebase updated for subscription ${subscriptionId}`);
     }
 
     return NextResponse.json({ 
@@ -115,7 +126,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("Cancel API Error:", error);
+    console.error("❌ Cancel API Error:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" }, 
       { status: 500 }
