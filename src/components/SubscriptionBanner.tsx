@@ -16,6 +16,18 @@ export function SubscriptionBanner() {
   const [monthlyButtonsReady, setMonthlyButtonsReady] = useState(false);
   const [lifetimeButtonsReady, setLifetimeButtonsReady] = useState(false);
 
+  const paypalOptions = {
+    clientId: PAYPAL_CREDENTIALS.clientId,
+    intent: "subscription", // must include vault for subscriptions
+    vault: true,
+    currency: "USD",
+    components: "buttons",
+    ...(PAYPAL_ENV.isSandbox && {
+      "buyer-country": "US",
+      "data-environment": "sandbox",
+    }),
+  } as const;
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-6 md:p-10 text-center shadow-2xl">
       
@@ -38,47 +50,35 @@ export function SubscriptionBanner() {
           Choose Your Plan
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
-          
-          {/* MONTHLY PLAN */}
-          <div className="flex flex-col rounded-xl border border-[#FFF0C4]/10 bg-[#1a0201]/60 p-6 backdrop-blur-sm text-left">
-            <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
-            <p className="text-sm text-[#FFF0C4]/60 mb-6">$2.99/month subscription</p>
+        <PayPalScriptProvider options={paypalOptions}>
+          <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
             
-            <div className="flex-1 space-y-3 mb-6">
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Track Unlimited Applications</span>
-               </div>
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Smart Filters & Reminders</span>
-               </div>
-            </div>
+            {/* MONTHLY PLAN */}
+            <div className="flex flex-col rounded-xl border border-[#FFF0C4]/10 bg-[#1a0201]/60 p-6 backdrop-blur-sm text-left">
+              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
+              <p className="text-sm text-[#FFF0C4]/60 mb-6">$2.99/month subscription</p>
+              
+              <div className="flex-1 space-y-3 mb-6">
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Track Unlimited Applications</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Smart Filters & Reminders</span>
+                 </div>
+              </div>
 
-            <div className="relative z-20 min-h-[96px] flex items-center justify-center">
-              {!monthlyButtonsReady && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#FFF0C4]/10">
-                  <div className="flex items-center gap-2 text-[#FFF0C4]/70 text-xs font-semibold">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
-                    Loading payment options...
+              <div className="relative z-20 min-h-[96px] flex items-center justify-center">
+                {!monthlyButtonsReady && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#FFF0C4]/10">
+                    <div className="flex items-center gap-2 text-[#FFF0C4]/70 text-xs font-semibold">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
+                      Loading payment options...
+                    </div>
                   </div>
-                </div>
-              )}
-              <div className={monthlyButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
-                <PayPalScriptProvider
-                  options={{
-                    clientId: PAYPAL_CREDENTIALS.clientId,
-                    intent: "subscription",
-                    vault: true,
-                    currency: "USD",
-                    components: "buttons",
-                    ...(PAYPAL_ENV.isSandbox && {
-                      "buyer-country": "US",
-                      "data-environment": "sandbox",
-                    }),
-                  }}
-                >
+                )}
+                <div className={monthlyButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
                   <PayPalButtons
                     style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
                     onInit={() => setMonthlyButtonsReady(true)}
@@ -100,54 +100,40 @@ export function SubscriptionBanner() {
                       setErrorMessage("Payment failed. Please try again.");
                     }}
                   />
-                </PayPalScriptProvider>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* LIFETIME PLAN */}
-          <div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-               <Zap className="w-3 h-3 inline mr-1" /> Best Value
-            </div>
+            {/* LIFETIME PLAN */}
+            <div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                 <Zap className="w-3 h-3 inline mr-1" /> Best Value
+              </div>
 
-            <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
-            <p className="text-sm text-[#FFF0C4]/60 mb-6">$17.99 one-time payment</p>
-            
-            <div className="flex-1 space-y-3 mb-6">
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Pay Once, Own Forever</span>
-               </div>
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Future Features Included</span>
-               </div>
-            </div>
+              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
+              <p className="text-sm text-[#FFF0C4]/60 mb-6">$17.99 one-time payment</p>
+              
+              <div className="flex-1 space-y-3 mb-6">
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Pay Once, Own Forever</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Future Features Included</span>
+                 </div>
+              </div>
 
-            <div className="relative z-20 min-h-[96px] flex items-center justify-center">
-              {!lifetimeButtonsReady && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#8C1007]/30">
-                  <div className="flex items-center gap-2 text-[#FFF0C4]/80 text-xs font-semibold">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
-                    Loading payment options...
+              <div className="relative z-20 min-h-[96px] flex items-center justify-center">
+                {!lifetimeButtonsReady && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#8C1007]/30">
+                    <div className="flex items-center gap-2 text-[#FFF0C4]/80 text-xs font-semibold">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
+                      Loading payment options...
+                    </div>
                   </div>
-                </div>
-              )}
-              <div className={lifetimeButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
-                <PayPalScriptProvider
-                  options={{
-                    clientId: PAYPAL_CREDENTIALS.clientId,
-                    intent: "capture", // one-time payment
-                    vault: false,
-                    currency: "USD",
-                    components: "buttons",
-                    ...(PAYPAL_ENV.isSandbox && {
-                      "buyer-country": "US",
-                      "data-environment": "sandbox",
-                    }),
-                  }}
-                >
+                )}
+                <div className={lifetimeButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
                   <PayPalButtons
                     style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
                     onInit={() => setLifetimeButtonsReady(true)}
@@ -182,11 +168,11 @@ export function SubscriptionBanner() {
                       setErrorMessage("Payment failed. Please try again.");
                     }}
                   />
-                </PayPalScriptProvider>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </PayPalScriptProvider>
 
         {(successMessage || errorMessage) && (
           <div className="mt-6 w-full max-w-2xl">
