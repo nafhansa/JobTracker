@@ -123,3 +123,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Definisi Keyframes: Bergerak dari posisi -50% ke 0% */
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0%);
+    }
+  }
+
+  /* Class Utility untuk menjalankan animasi */
+  /* Durasi 50s dibuat agar jalannya pelan dan enak dibaca */
+  .animate-marquee-reverse {
+    animation: marquee-reverse 50s linear infinite;
+  }
+
+  /* Class Utility untuk pause animasi saat hover */
+  .paused {
+    animation-play-state: paused;
+  }
+}
