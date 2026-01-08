@@ -33,6 +33,9 @@ export const PAYPAL_CREDENTIALS = {
   clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
 };
 
+// Webhook ID (required for signature verification)
+export const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '';
+
 // Plan IDs (sama untuk semua environment)
 export const PAYPAL_PLANS = {
   monthly: PAYPAL_ENV.isSandbox 
@@ -51,6 +54,9 @@ if (typeof window === 'undefined') {
   console.log('  APP_ENV:', appEnv);
   console.log('  NODE_ENV:', nodeEnv);
   console.log('  Mode:', PAYPAL_ENV.environment);
+  if (!PAYPAL_WEBHOOK_ID) {
+    console.warn('⚠️  PAYPAL_WEBHOOK_ID is not set - webhook verification will fail');
+  }
 } else {
   // Client-side
   console.log('🔧 [Client] PayPal Config:');

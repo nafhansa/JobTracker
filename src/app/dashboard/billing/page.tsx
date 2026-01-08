@@ -29,9 +29,16 @@ export default function BillingPage() {
 
     setCancelling(true);
     try {
+      if (!user) {
+        throw new Error("No user session");
+      }
+      const token = await user.getIdToken();
       const response = await fetch("/api/subscription/cancel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ 
           subscriptionId: subscription.paypalSubscriptionId 
         })
