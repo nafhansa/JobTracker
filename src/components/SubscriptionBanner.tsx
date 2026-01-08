@@ -2,10 +2,10 @@
 "use client";
 
 import { Sparkles, CheckCircle2, Zap } from "lucide-react";
-import { PayPalButtons } from "@paypal/react-paypal-js";
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter } from "next/navigation";
-import { PAYPAL_PLANS, PAYPAL_ENV } from "@/lib/paypal-config"; // ✅ Import from config
+import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config"; // ✅ Import from config
 
 export function SubscriptionBanner() {
   const { user } = useAuth();
@@ -98,40 +98,54 @@ export function SubscriptionBanner() {
             </div>
 
             <div className="relative z-20">
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-                createOrder={(data, actions) => {
-                  console.log('Creating lifetime order');
-                  return actions.order.create({
-                    intent: "CAPTURE",
-                    purchase_units: [{
-                      amount: {
-                        value: "17.99",
-                        currency_code: "USD"
-                      },
-                      description: "JobTracker Lifetime Pro Access",
-                      custom_id: user?.uid
-                    }],
-                    application_context: {
-                      shipping_preference: "NO_SHIPPING"
+              <PayPalScriptProvider
+                options={{
+                  clientId: PAYPAL_CREDENTIALS.clientId,
+                  intent: "capture", // one-time payment
+                  vault: false,
+                  currency: "USD",
+                  components: "buttons",
+                  ...(PAYPAL_ENV.isSandbox && {
+                    "buyer-country": "US",
+                    "data-environment": "sandbox",
+                  }),
+                }}
+              >
+                <PayPalButtons
+                  style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
+                  createOrder={(data, actions) => {
+                    console.log('Creating lifetime order');
+                    return actions.order.create({
+                      intent: "CAPTURE",
+                      purchase_units: [{
+                        amount: {
+                          value: "17.99",
+                          currency_code: "USD"
+                        },
+                        description: "JobTracker Lifetime Pro Access",
+                        custom_id: user?.uid
+                      }],
+                      application_context: {
+                        shipping_preference: "NO_SHIPPING"
+                      }
+                    });
+                  }}
+                  onApprove={async (data, actions) => {
+                    if (actions.order) {
+                      const details = await actions.order.capture();
+                      console.log("✅ Lifetime purchase:", details);
+                      alert("Lifetime purchase successful!");
+                      setTimeout(() => {
+                        router.refresh();
+                      }, 2000);
                     }
-                  });
-                }}
-                onApprove={async (data, actions) => {
-                  if (actions.order) {
-                    const details = await actions.order.capture();
-                    console.log("✅ Lifetime purchase:", details);
-                    alert("Lifetime purchase successful!");
-                    setTimeout(() => {
-                      router.refresh();
-                    }, 2000);
-                  }
-                }}
-                onError={(err) => {
-                  console.error("❌ PayPal Error:", err);
-                  alert("Payment failed. Please try again.");
-                }}
-              />
+                  }}
+                  onError={(err) => {
+                    console.error("❌ PayPal Error:", err);
+                    alert("Payment failed. Please try again.");
+                  }}
+                />
+              </PayPalScriptProvider>
             </div>
           </div>
         </div>

@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { PayPalButtons } from "@paypal/react-paypal-js";
-import { PAYPAL_PLANS, PAYPAL_ENV } from "@/lib/paypal-config";
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 
 export default function PricingPage() {
   const { user } = useAuth();
@@ -193,37 +193,51 @@ function PricingCard({
             />
           ) : (
             // Lifetime One-Time Purchase Button
-            <PayPalButtons
-              style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-              createOrder={(data, actions) => {
-                return actions.order.create({
-                  intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
-                  purchase_units: [{
-                    amount: {
-                      value: "17.99",
-                      currency_code: "USD"
-                    },
-                    description: "JobTracker Lifetime Pro Access",
-                    custom_id: user.uid // CRITICAL: Pass user ID for webhook
-                  }],
-                  application_context: {
-                    shipping_preference: "NO_SHIPPING"
+            <PayPalScriptProvider
+              options={{
+                clientId: PAYPAL_CREDENTIALS.clientId,
+                intent: "capture",
+                vault: false,
+                currency: "USD",
+                components: "buttons",
+                ...(PAYPAL_ENV.isSandbox && {
+                  "buyer-country": "US",
+                  "data-environment": "sandbox",
+                }),
+              }}
+            >
+              <PayPalButtons
+                style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
+                createOrder={(data, actions) => {
+                  return actions.order.create({
+                    intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
+                    purchase_units: [{
+                      amount: {
+                        value: "17.99",
+                        currency_code: "USD"
+                      },
+                      description: "JobTracker Lifetime Pro Access",
+                      custom_id: user.uid // CRITICAL: Pass user ID for webhook
+                    }],
+                    application_context: {
+                      shipping_preference: "NO_SHIPPING"
+                    }
+                  });
+                }}
+                onApprove={async (data, actions) => {
+                  if (actions.order) {
+                    const details = await actions.order.capture();
+                    console.log("Order completed:", details);
+                    alert("Lifetime purchase successful! Redirecting to dashboard...");
+                    router.push("/dashboard");
                   }
-                });
-              }}
-              onApprove={async (data, actions) => {
-                if (actions.order) {
-                  const details = await actions.order.capture();
-                  console.log("Order completed:", details);
-                  alert("Lifetime purchase successful! Redirecting to dashboard...");
-                  router.push("/dashboard");
-                }
-              }}
-              onError={(err) => {
-                console.error("PayPal Error:", err);
-                alert("Payment failed. Please try again.");
-              }}
-            />
+                }}
+                onError={(err) => {
+                  console.error("PayPal Error:", err);
+                  alert("Payment failed. Please try again.");
+                }}
+              />
+            </PayPalScriptProvider>
           )
         ) : (
           <button
