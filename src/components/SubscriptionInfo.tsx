@@ -7,11 +7,13 @@ import { Crown, Calendar, CreditCard } from "lucide-react";
 
 export function SubscriptionInfo() {
   const router = useRouter(); // 2. Init router
-  const { subscription } = useAuth();
+  const { subscription, updatedAt } = useAuth();
 
   if (!subscription) return null;
 
-  const dateToShow = subscription.status === 'active' ? subscription.renewsAt : subscription.endsAt;
+  const dateToShow = subscription.status === 'active' 
+    ? updatedAt
+    : subscription.endsAt;
 
   function parseFirebaseDate(dateStr: string): Date | null {
     // Contoh: "February 8, 2026 at 5:00:00 PM UTC+7"
@@ -32,21 +34,31 @@ export function SubscriptionInfo() {
   }
 
   let parsedDate: Date | null = null;
+
   if (dateToShow) {
-    if (typeof dateToShow === "string") {
-      parsedDate = parseFirebaseDate(dateToShow);
-    } else if (typeof dateToShow === "number") {
-      parsedDate = new Date(dateToShow);
-    } else if (typeof dateToShow === "object" && typeof dateToShow.toDate === "function") {
-      parsedDate = dateToShow.toDate();
-    }
+  // 1. Cek kalau Firestore Timestamp (punya method toDate)
+  if (typeof dateToShow === "object" && typeof dateToShow.toDate === "function") {
+    parsedDate = dateToShow.toDate();
+  } 
+  // 2. Cek kalau format string kayak "February 8, 2026 at 5:00:00 PM UTC+7"
+  else if (typeof dateToShow === "string") {
+    parsedDate = parseFirebaseDate(dateToShow);
+  } 
+  // 3. Cek kalau udah Date object
+  else if (dateToShow instanceof Date) {
+    parsedDate = dateToShow;
   }
+  // 4. Cek kalau timestamp number
+  else if (typeof dateToShow === "number") {
+    parsedDate = new Date(dateToShow);
+  }
+}
 
   const displayDate = parsedDate
-    ? parsedDate.toLocaleDateString("id-ID", {
-        day: "numeric", month: "long", year: "numeric"
-      })
-    : null;
+  ? parsedDate.toLocaleDateString("id-ID", {
+      day: "numeric", month: "long", year: "numeric"
+    })
+  : null;
 
   // 3. Update fungsi handleManage
   const handleManage = () => {

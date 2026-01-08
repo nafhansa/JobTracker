@@ -39,7 +39,12 @@ export const getSubscription = async (userId: string) => {
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        return userData.subscription || null;
+        return {
+        subscription: userData.subscription || null,
+        updatedAt: userData.updatedAt || null,
+        createdAt: userData.createdAt || null,
+        isPro: userData.isPro || false,
+      };
       }
       return null;
     } catch (error) {
