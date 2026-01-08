@@ -13,6 +13,20 @@ export function SubscriptionBanner() {
   const router = useRouter();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [monthlyButtonsReady, setMonthlyButtonsReady] = useState(false);
+  const [lifetimeButtonsReady, setLifetimeButtonsReady] = useState(false);
+
+  const paypalOptions = {
+    clientId: PAYPAL_CREDENTIALS.clientId,
+    intent: "subscription", // must include vault for subscriptions
+    vault: true,
+    currency: "USD",
+    components: "buttons",
+    ...(PAYPAL_ENV.isSandbox && {
+      "buyer-country": "US",
+      "data-environment": "sandbox",
+    }),
+  } as const;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-6 md:p-10 text-center shadow-2xl">
@@ -36,137 +50,129 @@ export function SubscriptionBanner() {
           Choose Your Plan
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
-          
-          {/* MONTHLY PLAN */}
-          <div className="flex flex-col rounded-xl border border-[#FFF0C4]/10 bg-[#1a0201]/60 p-6 backdrop-blur-sm text-left">
-            <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
-            <p className="text-sm text-[#FFF0C4]/60 mb-6">$2.99/month subscription</p>
+        <PayPalScriptProvider options={paypalOptions}>
+          <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
             
-            <div className="flex-1 space-y-3 mb-6">
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Track Unlimited Applications</span>
-               </div>
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Smart Filters & Reminders</span>
-               </div>
-            </div>
+            {/* MONTHLY PLAN */}
+            <div className="flex flex-col rounded-xl border border-[#FFF0C4]/10 bg-[#1a0201]/60 p-6 backdrop-blur-sm text-left">
+              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
+              <p className="text-sm text-[#FFF0C4]/60 mb-6">$2.99/month subscription</p>
+              
+              <div className="flex-1 space-y-3 mb-6">
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Track Unlimited Applications</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Smart Filters & Reminders</span>
+                 </div>
+              </div>
 
-            <div className="relative z-20">
-              <PayPalScriptProvider
-                options={{
-                  clientId: PAYPAL_CREDENTIALS.clientId,
-                  intent: "subscription",
-                  vault: true,
-                  currency: "USD",
-                  components: "buttons",
-                  ...(PAYPAL_ENV.isSandbox && {
-                    "buyer-country": "US",
-                    "data-environment": "sandbox",
-                  }),
-                }}
-              >
-                <PayPalButtons
-                  style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
-                  createSubscription={(data, actions) => {
-                    console.log('Creating subscription with Plan ID:', PAYPAL_PLANS.monthly);
-                    return actions.subscription.create({
-                      plan_id: PAYPAL_PLANS.monthly, // ✅ Auto-select correct plan
-                      custom_id: user?.uid
-                    });
-                  }}
-                  onApprove={async (data) => {
-                    console.log("✅ Subscription Success:", data.subscriptionID);
-                    setSuccessMessage("Monthly subscription activated!");
-                    setErrorMessage(null);
-                    setTimeout(() => {
-                      router.refresh();
-                    }, 1200);
-                  }}
-                  onError={(err) => {
-                    console.error("❌ PayPal Error:", err);
-                    setErrorMessage("Payment failed. Please try again.");
-                  }}
-                />
-              </PayPalScriptProvider>
-            </div>
-          </div>
-
-          {/* LIFETIME PLAN */}
-          <div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-               <Zap className="w-3 h-3 inline mr-1" /> Best Value
-            </div>
-
-            <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
-            <p className="text-sm text-[#FFF0C4]/60 mb-6">$17.99 one-time payment</p>
-            
-            <div className="flex-1 space-y-3 mb-6">
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Pay Once, Own Forever</span>
-               </div>
-               <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                 <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
-                 <span>Future Features Included</span>
-               </div>
-            </div>
-
-            <div className="relative z-20">
-              <PayPalScriptProvider
-                options={{
-                  clientId: PAYPAL_CREDENTIALS.clientId,
-                  intent: "capture", // one-time payment
-                  vault: false,
-                  currency: "USD",
-                  components: "buttons",
-                  ...(PAYPAL_ENV.isSandbox && {
-                    "buyer-country": "US",
-                    "data-environment": "sandbox",
-                  }),
-                }}
-              >
-                <PayPalButtons
-                  style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-                  createOrder={(data, actions) => {
-                    console.log('Creating lifetime order');
-                    return actions.order.create({
-                      intent: "CAPTURE",
-                      purchase_units: [{
-                        amount: {
-                          value: "17.99",
-                          currency_code: "USD"
-                        },
-                        description: "JobTracker Lifetime Pro Access",
+              <div className="relative z-20 min-h-[96px] flex items-center justify-center">
+                {!monthlyButtonsReady && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#FFF0C4]/10">
+                    <div className="flex items-center gap-2 text-[#FFF0C4]/70 text-xs font-semibold">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
+                      Loading payment options...
+                    </div>
+                  </div>
+                )}
+                <div className={monthlyButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
+                  <PayPalButtons
+                    style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
+                    onInit={() => setMonthlyButtonsReady(true)}
+                    createSubscription={(data, actions) =>
+                      actions.subscription.create({
+                        plan_id: PAYPAL_PLANS.monthly, // ✅ Auto-select correct plan
                         custom_id: user?.uid
-                      }],
-                      application_context: {
-                        shipping_preference: "NO_SHIPPING"
-                      }
-                    });
-                  }}
-                  onApprove={async (data, actions) => {
-                    if (actions.order) {
-                      const details = await actions.order.capture();
-                      console.log("✅ Lifetime purchase:", details);
-                      setSuccessMessage("Lifetime purchase successful!");
+                      })
+                    }
+                    onApprove={async () => {
+                      setSuccessMessage("Monthly subscription activated!");
                       setErrorMessage(null);
                       setTimeout(() => {
                         router.refresh();
-                      }, 2000);
+                      }, 1200);
+                    }}
+                    onError={() => {
+                      setMonthlyButtonsReady(true); // Unblock UI if render fails
+                      setErrorMessage("Payment failed. Please try again.");
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* LIFETIME PLAN */}
+            <div className="relative flex flex-col rounded-xl border border-[#8C1007] bg-[#3E0703]/40 p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                 <Zap className="w-3 h-3 inline mr-1" /> Best Value
+              </div>
+
+              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
+              <p className="text-sm text-[#FFF0C4]/60 mb-6">$17.99 one-time payment</p>
+              
+              <div className="flex-1 space-y-3 mb-6">
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Pay Once, Own Forever</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                   <span>Future Features Included</span>
+                 </div>
+              </div>
+
+              <div className="relative z-20 min-h-[96px] flex items-center justify-center">
+                {!lifetimeButtonsReady && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 border border-[#8C1007]/30">
+                    <div className="flex items-center gap-2 text-[#FFF0C4]/80 text-xs font-semibold">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#FFF0C4]/40 border-t-transparent" />
+                      Loading payment options...
+                    </div>
+                  </div>
+                )}
+                <div className={lifetimeButtonsReady ? "opacity-100" : "opacity-0 pointer-events-none"}>
+                  <PayPalButtons
+                    style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
+                    onInit={() => setLifetimeButtonsReady(true)}
+                    createOrder={(data, actions) =>
+                      actions.order.create({
+                        intent: "CAPTURE",
+                        purchase_units: [{
+                          amount: {
+                            value: "17.99",
+                            currency_code: "USD"
+                          },
+                          description: "JobTracker Lifetime Pro Access",
+                          custom_id: user?.uid
+                        }],
+                        application_context: {
+                          shipping_preference: "NO_SHIPPING"
+                        }
+                      })
                     }
-                  }}
-                  onError={(err) => {
-                    console.error("❌ PayPal Error:", err);
-                    setErrorMessage("Payment failed. Please try again.");
-                  }}
-                />
-              </PayPalScriptProvider>
+                    onApprove={async (_data, actions) => {
+                      if (actions.order) {
+                        await actions.order.capture();
+                        setSuccessMessage("Lifetime purchase successful!");
+                        setErrorMessage(null);
+                        setTimeout(() => {
+                          router.refresh();
+                        }, 2000);
+                      }
+                    }}
+                    onError={() => {
+                      setLifetimeButtonsReady(true); // Unblock UI if render fails
+                      setErrorMessage("Payment failed. Please try again.");
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </PayPalScriptProvider>
 
         {(successMessage || errorMessage) && (
           <div className="mt-6 w-full max-w-2xl">

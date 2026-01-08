@@ -25,7 +25,6 @@ export const createSubscription = async (userId: string, plan: "monthly" | "life
         
       },
     });
-    console.log("Subscription created successfully for user:", userId);
   } catch (error) {
     console.error("Error creating subscription:", error);
     throw error;
@@ -86,16 +85,7 @@ export const checkIsPro = (subscription: any): boolean => {
     }
 
     const now = new Date();
-
-    console.log("🔍 Grace Period Check:", {
-      status,
-      targetDate: endDate.toISOString(),
-      now: now.toISOString(),
-      isPro: now < endDate,
-    });
-
-    // Selama belum lewat target date, user masih Pro
-    return now < endDate;
+    return now < endDate; // Selama belum lewat target date, user masih Pro
   }
 
   return false;

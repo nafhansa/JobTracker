@@ -35,13 +35,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('🔥 AUTH STATE CHANGED, User:', user?.email);
       setUser(user);
       if (user) {
         const sub = await getSubscription(user.uid);
-        console.log('🔥 FULL USER DOC:', sub); // 👈 Debug: lihat seluruh doc
-        console.log('🔥 SUBSCRIPTION FIELD:', sub?.subscription); // 👈 Debug: subscription map
-        console.log('🔥 UPDATED AT FIELD:', sub?.updatedAt); 
         setSubscription(sub?.subscription || null);
         setUpdatedAt(sub?.updatedAt || null);
         setCreatedAt(sub?.createdAt || null);
@@ -56,7 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
   
-   console.log('🔥 CONTEXT STATE:', { user, subscription, updatedAt, isPro }); 
   return (
     // Masukkan isPro ke dalam value provider
     <AuthContext.Provider value={{ user, loading, subscription, isPro, updatedAt }}>

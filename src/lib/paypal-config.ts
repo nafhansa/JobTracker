@@ -60,11 +60,4 @@ if (typeof window === 'undefined') {
   if (!PAYPAL_WEBHOOK_ID) {
     console.warn('⚠️  PAYPAL_WEBHOOK_ID is not set - webhook verification will fail');
   }
-} else {
-  // Client-side
-  console.log('🔧 [Client] PayPal Config:');
-  console.log('  APP_ENV:', appEnv);
-  console.log('  URL:', window.location.hostname);
-  console.log('  isPreviewByURL:', isPreviewByURL);
-  console.log('  Mode:', PAYPAL_ENV.environment);
 }
