@@ -25,11 +25,30 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log(`🔧 Using PayPal API: ${PAYPAL_API_URL}`); // 👈 Debug log
+    console.log(`🔧 Using PayPal API: ${PAYPAL_API_URL}`);
+
+    // 👇 TAMBAH: Get current subscription data dari Firebase DULU
+    const usersSnapshot = await adminDb
+      .collection("users")
+      .where("subscription.paypalSubscriptionId", "==", subscriptionId)
+      .limit(1)
+      .get();
+
+    if (usersSnapshot.empty) {
+      return NextResponse.json(
+        { error: "Subscription not found in database" },
+        { status: 404 }
+      );
+    }
+
+    const userDoc = usersSnapshot.docs[0];
+    const currentSub = userDoc.data().subscription;
+    
+    console.log("📦 Current subscription data:", currentSub);
 
     // Get PayPal Access Token
     const authResponse = await fetch(
-      `${PAYPAL_API_URL}/v1/oauth2/token`, // ✅ Sudah benar
+      `${PAYPAL_API_URL}/v1/oauth2/token`,
       {
         method: "POST",
         headers: {
@@ -52,7 +71,6 @@ export async function POST(req: Request) {
     console.log("✅ PayPal Access Token obtained");
 
     // Cancel subscription in PayPal
-    // 👇 FIX: Ganti hardcode jadi pakai PAYPAL_API_URL
     const cancelResponse = await fetch(
       `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}/cancel`,
       {
@@ -76,8 +94,10 @@ export async function POST(req: Request) {
 
     console.log("✅ Subscription cancelled in PayPal");
 
-    // Get subscription details to find end date
-    // 👇 FIX: Ganti hardcode jadi pakai PAYPAL_API_URL
+    // 👇 PERBAIKAN: Tentukan end date dengan prioritas yang benar
+    let endDate: string | null = null;
+
+    // PRIORITAS 1: Coba ambil dari PayPal API
     const detailsResponse = await fetch(
       `${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}`,
       {
@@ -87,37 +107,51 @@ export async function POST(req: Request) {
       }
     );
 
-    let endDate = null;
     if (detailsResponse.ok) {
       const subDetails = await detailsResponse.json();
-      // billing_info.next_billing_time is when the current period ends
-      endDate = subDetails.billing_info?.next_billing_time 
-        ? new Date(subDetails.billing_info.next_billing_time).toISOString()
-        : new Date().toISOString();
-    } else {
-      endDate = new Date().toISOString();
+      if (subDetails.billing_info?.next_billing_time) {
+        endDate = new Date(subDetails.billing_info.next_billing_time).toISOString();
+        console.log("✅ Got end date from PayPal API:", endDate);
+      }
     }
 
-    console.log(`📅 Subscription end date: ${endDate}`);
-
-    // Update Firebase
-    const usersSnapshot = await adminDb
-      .collection("users")
-      .where("subscription.paypalSubscriptionId", "==", subscriptionId)
-      .limit(1)
-      .get();
-
-    if (!usersSnapshot.empty) {
-      const userDoc = usersSnapshot.docs[0];
-      await userDoc.ref.update({
-        "subscription.status": "cancelled",
-        "subscription.endsAt": endDate,
-        "subscription.renewsAt": null,
-        "updatedAt": new Date().toISOString()
-      });
-
-      console.log(`✅ Firebase updated for subscription ${subscriptionId}`);
+    // PRIORITAS 2: Kalau PayPal ga return, pakai renewsAt dari Firebase
+    if (!endDate && currentSub?.renewsAt) {
+      // renewsAt bisa berupa Timestamp object atau string
+      if (typeof currentSub.renewsAt === 'string') {
+        endDate = currentSub.renewsAt;
+      } else if (currentSub.renewsAt.toDate) {
+        // Firebase Admin SDK Timestamp
+        endDate = currentSub.renewsAt.toDate().toISOString();
+      } else if (currentSub.renewsAt._seconds) {
+        // Firestore Timestamp format { _seconds, _nanoseconds }
+        endDate = new Date(currentSub.renewsAt._seconds * 1000).toISOString();
+      }
+      console.log("📅 Using renewsAt from Firebase:", endDate);
     }
+
+    // PRIORITAS 3: Fallback - tambah 1 bulan dari updatedAt atau sekarang
+    if (!endDate) {
+      const baseDate = currentSub?.updatedAt 
+        ? new Date(currentSub.updatedAt) 
+        : new Date();
+      
+      baseDate.setMonth(baseDate.getMonth() + 1);
+      endDate = baseDate.toISOString();
+      console.log("⚠️ Fallback: +1 month from base date:", endDate);
+    }
+
+    console.log(`📅 Final end date: ${endDate}`);
+
+    // Update Firebase - SET endsAt, KEEP renewsAt untuk grace period check
+    await userDoc.ref.update({
+      "subscription.status": "cancelled",
+      "subscription.endsAt": endDate,
+      // 👇 JANGAN set renewsAt jadi null! Biarkan tetap ada untuk checkIsPro
+      "updatedAt": new Date().toISOString()
+    });
+
+    console.log(`✅ Firebase updated for subscription ${subscriptionId}`);
 
     return NextResponse.json({ 
       success: true,

@@ -87,7 +87,7 @@ export default function BillingPage() {
           <Button
             variant="ghost"
             onClick={() => router.push("/dashboard")}
-            className="text-[#FFF0C4] hover:text-[#FFF0C4] mb-4"
+            className="text-[#FFF0C4] hover:text-black hover:bg-[#FFF0C4] mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard

@@ -22,6 +22,7 @@ export const createSubscription = async (userId: string, plan: "monthly" | "life
       subscription: {
         plan,
         status: "active",
+        
       },
     });
     console.log("Subscription created successfully for user:", userId);
@@ -58,7 +59,7 @@ export const getSubscription = async (userId: string) => {
 export const checkIsPro = (subscription: any): boolean => {
   if (!subscription) return false;
 
-  const { status, plan, endsAt } = subscription;
+  const { status, plan, renewsAt } = subscription;
 
   // 1. Lifetime = Auto Pro
   if (plan === "lifetime") return true;
@@ -66,18 +67,32 @@ export const checkIsPro = (subscription: any): boolean => {
   // 2. Status Active = Pro
   if (status === "active") return true;
 
-  // 3. Status Cancelled = Cek Tanggal (Grace Period)
-  if (status === "cancelled" && endsAt) {
-    // Handle konversi tanggal karena Firebase bisa return Timestamp / String / Date
-    let endDate;
-    if (endsAt instanceof Timestamp) {
-      endDate = endsAt.toDate();
+  // 3. Status Cancelled = Cek Grace Period pakai renewsAt
+  if (status === "cancelled" && renewsAt) {
+    // Parse tanggal renewsAt
+    let endDate: Date;
+
+    if (renewsAt instanceof Timestamp) {
+      endDate = renewsAt.toDate();
+    } else if (typeof renewsAt === "string") {
+      endDate = new Date(renewsAt);
+    } else if (renewsAt instanceof Date) {
+      endDate = renewsAt;
     } else {
-      endDate = new Date(endsAt);
+      return false; // Kalau format aneh, anggap expired
     }
-    
+
     const now = new Date();
-    // Jika hari ini belum melewati tanggal berakhir, berarti MASIH PRO
+    
+    // Debug log
+    console.log('🔍 Grace Period Check:', {
+      status,
+      renewsAt: endDate.toISOString(),
+      now: now.toISOString(),
+      isPro: now < endDate
+    });
+
+    // ✅ Selama belum lewat renewsAt, user MASIH PRO
     return now < endDate;
   }
 
