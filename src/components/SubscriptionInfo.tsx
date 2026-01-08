@@ -140,13 +140,15 @@ export function SubscriptionInfo() {
           </div>
         </div>
 
-        <Button 
-          onClick={handleManage}
-          className="bg-[#FFF0C4] text-[#3E0703] hover:bg-[#FFF0C4]/90 hover:scale-105 transition-all font-bold shadow-lg shadow-[#FFF0C4]/10"
-        >
-        <CreditCard className="w-4 h-4 mr-2" />
-          Manage Subscription
-        </Button>
+        {!isLifetime && (
+          <Button 
+            onClick={handleManage}
+            className="bg-[#FFF0C4] text-[#3E0703] hover:bg-[#FFF0C4]/90 hover:scale-105 transition-all font-bold shadow-lg shadow-[#FFF0C4]/10"
+          >
+          <CreditCard className="w-4 h-4 mr-2" />
+            Manage Subscription
+          </Button>
+        )}
       </div>
     </div>
   );
