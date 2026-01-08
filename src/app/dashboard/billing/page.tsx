@@ -300,8 +300,8 @@ function parseFirebaseDate(dateStr: string): Date | null {
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "N/A";
-  const date = parseFirebaseDate(dateStr);
-  return date
-    ? date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+  const parsedDate = parseFirebaseDate(dateStr);
+  return parsedDate
+    ? parsedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
     : "N/A";
 }
