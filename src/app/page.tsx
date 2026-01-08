@@ -1,8 +1,10 @@
 // /home/nafhan/Documents/projek/job/src/app/page.tsx
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, CheckCircle2, LayoutDashboard, ShieldCheck, Star, CreditCard, Check } from "lucide-react";
+import { ArrowRight, Star, CreditCard, Check, X, Quote } from "lucide-react";
 import Navbar from "../components/Navbar";
+import SocialProof from "../components/SocialProof";
+import FAQSection from "../components/FAQSection";
 
 export default function LandingPage() {
   return (
@@ -57,6 +59,143 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* --- COMPARISON SECTION --- */}
+        <section id="comparison" className="py-20 w-full max-w-6xl px-6 relative z-10 mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#FFF0C4] mb-4">
+              Spreadsheets vs JobTracker
+            </h2>
+            <p className="text-[#FFF0C4]/60 text-lg">
+              See why JobTracker is the smarter choice
+            </p>
+          </div>
+
+          <div className="bg-[#2a0401] rounded-xl border border-[#FFF0C4]/10 p-2 md:p-8 backdrop-blur-sm">
+            {/* --- DESKTOP VIEW (Grid System) --- */}
+            <div className="hidden md:grid grid-cols-3 gap-6 items-stretch">
+              
+              {/* 1. FEATURES COLUMN */}
+              <div className="flex flex-col px-4 py-8"> 
+                {/* Header Area - Fixed Height for alignment */}
+                <div className="h-[120px] flex flex-col justify-end pb-8 border-b border-[#FFF0C4]/5 mb-6">
+                  <h3 className="text-xl font-serif font-bold text-[#FFF0C4] text-left">
+                    Features
+                  </h3>
+                </div>
+                {/* Rows */}
+                <div className="flex flex-col space-y-4">
+                  {[
+                    "Visual Stage Tracking",
+                    "Salary Recording",
+                    "Structured Job Details",
+                    "Responsive Mobile Experience",
+                  ].map((feature, idx) => (
+                    <div key={idx} className="h-12 flex items-center text-base font-medium text-[#FFF0C4]/90">
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. JOBTRACKER COLUMN (Highlighted) */}
+              <div className="relative">
+                {/* Glow Effect */}
+                <div className="absolute -inset-1 bg-[#8C1007]/20 rounded-xl blur-md"></div>
+                
+                <div className="relative bg-[#3E0703] border-2 border-[#8C1007] rounded-xl p-8 shadow-[0_0_20px_rgba(140,16,7,0.2)] h-full">
+                  {/* Header Area - Fixed Height for alignment */}
+                  <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-[#8C1007]/30 mb-6">
+                    <h3 className="text-2xl font-serif font-bold text-[#FFF0C4] mb-2">
+                      JobTracker
+                    </h3>
+                    <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#8C1007] text-xs font-bold text-[#FFF0C4] shadow-lg">
+                      <Star className="w-3 h-3 fill-[#FFF0C4]" />
+                      Winner
+                    </div>
+                  </div>
+
+                  {/* Rows */}
+                  <div className="flex flex-col space-y-4">
+                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value="Organized" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. SPREADSHEETS COLUMN */}
+              <div className="flex flex-col h-full">
+                <div className="bg-[#1a0201] border border-[#FFF0C4]/10 rounded-xl p-8 h-full">
+                  {/* Header Area - Fixed Height for alignment */}
+                  <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-[#FFF0C4]/10 mb-6">
+                    <h3 className="text-2xl font-serif font-bold text-[#FFF0C4]/60">
+                      Spreadsheets
+                    </h3>
+                  </div>
+
+                  {/* Rows */}
+                  <div className="flex flex-col space-y-4">
+                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value="Messy" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value="Painful" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* --- MOBILE VIEW (Stacked Cards) --- */}
+            <div className="md:hidden space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-serif font-bold text-[#FFF0C4] mb-2">
+                  Why switch?
+                </h3>
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#8C1007]/30 border border-[#8C1007]/50 text-xs font-bold text-[#FFF0C4]">
+                  <Star className="w-3 h-3 fill-[#8C1007]" />
+                  Recommended
+                </div>
+              </div>
+
+              {[
+                { feature: "Auto-Follow Up Reminders", jobtracker: "Yes", spreadsheet: "No" },
+                { feature: "Kanban Visualization", jobtracker: "Yes", spreadsheet: "No" },
+                { feature: "Salary Analytics", jobtracker: "Yes", spreadsheet: "No" },
+                { feature: "Document Storage", jobtracker: "Organized", spreadsheet: "Messy" },
+                { feature: "Mobile Friendly", jobtracker: "Yes", spreadsheet: "Painful" },
+              ].map((item, idx) => (
+                <div key={idx} className="bg-[#1a0201] border border-[#FFF0C4]/10 rounded-lg p-5">
+                  <div className="text-sm font-bold text-[#FFF0C4] mb-4 text-center tracking-wide uppercase opacity-80">
+                    {item.feature}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* JobTracker Side */}
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-[#8C1007]/20 rounded-lg blur-sm"></div>
+                      <div className="relative bg-[#3E0703] border border-[#8C1007] rounded-lg p-3 text-center h-full flex flex-col justify-center items-center">
+                        <div className="text-[10px] uppercase tracking-wider text-[#8C1007] font-bold mb-1">JobTracker</div>
+                        <div className="flex items-center gap-2 text-[#FFF0C4] font-medium">
+                          <Check className="w-4 h-4 text-[#8C1007]" /> {item.jobtracker}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Spreadsheet Side */}
+                    <div className="bg-[#0f0101] border border-[#FFF0C4]/5 rounded-lg p-3 text-center h-full flex flex-col justify-center items-center opacity-70">
+                       <div className="text-[10px] uppercase tracking-wider text-[#FFF0C4]/30 font-bold mb-1">Excel</div>
+                       <div className="flex items-center gap-2 text-[#FFF0C4]/50">
+                          <X className="w-4 h-4" /> {item.spreadsheet}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* --- PRODUCT SHOWCASE (UPDATED: REAL SCREENSHOT) --- */}
         {/* Paddle Point #3: Clear display of product features */}
         <div className="relative w-full max-w-6xl px-4 mt-8 md:mt-16 mb-24 perspective-[2000px] group">
@@ -84,30 +223,11 @@ export default function LandingPage() {
            </div>
         </div>
 
-        {/* --- FEATURES SECTION --- */}
-        <section id="features" className="py-20 w-full max-w-6xl px-6 relative z-10">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#FFF0C4] mb-4">Why JobTracker?</h2>
-              <p className="text-[#FFF0C4]/60">Everything you need to manage your career journey.</p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-8">
-              <FeatureCard 
-                icon={<LayoutDashboard className="w-6 h-6" />}
-                title="Kanban Board"
-                desc="Visualize your applications from 'Applied' to 'Offer' in a drag-and-drop interface."
-              />
-              <FeatureCard 
-                icon={<CheckCircle2 className="w-6 h-6" />}
-                title="Application History"
-                desc="Keep a detailed log of every company, salary offer, and interview date."
-              />
-              <FeatureCard 
-                icon={<ShieldCheck className="w-6 h-6" />}
-                title="Privacy First"
-                desc="Your career data is sensitive. We encrypt it and never share it with recruiters."
-              />
-            </div>
-        </section>
+        {/* --- SOCIAL PROOF SECTION --- */}
+        <SocialProof />
+
+        {/* --- FAQ SECTION --- */}
+        <FAQSection />
       </main>
 
       {/* --- FOOTER (UPDATED: EXPLICIT LINKS) --- */}
@@ -138,14 +258,25 @@ export default function LandingPage() {
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+function ComparisonItem({ value, icon, isPositive }: { value: string, icon: React.ReactNode, isPositive: boolean }) {
   return (
-    <div className="p-8 bg-[#2a0401] backdrop-blur-md rounded-xl border border-[#FFF0C4]/5 hover:border-[#8C1007]/50 hover:bg-[#3E0703] transition-all duration-500 group">
-      <div className="w-12 h-12 bg-[#3E0703] border border-[#FFF0C4]/10 text-[#8C1007] rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 group-hover:text-[#FFF0C4] group-hover:border-[#8C1007] transition-all duration-300">
+    <div className="h-12 flex items-center gap-3">
+      <div
+        className={`flex items-center justify-center w-6 h-6 rounded-full shrink-0 ${
+          isPositive
+            ? "bg-[#8C1007] text-[#FFF0C4]"
+            : "bg-[#FFF0C4]/10 text-[#FFF0C4]/40"
+        }`}
+      >
         {icon}
       </div>
-      <h3 className="font-serif font-bold text-xl mb-3 text-[#FFF0C4] tracking-wide">{title}</h3>
-      <p className="text-[#FFF0C4]/60 leading-relaxed font-light text-sm">{desc}</p>
+      <span
+        className={`text-base font-medium ${
+          isPositive ? "text-[#FFF0C4]" : "text-[#FFF0C4]/50"
+        }`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
