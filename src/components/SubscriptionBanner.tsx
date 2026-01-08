@@ -82,23 +82,20 @@ export function SubscriptionBanner() {
                   <PayPalButtons
                     style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
                     onInit={() => setMonthlyButtonsReady(true)}
-                    createSubscription={(data, actions) => {
-                      console.log('Creating subscription with Plan ID:', PAYPAL_PLANS.monthly);
-                      return actions.subscription.create({
+                    createSubscription={(data, actions) =>
+                      actions.subscription.create({
                         plan_id: PAYPAL_PLANS.monthly, // ✅ Auto-select correct plan
                         custom_id: user?.uid
-                      });
-                    }}
-                    onApprove={async (data) => {
-                      console.log("✅ Subscription Success:", data.subscriptionID);
+                      })
+                    }
+                    onApprove={async () => {
                       setSuccessMessage("Monthly subscription activated!");
                       setErrorMessage(null);
                       setTimeout(() => {
                         router.refresh();
                       }, 1200);
                     }}
-                    onError={(err) => {
-                      console.error("❌ PayPal Error:", err);
+                    onError={() => {
                       setMonthlyButtonsReady(true); // Unblock UI if render fails
                       setErrorMessage("Payment failed. Please try again.");
                     }}
@@ -154,9 +151,8 @@ export function SubscriptionBanner() {
                   <PayPalButtons
                     style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
                     onInit={() => setLifetimeButtonsReady(true)}
-                    createOrder={(data, actions) => {
-                      console.log('Creating lifetime order');
-                      return actions.order.create({
+                    createOrder={(data, actions) =>
+                      actions.order.create({
                         intent: "CAPTURE",
                         purchase_units: [{
                           amount: {
@@ -169,12 +165,11 @@ export function SubscriptionBanner() {
                         application_context: {
                           shipping_preference: "NO_SHIPPING"
                         }
-                      });
-                    }}
-                    onApprove={async (data, actions) => {
+                      })
+                    }
+                    onApprove={async (_data, actions) => {
                       if (actions.order) {
-                        const details = await actions.order.capture();
-                        console.log("✅ Lifetime purchase:", details);
+                        await actions.order.capture();
                         setSuccessMessage("Lifetime purchase successful!");
                         setErrorMessage(null);
                         setTimeout(() => {
@@ -182,8 +177,7 @@ export function SubscriptionBanner() {
                         }, 2000);
                       }
                     }}
-                    onError={(err) => {
-                      console.error("❌ PayPal Error:", err);
+                    onError={() => {
                       setLifetimeButtonsReady(true); // Unblock UI if render fails
                       setErrorMessage("Payment failed. Please try again.");
                     }}
