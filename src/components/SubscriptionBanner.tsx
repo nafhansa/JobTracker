@@ -8,110 +8,6 @@ import { useRouter } from "next/navigation";
 import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 import { useState } from "react";
 
-// ==========================================
-// 1. KOMPONEN KHUSUS MONTHLY (SUBSCRIPTION)
-// ==========================================
-const MonthlyCheckout = ({ 
-  userId, 
-  onSuccess, 
-  onError 
-}: { 
-  userId: string | undefined; 
-  onSuccess: () => void; 
-  onError: (msg: string) => void;
-}) => {
-  const initialOptions = {
-    clientId: PAYPAL_CREDENTIALS.clientId,
-    intent: "subscription" as const,
-    vault: true,
-    currency: "USD",
-    "data-namespace": "paypal_subscriber",
-    ...(PAYPAL_ENV.isSandbox && { 
-      "data-environment": "sandbox" as const, 
-      "buyer-country": "US" 
-    }),
-  };
-
-  return (
-    <PayPalScriptProvider options={initialOptions}>
-      <div className="animate-in fade-in zoom-in duration-300 w-full">
-        <PayPalButtons
-          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
-          createSubscription={(data, actions) => {
-            return actions.subscription.create({
-              plan_id: PAYPAL_PLANS.monthly,
-              custom_id: userId
-            });
-          }}
-          onApprove={async () => onSuccess()}
-          onError={(err) => {
-            console.error("Monthly Subscription Error:", err);
-            onError("Subscription process failed.");
-          }}
-        />
-      </div>
-    </PayPalScriptProvider>
-  );
-};
-
-// ==========================================
-// 2. KOMPONEN KHUSUS LIFETIME (ONE-TIME)
-// ==========================================
-const LifetimeCheckout = ({ 
-  userId, 
-  onSuccess, 
-  onError 
-}: { 
-  userId: string | undefined; 
-  onSuccess: () => void; 
-  onError: (msg: string) => void;
-}) => {
-  const initialOptions = {
-    clientId: PAYPAL_CREDENTIALS.clientId,
-    intent: "capture" as const,
-    currency: "USD",
-    "data-namespace": "paypal_lifetime",
-    ...(PAYPAL_ENV.isSandbox && { 
-      "data-environment": "sandbox" as const, 
-      "buyer-country": "US" 
-    }),
-  };
-
-  return (
-    <PayPalScriptProvider options={initialOptions}>
-      <div className="animate-in fade-in zoom-in duration-300 w-full">
-        <PayPalButtons
-          style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'pay' }}
-          createOrder={(data, actions) => {
-            console.log("Creating Lifetime Order...");
-            return actions.order.create({
-              intent: "CAPTURE",
-              purchase_units: [{
-                amount: { value: "17.99", currency_code: "USD" },
-                description: "JobTracker Lifetime Pro Access",
-                custom_id: userId
-              }]
-            });
-          }}
-          onApprove={async (data, actions) => {
-            if (actions.order) {
-              await actions.order.capture();
-              onSuccess();
-            }
-          }}
-          onError={(err) => {
-            console.error("Lifetime Payment Error:", err);
-            onError("Payment execution failed.");
-          }}
-        />
-      </div>
-    </PayPalScriptProvider>
-  );
-};
-
-// ==========================================
-// 3. KOMPONEN UTAMA (BANNER)
-// ==========================================
 type PlanType = "monthly" | "lifetime" | null;
 
 export function SubscriptionBanner() {
@@ -129,18 +25,31 @@ export function SubscriptionBanner() {
     setStatusMsg({ type: 'error', text: msg });
   };
 
+  // PayPal options TANPA intent spesifik - biarkan buttons yang tentukan
+  const paypalOptions = {
+    clientId: PAYPAL_CREDENTIALS.clientId,
+    vault: true,
+    currency: "USD",
+    components: "buttons",
+    ...(PAYPAL_ENV.isSandbox && { 
+      "data-environment": "sandbox" as const, 
+      "buyer-country": "US" 
+    }),
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-6 md:p-10 text-center shadow-2xl">
-      
-      {PAYPAL_ENV.isSandbox && (
-        <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs">
-          🧪 SANDBOX MODE - Testing with fake money
-        </div>
-      )}
-      
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8C1007] to-transparent opacity-50"></div>
-      
-      <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
+    <PayPalScriptProvider options={paypalOptions}>
+      <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-6 md:p-10 text-center shadow-2xl">
+        
+        {PAYPAL_ENV.isSandbox && (
+          <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs">
+            🧪 SANDBOX MODE - Testing with fake money
+          </div>
+        )}
+        
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8C1007] to-transparent opacity-50"></div>
+        
+        <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4] text-xs font-bold tracking-wider uppercase mb-4">
           <Sparkles className="w-3 h-3" />
           Premium Access Required
@@ -183,11 +92,24 @@ export function SubscriptionBanner() {
                     Select Monthly <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <MonthlyCheckout 
-                    userId={user?.uid} 
-                    onSuccess={() => handleSuccess("Monthly subscription activated!")} 
-                    onError={handleError}
-                  />
+                  <div className="animate-in fade-in zoom-in duration-300 w-full">
+                    <PayPalButtons
+                      style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'subscribe' }}
+                      createSubscription={(data, actions) => {
+                        return actions.subscription.create({
+                          plan_id: PAYPAL_PLANS.monthly,
+                          custom_id: user?.uid
+                        });
+                      }}
+                      onApprove={async () => {
+                        handleSuccess("Monthly subscription activated!");
+                      }}
+                      onError={(err) => {
+                        console.error("Monthly Error:", err);
+                        handleError("Subscription process failed.");
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -227,11 +149,32 @@ export function SubscriptionBanner() {
                     Select Lifetime <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <LifetimeCheckout 
-                    userId={user?.uid} 
-                    onSuccess={() => handleSuccess("Lifetime purchase successful!")} 
-                    onError={handleError}
-                  />
+                  <div className="animate-in fade-in zoom-in duration-300 w-full">
+                    <PayPalButtons
+                      style={{ layout: 'vertical', shape: 'rect', color: 'gold', label: 'pay' }}
+                      createOrder={(data, actions) => {
+                        console.log("Creating Lifetime Order...");
+                        return actions.order.create({
+                          intent: "CAPTURE",
+                          purchase_units: [{
+                            amount: { value: "17.99", currency_code: "USD" },
+                            description: "JobTracker Lifetime Pro Access",
+                            custom_id: user?.uid
+                          }]
+                        });
+                      }}
+                      onApprove={async (data, actions) => {
+                        if (actions.order) {
+                          await actions.order.capture();
+                          handleSuccess("Lifetime purchase successful!");
+                        }
+                      }}
+                      onError={(err) => {
+                        console.error("Lifetime Error:", err);
+                        handleError("Payment execution failed.");
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -266,7 +209,8 @@ export function SubscriptionBanner() {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </PayPalScriptProvider>
   );
 }
