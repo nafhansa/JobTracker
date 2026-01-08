@@ -65,11 +65,8 @@ export default function BillingPage() {
   const isActive = subscription?.status === "active";
   const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
   
-  const renewsAt = subscription?.renewsAt 
-    ? new Date(subscription.renewsAt).toLocaleDateString("en-US", { 
-        year: "numeric", month: "long", day: "numeric" 
-      })
-    : null;
+  const rawRenewsAt = subscription?.renewsAt;
+  const rawEndsAt = subscription?.endsAt;
 
   const endsAt = subscription?.endsAt
     ? new Date(subscription.endsAt).toLocaleDateString("en-US", { 
@@ -165,9 +162,9 @@ export default function BillingPage() {
                       {isCancelled ? "Access Ends" : "Next Billing"}
                     </span>
                     <span className="font-semibold text-[#FFF0C4]">
-                      {isCancelled
-                        ? formatDate(endsAt ?? undefined)
-                        : formatDate(renewsAt ?? undefined)}
+                     {isCancelled
+                        ? formatDate(rawEndsAt)
+                        : formatDate(rawRenewsAt)}
                     </span>
                   </div>
                 )}
@@ -224,7 +221,7 @@ export default function BillingPage() {
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-[#FFF0C4]/60">
                           Your subscription will be cancelled, but you'll keep access until the end of 
-                          your current billing period ({renewsAt}). You can resubscribe anytime.
+                          your current billing period ({formatDate(rawRenewsAt)}). You can resubscribe anytime.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -284,24 +281,53 @@ export default function BillingPage() {
   );
 }
 
-function parseFirebaseDate(dateStr: string): Date | null {
-  const match = dateStr.match(
-    /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
-  );
-  if (!match) return null;
-  const [_, datePart, timePart, ampm, tz] = match;
-  let formatted = `${datePart} ${timePart}`;
-  if (ampm) formatted += ` ${ampm}`;
-  formatted += " GMT";
-  if (tz) formatted += tz;
-  const d = new Date(formatted);
-  return isNaN(d.getTime()) ? null : d;
+function parseFirebaseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+  
+  // Jika sudah berupa Date object
+  if (dateValue instanceof Date) return dateValue;
+  
+  // Jika berupa Firebase Timestamp object { seconds, nanoseconds }
+  if (typeof dateValue === "object" && typeof dateValue.toDate === "function") {
+    return dateValue.toDate();
+  }
+
+  // Jika berupa number (timestamp)
+  if (typeof dateValue === "number") {
+    return new Date(dateValue);
+  }
+
+  // Jika berupa string (Contoh: "February 8, 2026 at 5:00:00 PM UTC+7")
+  if (typeof dateValue === "string") {
+    const match = dateValue.match(
+      /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
+    );
+    if (!match) {
+        // Fallback untuk string ISO standar
+        const d = new Date(dateValue);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    const [_, datePart, timePart, ampm, tz] = match;
+    let formatted = `${datePart} ${timePart}`;
+    if (ampm) formatted += ` ${ampm}`;
+    formatted += " GMT"; 
+    if (tz) formatted += tz;
+
+    const d = new Date(formatted);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  return null;
 }
 
-function formatDate(dateStr?: string) {
-  if (!dateStr) return "N/A";
-  const parsedDate = parseFirebaseDate(dateStr);
+function formatDate(dateValue: any) {
+  const parsedDate = parseFirebaseDate(dateValue);
   return parsedDate
-    ? parsedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+    ? parsedDate.toLocaleDateString("id-ID", { 
+        day: "numeric", 
+        month: "long", 
+        year: "numeric" 
+      })
     : "N/A";
 }
