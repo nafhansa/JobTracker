@@ -59,7 +59,7 @@ export const getSubscription = async (userId: string) => {
 export const checkIsPro = (subscription: any): boolean => {
   if (!subscription) return false;
 
-  const { status, plan, renewsAt } = subscription;
+  const { status, plan, renewsAt, endsAt } = subscription;
 
   // 1. Lifetime = Auto Pro
   if (plan === "lifetime") return true;
@@ -67,32 +67,34 @@ export const checkIsPro = (subscription: any): boolean => {
   // 2. Status Active = Pro
   if (status === "active") return true;
 
-  // 3. Status Cancelled = Cek Grace Period pakai renewsAt
-  if (status === "cancelled" && renewsAt) {
-    // Parse tanggal renewsAt
-    let endDate: Date;
+  // 3. Status Cancelled = Cek Grace Period pakai endsAt (prioritas) atau renewsAt
+  if (status === "cancelled" || status === "canceled") {
+    const candidate = endsAt || renewsAt;
+    if (!candidate) return false;
 
-    if (renewsAt instanceof Timestamp) {
-      endDate = renewsAt.toDate();
-    } else if (typeof renewsAt === "string") {
-      endDate = new Date(renewsAt);
-    } else if (renewsAt instanceof Date) {
-      endDate = renewsAt;
+    let endDate: Date;
+    if (candidate instanceof Timestamp) {
+      endDate = candidate.toDate();
+    } else if (candidate instanceof Date) {
+      endDate = candidate;
+    } else if (typeof candidate === "string") {
+      endDate = new Date(candidate);
+    } else if ((candidate as any)?._seconds) {
+      endDate = new Date((candidate as any)._seconds * 1000);
     } else {
-      return false; // Kalau format aneh, anggap expired
+      return false; // Format tidak dikenal
     }
 
     const now = new Date();
-    
-    // Debug log
-    console.log('🔍 Grace Period Check:', {
+
+    console.log("🔍 Grace Period Check:", {
       status,
-      renewsAt: endDate.toISOString(),
+      targetDate: endDate.toISOString(),
       now: now.toISOString(),
-      isPro: now < endDate
+      isPro: now < endDate,
     });
 
-    // ✅ Selama belum lewat renewsAt, user MASIH PRO
+    // Selama belum lewat target date, user masih Pro
     return now < endDate;
   }
 
