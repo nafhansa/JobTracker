@@ -22,12 +22,31 @@ const serviceAccount = {
 
 if (!admin.apps.length) {
   try {
+    // Validate service account before initialization
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+      throw new Error("Missing required service account fields");
+    }
+
+    // Check if private key format is valid
+    if (!serviceAccount.privateKey.includes("BEGIN PRIVATE KEY") || !serviceAccount.privateKey.includes("END PRIVATE KEY")) {
+      console.warn("⚠️ Private key format might be incorrect. Expected format: -----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----");
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+      projectId: serviceAccount.projectId, // Explicitly set projectId
     });
     console.log("✅ Firebase Admin initialized successfully");
+    console.log("Project ID:", serviceAccount.projectId);
+    console.log("Client Email:", serviceAccount.clientEmail);
   } catch (error: any) {
     console.error("❌ Firebase Admin initialization failed:", error.message);
+    console.error("Service Account Check:", {
+      hasProjectId: !!serviceAccount.projectId,
+      hasClientEmail: !!serviceAccount.clientEmail,
+      hasPrivateKey: !!serviceAccount.privateKey,
+      privateKeyLength: serviceAccount.privateKey?.length || 0,
+    });
     throw new Error(`Firebase Admin initialization failed: ${error.message}`);
   }
 }
