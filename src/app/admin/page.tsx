@@ -27,9 +27,13 @@ export default function AdminPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [pageFilter, setPageFilter] = useState<string>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const admins = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
-  const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string) => {
+  const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string, showLoading = false) => {
+    if (showLoading) {
+      setIsRefreshing(true);
+    }
     try {
       const params = new URLSearchParams();
       const timeFilterToUse = visitorTimeFilter || timeFilter;
@@ -49,6 +53,10 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
+    } finally {
+      if (showLoading) {
+        setIsRefreshing(false);
+      }
     }
   }, [timeFilter, pageFilter]);
 
@@ -356,7 +364,32 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
-                  {analytics?.visitorLogs && analytics.visitorLogs.length > 0 ? (
+                  {isRefreshing ? (
+                    // Loading skeleton rows
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={`loading-${idx}`} className="animate-pulse">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-32"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-6 bg-[#FFF0C4]/10 rounded w-20"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-5 bg-[#FFF0C4]/10 rounded w-40"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-24 mb-2"></div>
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-32"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-28"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-16"></div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : analytics?.visitorLogs && analytics.visitorLogs.length > 0 ? (
                     (() => {
                       // Get admin session IDs from login logs
                       const adminSessionIds = new Set<string>();
@@ -512,12 +545,13 @@ export default function AdminPage() {
                 Showing {analytics?.loginLogs?.length || 0} login attempts
               </div>
               <button
-                onClick={() => fetchAnalytics()}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
+                onClick={() => fetchAnalytics(undefined, undefined, true)}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
                 title="Refresh logs"
               >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? "Refreshing..." : "Refresh"}
               </button>
             </div>
           </div>
@@ -536,7 +570,32 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
-                  {analytics?.loginLogs && analytics.loginLogs.length > 0 ? (
+                  {isRefreshing ? (
+                    // Loading skeleton rows
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={`loading-login-${idx}`} className="animate-pulse">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-32"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-48"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-5 bg-[#FFF0C4]/10 rounded w-40"></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-24 mb-2"></div>
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-32"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-28"></div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="h-4 bg-[#FFF0C4]/10 rounded w-16"></div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : analytics?.loginLogs && analytics.loginLogs.length > 0 ? (
                     analytics.loginLogs.map((log) => {
                       const logDate = new Date(log.timestamp);
                       const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);

@@ -70,7 +70,17 @@ export function SubscriptionBanner() {
               } p-6 backdrop-blur-sm text-left`}
             >
               <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
-              <p className="text-sm text-[#FFF0C4]/60 mb-6">$2.99/month subscription</p>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2">
+                    $2.99
+                  </span>
+                  <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide">
+                    Save 33%
+                  </span>
+                </div>
+                <p className="text-sm text-[#FFF0C4]/60">$1.99/month subscription</p>
+              </div>
               
               <div className="flex-1 space-y-3 mb-6">
                  <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">

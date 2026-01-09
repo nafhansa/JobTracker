@@ -60,7 +60,8 @@ export default function PricingPage() {
             {/* MONTHLY PLAN */}
             <PricingCard
               plan="Monthly"
-              price="$2.99"
+              price="$1.99"
+              originalPrice="$2.99"
               period="/month"
               description="Perfect for active job seekers."
               features={[
@@ -154,7 +155,14 @@ function PricingCard({
               {originalPrice}
             </span>
             <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
-              <Tag className="w-3 h-3" /> Save 30%
+              <Tag className="w-3 h-3" /> 
+              {(() => {
+                // Calculate discount percentage
+                const original = parseFloat(originalPrice.replace('$', ''));
+                const current = parseFloat(price.replace('$', ''));
+                const discount = Math.round(((original - current) / original) * 100);
+                return `Save ${discount}%`;
+              })()}
             </span>
           </div>
         )}
