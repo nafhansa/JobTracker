@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw } from "lucide-react";
+import { getOrCreateSessionId } from "@/lib/utils/analytics";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -291,6 +292,20 @@ export default function AdminPage() {
                 <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
                   {analytics?.visitorLogs && analytics.visitorLogs.length > 0 ? (
                     (() => {
+                      // Get admin session IDs from login logs
+                      const adminSessionIds = new Set<string>();
+                      analytics.loginLogs?.forEach(log => {
+                        if (log.userEmail && admins.includes(log.userEmail) && log.sessionId) {
+                          adminSessionIds.add(log.sessionId);
+                        }
+                      });
+                      
+                      // Also check current admin session ID
+                      const currentAdminSessionId = typeof window !== "undefined" ? getOrCreateSessionId() : null;
+                      if (currentAdminSessionId) {
+                        adminSessionIds.add(currentAdminSessionId);
+                      }
+
                       // Group by session ID to identify repeat visitors
                       const sessionCounts: { [key: string]: number } = {};
                       analytics.visitorLogs.forEach(log => {
@@ -309,6 +324,7 @@ export default function AdminPage() {
                           return `${Math.floor(timeAgo / 86400)}d ago`;
                         };
 
+                        const isAdminSession = log.sessionId && adminSessionIds.has(log.sessionId);
                         const isRepeatVisitor = log.sessionId && sessionCounts[log.sessionId] > 1;
                         const deviceType = log.deviceInfo?.userAgent 
                           ? (log.deviceInfo.userAgent.includes("Mobile") ? "Mobile" : "Desktop")
@@ -335,14 +351,23 @@ export default function AdminPage() {
                             <td className="px-6 py-4 text-sm">
                               {log.sessionId ? (
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono text-xs text-[#8C1007] break-all">
-                                    {log.sessionId}
-                                  </span>
-                                  {isRepeatVisitor && (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#8C1007]/30 text-[#8C1007] text-[10px] font-medium shrink-0">
-                                      <Repeat className="w-3 h-3" />
-                                      {sessionCounts[log.sessionId]}x
+                                  {isAdminSession ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#8C1007]/30 text-[#8C1007] text-xs font-medium">
+                                      <Shield className="w-3 h-3" />
+                                      admin
                                     </span>
+                                  ) : (
+                                    <>
+                                      <span className="font-mono text-xs text-[#8C1007] break-all">
+                                        {log.sessionId}
+                                      </span>
+                                      {isRepeatVisitor && (
+                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#8C1007]/30 text-[#8C1007] text-[10px] font-medium shrink-0">
+                                          <Repeat className="w-3 h-3" />
+                                          {sessionCounts[log.sessionId]}x
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               ) : (
@@ -428,6 +453,7 @@ export default function AdminPage() {
                         return `${Math.floor(timeAgo / 86400)}d ago`;
                       };
 
+                      const isAdminEmail = log.userEmail && admins.includes(log.userEmail);
                       const deviceType = log.deviceInfo?.userAgent 
                         ? (log.deviceInfo.userAgent.includes("Mobile") ? "Mobile" : "Desktop")
                         : "Unknown";
@@ -451,9 +477,16 @@ export default function AdminPage() {
                           </td>
                           <td className="px-6 py-4 text-sm">
                             {log.sessionId ? (
-                              <span className="font-mono text-xs text-[#8C1007] break-all">
-                                {log.sessionId}
-                              </span>
+                              isAdminEmail ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#8C1007]/30 text-[#8C1007] text-xs font-medium">
+                                  <Shield className="w-3 h-3" />
+                                  admin
+                                </span>
+                              ) : (
+                                <span className="font-mono text-xs text-[#8C1007] break-all">
+                                  {log.sessionId}
+                                </span>
+                              )
                             ) : (
                               <span className="text-[#FFF0C4]/40 text-xs">-</span>
                             )}
