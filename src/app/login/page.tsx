@@ -13,24 +13,26 @@ export default function LoginPage() {
     try {
       const sessionId = getOrCreateSessionId();
       const deviceInfo = getDeviceInfo();
-      
-      // Track login attempt
-      try {
-        await fetch("/api/analytics/track", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            type: "login",
-            sessionId,
-            deviceInfo,
-          }),
-        });
-      } catch (error) {
-        console.error("Failed to track login attempt:", error);
-      }
 
       const user = await loginWithGoogle();
       if (user) {
+        // Track login attempt AFTER successful login (so we have email)
+        try {
+          await fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              type: "login",
+              userId: user.uid,
+              userEmail: user.email || undefined,
+              sessionId,
+              deviceInfo,
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to track login attempt:", error);
+        }
+
         // Track dashboard visit after successful login
         try {
           await fetch("/api/analytics/track", {
