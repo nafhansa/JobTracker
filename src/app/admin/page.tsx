@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
-import { Users, LogIn, Activity, TrendingUp, Clock } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -24,11 +24,21 @@ export default function AdminPage() {
   const [analytics, setAnalytics] = useState<AnalyticsStats | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [timeFilter, setTimeFilter] = useState<string>("all");
+  const [pageFilter, setPageFilter] = useState<string>("all");
   const admins = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string) => {
     try {
-      const response = await fetch("/api/analytics/stats");
+      const params = new URLSearchParams();
+      const timeFilterToUse = visitorTimeFilter || timeFilter;
+      const pageFilterToUse = visitorPageFilter || pageFilter;
+      
+      if (timeFilterToUse !== "all") params.append("timeFilter", timeFilterToUse);
+      if (pageFilterToUse !== "all") params.append("pageFilter", pageFilterToUse);
+      
+      const url = `/api/analytics/stats${params.toString() ? `?${params.toString()}` : ""}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (response.ok) {
         setAnalytics(data);
@@ -39,7 +49,7 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error fetching analytics:", error);
     }
-  }, []);
+  }, [timeFilter, pageFilter]);
 
   useEffect(() => {
     if (!loading) {
@@ -74,6 +84,13 @@ export default function AdminPage() {
       }
     }
   }, [user, loading, router, fetchAnalytics]);
+
+  // Re-fetch when time filter changes (for both logs)
+  useEffect(() => {
+    if (isAdmin && !loading) {
+      fetchAnalytics();
+    }
+  }, [timeFilter, isAdmin, loading, fetchAnalytics]);
 
   if (loading || !isAdmin) {
     return (
@@ -209,6 +226,183 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Visitor Logs */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-[#8C1007]" />
+              <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Visitor Logs</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[#FFF0C4]/60" />
+                <select
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value)}
+                  className="bg-[#2a0401] border border-[#FFF0C4]/10 rounded-lg px-3 py-1.5 text-sm text-[#FFF0C4] focus:outline-none focus:border-[#8C1007]"
+                >
+                  <option value="all">All Time</option>
+                  <option value="5m">Last 5 minutes</option>
+                  <option value="15m">Last 15 minutes</option>
+                  <option value="30m">Last 30 minutes</option>
+                  <option value="1h">Last hour</option>
+                  <option value="24h">Last 24 hours</option>
+                </select>
+              </div>
+              <select
+                value={pageFilter}
+                onChange={(e) => {
+                  setPageFilter(e.target.value);
+                  // Immediately fetch with new page filter
+                  fetchAnalytics(timeFilter, e.target.value);
+                }}
+                className="bg-[#2a0401] border border-[#FFF0C4]/10 rounded-lg px-3 py-1.5 text-sm text-[#FFF0C4] focus:outline-none focus:border-[#8C1007]"
+              >
+                <option value="all">All Pages</option>
+                <option value="home">Home</option>
+                <option value="login">Login</option>
+                <option value="dashboard">Dashboard</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-[#2a0401] border border-[#FFF0C4]/10 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+              <table className="min-w-full divide-y divide-[#FFF0C4]/10">
+                <thead className="bg-[#3E0703]/50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Page</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
+                  {analytics?.visitorLogs && analytics.visitorLogs.length > 0 ? (
+                    analytics.visitorLogs.map((log) => {
+                      const logDate = new Date(log.timestamp);
+                      const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
+                      const formatTimeAgo = () => {
+                        if (timeAgo < 60) return `${timeAgo}s ago`;
+                        if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
+                        if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
+                        return `${Math.floor(timeAgo / 86400)}d ago`;
+                      };
+                      
+                      return (
+                        <tr key={log.id} className="hover:bg-[#3E0703]/30 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4] font-mono">
+                            {logDate.toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/80">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#8C1007]/20 text-[#8C1007] text-xs font-medium">
+                              <Globe className="w-3 h-3" />
+                              {log.page}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60">
+                            {formatTimeAgo()}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                        No visitor logs found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Login Logs */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LogIn className="w-5 h-5 text-[#8C1007]" />
+              <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Login Logs</h2>
+            </div>
+            <div className="text-sm text-[#FFF0C4]/60">
+              Showing {analytics?.loginLogs?.length || 0} login attempts
+            </div>
+          </div>
+
+          <div className="bg-[#2a0401] border border-[#FFF0C4]/10 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+              <table className="min-w-full divide-y divide-[#FFF0C4]/10">
+                <thead className="bg-[#3E0703]/50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">User Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
+                  {analytics?.loginLogs && analytics.loginLogs.length > 0 ? (
+                    analytics.loginLogs.map((log) => {
+                      const logDate = new Date(log.timestamp);
+                      const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
+                      const formatTimeAgo = () => {
+                        if (timeAgo < 60) return `${timeAgo}s ago`;
+                        if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
+                        if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
+                        return `${Math.floor(timeAgo / 86400)}d ago`;
+                      };
+                      
+                      return (
+                        <tr key={log.id} className="hover:bg-[#3E0703]/30 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4] font-mono">
+                            {logDate.toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/80">
+                            {log.userEmail || (
+                              <span className="text-[#FFF0C4]/40 italic">Anonymous</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60 font-mono text-xs">
+                            {log.userId ? (
+                              <span className="text-[#8C1007]">{log.userId.slice(0, 8)}...</span>
+                            ) : (
+                              <span className="text-[#FFF0C4]/40">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60">
+                            {formatTimeAgo()}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                        No login logs found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         {/* Users Table */}
