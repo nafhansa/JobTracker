@@ -20,3 +20,24 @@ export interface JobApplication {
   createdAt: number; 
   updatedAt: number; 
 }
+
+export type AnalyticsEventType = "visit" | "login" | "dashboard";
+
+export interface AnalyticsEvent {
+  type: AnalyticsEventType;
+  timestamp: any;
+  userId?: string;
+  userEmail?: string;
+  page?: string;
+}
+
+export interface AnalyticsStats {
+  totalVisitors: number;
+  loginAttempts: number;
+  activeUsers: number;
+  dashboardVisits: number;
+  conversionRate: number;
+  recentVisits: Array<{ timestamp: string; count: number }>;
+  recentLogins: Array<{ timestamp: string; count: number }>;
+  recentDashboardVisits: Array<{ timestamp: string; count: number }>;
+}

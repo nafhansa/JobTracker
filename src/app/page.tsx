@@ -1,4 +1,7 @@
 // /home/nafhan/Documents/projek/job/src/app/page.tsx
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
 import { ArrowRight, Star, CreditCard, Check, X, Quote } from "lucide-react";
@@ -7,6 +10,22 @@ import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
 
 export default function LandingPage() {
+  // Track page visit
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "visit", page: "home" }),
+        });
+      } catch (error) {
+        console.error("Failed to track visit:", error);
+      }
+    };
+    trackVisit();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
       <Navbar />

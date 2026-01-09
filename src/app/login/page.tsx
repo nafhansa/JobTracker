@@ -10,7 +10,34 @@ export default function LoginPage() {
   const router = useRouter(); 
   const handleLogin = async () => {
     try {
-      await loginWithGoogle();
+      // Track login attempt
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "login" }),
+        });
+      } catch (error) {
+        console.error("Failed to track login attempt:", error);
+      }
+
+      const user = await loginWithGoogle();
+      if (user) {
+        // Track dashboard visit after successful login
+        try {
+          await fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              type: "dashboard", 
+              userId: user.uid,
+              userEmail: user.email || undefined,
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to track dashboard visit:", error);
+        }
+      }
       router.push("/dashboard"); 
     } catch (error) {
       console.error(error);
