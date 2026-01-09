@@ -276,9 +276,17 @@ export async function GET(req: Request) {
 
     return NextResponse.json(stats);
   } catch (error: any) {
-    console.error("Error getting analytics stats:", error);
+    console.error("❌ Error getting analytics stats:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack?.split('\n').slice(0, 3),
+    });
     return NextResponse.json(
-      { error: error.message },
+      { 
+        error: error.message || "Failed to fetch analytics stats",
+        code: error.code || "UNKNOWN_ERROR",
+      },
       { status: 500 }
     );
   }

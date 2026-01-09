@@ -26,6 +26,17 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("❌ Error fetching users:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+    });
+    return NextResponse.json(
+      { 
+        error: error.message || "Failed to fetch users",
+        code: error.code || "UNKNOWN_ERROR",
+      },
+      { status: 500 }
+    );
   }
 }

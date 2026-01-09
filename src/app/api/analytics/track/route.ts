@@ -55,9 +55,11 @@ async function getCountryFromIP(ip: string): Promise<{ country?: string; country
 }
 
 export async function POST(req: Request) {
+  let type: string | undefined;
   try {
     const body = await req.json();
-    const { type, userId, userEmail, page, sessionId, deviceInfo } = body;
+    type = body.type;
+    const { userId, userEmail, page, sessionId, deviceInfo } = body;
 
     // Get IP address and country
     const ipAddress = getClientIP(req);
@@ -135,9 +137,17 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Error tracking analytics event:", error);
+    console.error("❌ Error tracking analytics event:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      type: type,
+    });
     return NextResponse.json(
-      { error: error.message },
+      { 
+        error: error.message || "Failed to track analytics event",
+        code: error.code || "UNKNOWN_ERROR",
+      },
       { status: 500 }
     );
   }
