@@ -147,6 +147,9 @@ export async function GET(req: Request) {
         page: visit.page || "home",
         sessionId: visit.sessionId || null,
         deviceInfo: visit.deviceInfo || null,
+        ipAddress: visit.ipAddress || null,
+        country: visit.country || null,
+        countryCode: visit.countryCode || null,
       }))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 200);
@@ -163,6 +166,9 @@ export async function GET(req: Request) {
         userId: login.userId || null,
         sessionId: login.sessionId || null,
         deviceInfo: login.deviceInfo || null,
+        ipAddress: login.ipAddress || null,
+        country: login.country || null,
+        countryCode: login.countryCode || null,
       }))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 200);

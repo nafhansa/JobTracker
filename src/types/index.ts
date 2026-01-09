@@ -44,6 +44,9 @@ export interface AnalyticsLogEntry {
     screenHeight?: number;
     language?: string;
   };
+  ipAddress?: string;
+  country?: string;
+  countryCode?: string;
 }
 
 export interface AnalyticsStats {

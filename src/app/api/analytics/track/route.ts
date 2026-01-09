@@ -2,10 +2,66 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import { AnalyticsEventType } from "@/types";
 
+// Helper function to get IP address from request
+function getClientIP(req: Request): string {
+  // Check various headers for IP (in order of preference)
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  
+  const realIP = req.headers.get("x-real-ip");
+  if (realIP) {
+    return realIP;
+  }
+  
+  const cfConnectingIP = req.headers.get("cf-connecting-ip"); // Cloudflare
+  if (cfConnectingIP) {
+    return cfConnectingIP;
+  }
+  
+  return "unknown";
+}
+
+// Helper function to get country from IP using ip-api.com (free, no API key)
+async function getCountryFromIP(ip: string): Promise<{ country?: string; countryCode?: string }> {
+  // Skip if IP is localhost or unknown
+  if (!ip || ip === "unknown" || ip.startsWith("127.") || ip.startsWith("192.168.") || ip.startsWith("10.") || ip === "::1") {
+    return {};
+  }
+
+  try {
+    // Using ip-api.com (free, 45 requests/minute)
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === "success") {
+        return {
+          country: data.country,
+          countryCode: data.countryCode,
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching country from IP:", error);
+  }
+  
+  return {};
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { type, userId, userEmail, page, sessionId, deviceInfo } = body;
+
+    // Get IP address and country
+    const ipAddress = getClientIP(req);
+    const geoInfo = await getCountryFromIP(ipAddress);
 
     if (!type || !["visit", "login", "dashboard"].includes(type)) {
       return NextResponse.json(
@@ -23,9 +79,12 @@ export async function POST(req: Request) {
       timestamp,
     };
 
-    // Add session ID and device info to all events
+    // Add session ID, device info, IP, and country to all events
     if (sessionId) eventData.sessionId = sessionId;
     if (deviceInfo) eventData.deviceInfo = deviceInfo;
+    if (ipAddress && ipAddress !== "unknown") eventData.ipAddress = ipAddress;
+    if (geoInfo.country) eventData.country = geoInfo.country;
+    if (geoInfo.countryCode) eventData.countryCode = geoInfo.countryCode;
 
     switch (type) {
       case "visit":

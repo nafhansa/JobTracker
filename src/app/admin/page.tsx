@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
 import { getOrCreateSessionId } from "@/lib/utils/analytics";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -285,6 +285,7 @@ export default function AdminPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Page</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Session</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">IP / Country</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Device</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
                   </tr>
@@ -374,6 +375,33 @@ export default function AdminPage() {
                                 <span className="text-[#FFF0C4]/40 text-xs">-</span>
                               )}
                             </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="flex flex-col gap-1">
+                                {log.ipAddress ? (
+                                  <div className="flex items-center gap-1">
+                                    <Network className="w-3 h-3 text-[#FFF0C4]/60" />
+                                    <span className="font-mono text-xs text-[#FFF0C4]/80">
+                                      {log.ipAddress}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[#FFF0C4]/40 text-xs">-</span>
+                                )}
+                                {log.country && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 text-[#8C1007]" />
+                                    <span className="text-xs text-[#FFF0C4]/80">
+                                      {log.country}
+                                      {log.countryCode && (
+                                        <span className="text-[#FFF0C4]/40 ml-1">
+                                          ({log.countryCode})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <div className="flex items-center gap-2">
                                 <Smartphone className="w-4 h-4 text-[#FFF0C4]/60" />
@@ -396,7 +424,7 @@ export default function AdminPage() {
                     })()
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                      <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
                         No visitor logs found
                       </td>
                     </tr>
@@ -437,6 +465,7 @@ export default function AdminPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">User Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Session</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">IP / Country</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Device</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
                   </tr>
@@ -491,6 +520,33 @@ export default function AdminPage() {
                               <span className="text-[#FFF0C4]/40 text-xs">-</span>
                             )}
                           </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex flex-col gap-1">
+                              {log.ipAddress ? (
+                                <div className="flex items-center gap-1">
+                                  <Network className="w-3 h-3 text-[#FFF0C4]/60" />
+                                  <span className="font-mono text-xs text-[#FFF0C4]/80">
+                                    {log.ipAddress}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[#FFF0C4]/40 text-xs">-</span>
+                              )}
+                              {log.country && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-[#8C1007]" />
+                                  <span className="text-xs text-[#FFF0C4]/80">
+                                    {log.country}
+                                    {log.countryCode && (
+                                      <span className="text-[#FFF0C4]/40 ml-1">
+                                        ({log.countryCode})
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex items-center gap-2">
                               <Smartphone className="w-4 h-4 text-[#FFF0C4]/60" />
@@ -512,7 +568,7 @@ export default function AdminPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                      <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
                         No login logs found
                       </td>
                     </tr>
