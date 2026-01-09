@@ -4,11 +4,10 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, Star, CreditCard, Check, X, Quote, Clock, TrendingUp } from "lucide-react";
+import { ArrowRight, Star, CreditCard, Check, X, Quote, Clock, TrendingUp, Zap } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
-import { UrgencyBanner } from "../components/UrgencyBanner";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function LandingPage() {
@@ -115,7 +114,7 @@ export default function LandingPage() {
       case "A":
         return "Get Started Now";
       case "B":
-        return "Try Free Demo";
+        return "Try Now";
       case "C":
         return "Start Tracking Jobs";
       default:
@@ -123,9 +122,48 @@ export default function LandingPage() {
     }
   };
 
+  // Early bird countdown logic
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(false);
+
+  useEffect(() => {
+    const EARLY_BIRD_END_DATE = new Date();
+    EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
+    EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
+
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const end = EARLY_BIRD_END_DATE.getTime();
+      const difference = end - now;
+
+      if (difference <= 0) {
+        setIsEarlyBirdExpired(true);
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
-      <UrgencyBanner />
       <Navbar />
       
       {/* --- Background Effects --- */}
@@ -190,7 +228,7 @@ export default function LandingPage() {
             </Link>
             
             <Link 
-              href="#pricing" 
+              href="/pricing" 
               onClick={handlePricingClick}
               className="inline-flex items-center justify-center px-8 py-4 text-base font-bold tracking-widest text-[#FFF0C4] border border-[#FFF0C4]/20 rounded-sm hover:bg-[#FFF0C4]/10 transition-all duration-300 uppercase"
             >
@@ -198,6 +236,133 @@ export default function LandingPage() {
             </Link>
           </div>
         </section>
+
+        {/* --- EARLY BIRD SPECIAL SECTION --- */}
+        {!isEarlyBirdExpired && (
+          <section className="w-full max-w-6xl px-6 py-12 md:py-16 relative z-10 mx-auto">
+            <div className="relative bg-gradient-to-br from-[#8C1007] via-[#a01208] to-[#8C1007] rounded-2xl border-2 border-[#FFF0C4]/20 shadow-[0_0_40px_rgba(140,16,7,0.6)] overflow-hidden">
+              {/* Animated background effect */}
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FFF0C4] to-transparent animate-pulse"></div>
+              
+              <div className="relative z-10 p-6 md:p-10">
+                {/* Mobile Layout */}
+                <div className="md:hidden space-y-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FFF0C4]/20 rounded-full mb-4">
+                      <Zap className="w-4 h-4 text-[#FFF0C4] animate-pulse" />
+                      <span className="text-xs font-bold text-[#FFF0C4] uppercase tracking-wider">
+                        🎉 Early Bird Special
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-serif font-bold text-[#FFF0C4] mb-2">
+                      Limited Time Offer
+                    </h2>
+                    <p className="text-base text-[#FFF0C4]/90 mb-4">
+                      Get Lifetime Access for <span className="font-bold text-[#FFF0C4]">$9.99</span>
+                    </p>
+                    <p className="text-sm text-[#FFF0C4]/70 line-through mb-2">
+                      Regular Price: $17.99
+                    </p>
+                  </div>
+
+                  {/* Countdown Timer Mobile */}
+                  <div className="bg-[#FFF0C4]/10 rounded-xl p-4 border border-[#FFF0C4]/20">
+                    <div className="text-center mb-3">
+                      <Clock className="w-5 h-5 text-[#FFF0C4] mx-auto mb-2" />
+                      <p className="text-xs text-[#FFF0C4]/80 uppercase tracking-wider">Offer Ends In</p>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="bg-[#FFF0C4]/20 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-mono font-bold text-[#FFF0C4]">
+                          {String(timeLeft.days).padStart(2, "0")}
+                        </p>
+                        <p className="text-[10px] text-[#FFF0C4]/70 uppercase mt-1">Days</p>
+                      </div>
+                      <div className="bg-[#FFF0C4]/20 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-mono font-bold text-[#FFF0C4]">
+                          {String(timeLeft.hours).padStart(2, "0")}
+                        </p>
+                        <p className="text-[10px] text-[#FFF0C4]/70 uppercase mt-1">Hours</p>
+                      </div>
+                      <div className="bg-[#FFF0C4]/20 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-mono font-bold text-[#FFF0C4]">
+                          {String(timeLeft.minutes).padStart(2, "0")}
+                        </p>
+                        <p className="text-[10px] text-[#FFF0C4]/70 uppercase mt-1">Mins</p>
+                      </div>
+                      <div className="bg-[#FFF0C4]/20 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-mono font-bold text-[#FFF0C4]">
+                          {String(timeLeft.seconds).padStart(2, "0")}
+                        </p>
+                        <p className="text-[10px] text-[#FFF0C4]/70 uppercase mt-1">Secs</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/pricing"
+                    onClick={handlePricingClick}
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#FFF0C4] text-[#8C1007] rounded-lg font-bold text-base hover:bg-white transition-all duration-300 shadow-lg"
+                  >
+                    Claim Early Bird Offer
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden md:flex items-center justify-between gap-8">
+                  <div className="flex-1">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFF0C4]/20 rounded-full mb-4">
+                      <Zap className="w-5 h-5 text-[#FFF0C4] animate-pulse" />
+                      <span className="text-sm font-bold text-[#FFF0C4] uppercase tracking-wider">
+                        🎉 Early Bird Special
+                      </span>
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#FFF0C4] mb-3">
+                      Limited Time: Lifetime Access Only $9.99
+                    </h2>
+                    <p className="text-lg text-[#FFF0C4]/90 mb-4">
+                      <span className="line-through text-[#FFF0C4]/60">Was $17.99</span> • Save 44% • Pay Once, Own Forever
+                    </p>
+                    
+                    {/* Countdown Timer Desktop */}
+                    <div className="flex items-center gap-4 mt-6">
+                      <Clock className="w-5 h-5 text-[#FFF0C4]" />
+                      <span className="text-sm text-[#FFF0C4]/80 font-medium">Offer ends in:</span>
+                      <div className="flex items-center gap-2 font-mono text-lg font-bold text-[#FFF0C4]">
+                        <span className="bg-[#FFF0C4]/20 px-3 py-2 rounded-lg">
+                          {String(timeLeft.days).padStart(2, "0")}d
+                        </span>
+                        <span>:</span>
+                        <span className="bg-[#FFF0C4]/20 px-3 py-2 rounded-lg">
+                          {String(timeLeft.hours).padStart(2, "0")}h
+                        </span>
+                        <span>:</span>
+                        <span className="bg-[#FFF0C4]/20 px-3 py-2 rounded-lg">
+                          {String(timeLeft.minutes).padStart(2, "0")}m
+                        </span>
+                        <span>:</span>
+                        <span className="bg-[#FFF0C4]/20 px-3 py-2 rounded-lg">
+                          {String(timeLeft.seconds).padStart(2, "0")}s
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/pricing"
+                    onClick={handlePricingClick}
+                    className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#FFF0C4] text-[#8C1007] rounded-lg font-bold text-lg hover:bg-white transition-all duration-300 shadow-lg hover:scale-105"
+                  >
+                    Claim Offer
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* --- COMPARISON SECTION --- */}
         <section id="comparison" className="py-20 w-full max-w-6xl px-6 relative z-10 mx-auto">

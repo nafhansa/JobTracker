@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
-import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 import { useState, useEffect } from "react";
 
 // Early bird pricing check (same as UrgencyBanner)
@@ -47,12 +45,6 @@ export default function PricingPage() {
       </div>
 
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
-          {/* Sandbox Banner */}
-          {PAYPAL_ENV.isSandbox && (
-            <div className="fixed top-20 left-0 right-0 z-50 bg-yellow-500/90 text-black py-2 px-4 text-center text-sm font-bold">
-              🧪 SANDBOX MODE - Testing with Fake Money
-            </div>
-          )}
         <section className="text-center max-w-4xl mx-auto px-6 space-y-6">
           <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight text-[#FFF0C4]">
             Invest in Your Career
@@ -78,7 +70,6 @@ export default function PricingPage() {
                 "Priority Email Support",
               ]}
               buttonText="Start Monthly"
-              planId={PAYPAL_PLANS.monthly}
               planType="subscription"
             />
 
@@ -97,7 +88,6 @@ export default function PricingPage() {
               ]}
               buttonText="Get Lifetime Access"
               isFeatured
-              planId={PAYPAL_PLANS.lifetime}
               planType="lifetime"
               earlyBirdPrice={isEarlyBird ? EARLY_BIRD_LIFETIME_PRICE : undefined}
             />
@@ -121,7 +111,6 @@ function PricingCard({
   features,
   buttonText,
   isFeatured = false,
-  planId,
   planType,
   earlyBirdPrice,
 }: {
@@ -133,14 +122,11 @@ function PricingCard({
   features: string[];
   buttonText: string;
   isFeatured?: boolean;
-  planId: string;
   planType: "subscription" | "lifetime";
   earlyBirdPrice?: string;
 }) {
   const { user } = useAuth();
   const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
     <div
@@ -193,135 +179,26 @@ function PricingCard({
       </ul>
 
       <div className="mt-8 relative z-20">
-        {user ? (
-          planType === "subscription" ? (
-            // Monthly Subscription Button
-            <PayPalScriptProvider
-              options={{
-                clientId: PAYPAL_CREDENTIALS.clientId,
-                intent: "subscription",
-                vault: true,
-                currency: "USD",
-                components: "buttons",
-                ...(PAYPAL_ENV.isSandbox && {
-                  "buyer-country": "US",
-                  "data-environment": "sandbox",
-                }),
-              }}
-            >
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', color: 'silver' }}
-                createSubscription={(data, actions) => {
-                  return actions.subscription.create({
-                    plan_id: planId,
-                    custom_id: user.uid
-                  });
-                }}
-                onApprove={async (data, actions) => {
-                  console.log("Subscription approved:", data.subscriptionID);
-                  setSuccessMessage("Monthly subscription activated!");
-                  setErrorMessage(null);
-                  setTimeout(() => {
-                    router.push("/dashboard");
-                  }, 1200);
-                }}
-                onError={(err) => {
-                  console.error("PayPal Error:", err);
-                  setErrorMessage("Payment failed. Please try again.");
-                }}
-              />
-            </PayPalScriptProvider>
-          ) : (
-            // Lifetime One-Time Purchase Button
-            <PayPalScriptProvider
-              options={{
-                clientId: PAYPAL_CREDENTIALS.clientId,
-                intent: "capture",
-                vault: false,
-                currency: "USD",
-                components: "buttons",
-                ...(PAYPAL_ENV.isSandbox && {
-                  "buyer-country": "US",
-                  "data-environment": "sandbox",
-                }),
-              }}
-            >
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
-                createOrder={(data, actions) => {
-                  const finalPrice = earlyBirdPrice || "17.99";
-                  return actions.order.create({
-                    intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
-                    purchase_units: [{
-                      amount: {
-                        value: finalPrice,
-                        currency_code: "USD"
-                      },
-                      description: earlyBirdPrice 
-                        ? "JobTracker Lifetime Pro Access (Early Bird)" 
-                        : "JobTracker Lifetime Pro Access",
-                      custom_id: user.uid // CRITICAL: Pass user ID for webhook
-                    }],
-                    application_context: {
-                      shipping_preference: "NO_SHIPPING"
-                    }
-                  });
-                }}
-                onApprove={async (data, actions) => {
-                  if (actions.order) {
-                    const details = await actions.order.capture();
-                    console.log("Order completed:", details);
-                    setSuccessMessage("Lifetime purchase successful!");
-                    setErrorMessage(null);
-                    setTimeout(() => {
-                      router.push("/dashboard");
-                    }, 1200);
-                  }
-                }}
-                onError={(err) => {
-                  console.error("PayPal Error:", err);
-                  setErrorMessage("Payment failed. Please try again.");
-                }}
-              />
-            </PayPalScriptProvider>
-          )
-        ) : (
-          <button
-            onClick={() => router.push("/login")}
-            className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
-              isFeatured
-                ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
-                : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
-            }`}
-          >
-            {buttonText}
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </button>
-        )}
+        <button
+          onClick={() => {
+            if (user) {
+              // If user is logged in, go to dashboard
+              router.push("/dashboard");
+            } else {
+              // If user is not logged in, go to login
+              router.push("/login");
+            }
+          }}
+          className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
+            isFeatured
+              ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
+              : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
+          }`}
+        >
+          {user ? "Go to Dashboard" : buttonText}
+          <ArrowRight className="ml-2 w-4 h-4" />
+        </button>
       </div>
-
-      {(successMessage || errorMessage) && (
-        <div className="mt-4">
-          <div
-            className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold shadow ${
-              successMessage
-                ? "bg-green-500/10 text-green-200 border border-green-500/30"
-                : "bg-red-500/10 text-red-200 border border-red-500/30"
-            }`}
-          >
-            <span>{successMessage || errorMessage}</span>
-            <button
-              onClick={() => {
-                setSuccessMessage(null);
-                setErrorMessage(null);
-              }}
-              className="uppercase tracking-wide opacity-80 hover:opacity-100"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       {isFeatured && (
         <p className="text-center text-[10px] text-[#FFF0C4]/30 mt-4">
