@@ -7,21 +7,52 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 // Handle private key with multiple format support (Vercel can store it in different ways)
 let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 if (privateKey) {
-  // Handle various newline formats that Vercel might use
-  // 1. Replace escaped newlines (\n) with actual newlines
+  // Step 1: Remove any trailing/leading newlines or spaces
+  privateKey = privateKey.trim();
+  
+  // Step 2: Handle various newline formats that Vercel might use
+  // Replace escaped newlines (\n) with actual newlines - do this multiple times to handle nested escaping
   privateKey = privateKey.replace(/\\n/g, '\n');
-  // 2. Replace double-escaped newlines (\\n) with actual newlines
   privateKey = privateKey.replace(/\\\\n/g, '\n');
-  // 3. Ensure proper format with BEGIN/END markers
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-    // If it's missing the header, try to reconstruct it
-    privateKey = privateKey.trim();
-    if (!privateKey.startsWith('-----')) {
-      privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
+  privateKey = privateKey.replace(/\\\\\\n/g, '\n');
+  
+  // Step 3: Remove the trailing \n from JSON format if present
+  if (privateKey.endsWith('\\n')) {
+    privateKey = privateKey.slice(0, -2);
+  }
+  if (privateKey.endsWith('\n') && !privateKey.endsWith('-----\n')) {
+    // Keep newline before END marker, but remove trailing newline after
+    privateKey = privateKey.trimEnd();
+    if (!privateKey.endsWith('-----')) {
+      privateKey = privateKey + '\n-----END PRIVATE KEY-----';
     }
   }
-  // Trim any extra whitespace
-  privateKey = privateKey.trim();
+  
+  // Step 4: Ensure proper format with BEGIN/END markers
+  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    throw new Error('Private key missing BEGIN marker');
+  }
+  if (!privateKey.includes('-----END PRIVATE KEY-----')) {
+    throw new Error('Private key missing END marker');
+  }
+  
+  // Step 5: Extract the actual key content (between markers)
+  const beginMarker = '-----BEGIN PRIVATE KEY-----';
+  const endMarker = '-----END PRIVATE KEY-----';
+  const beginIndex = privateKey.indexOf(beginMarker);
+  const endIndex = privateKey.indexOf(endMarker);
+  
+  if (beginIndex === -1 || endIndex === -1 || endIndex <= beginIndex) {
+    throw new Error('Private key markers are invalid or out of order');
+  }
+  
+  // Reconstruct with proper formatting
+  const keyContent = privateKey.substring(beginIndex + beginMarker.length, endIndex).trim();
+  // Remove any remaining escaped newlines in content
+  const cleanKeyContent = keyContent.replace(/\\n/g, '\n').replace(/\s+/g, '\n');
+  
+  // Reconstruct the full key with proper newlines
+  privateKey = `${beginMarker}\n${cleanKeyContent}\n${endMarker}`;
 }
 
 if (!projectId || !clientEmail || !privateKey) {
@@ -54,9 +85,22 @@ if (!admin.apps.length) {
     }
     
     // Check if key is too short (likely corrupted)
-    if (key.length < 100) {
+    // RSA private keys should be at least 1600 characters when properly formatted
+    if (key.length < 1600) {
       console.error("❌ Private key appears to be too short or corrupted");
-      throw new Error("Private key appears to be corrupted or incomplete");
+      console.error("Expected length: ~1600-1700 characters, got:", key.length);
+      throw new Error(`Private key appears to be corrupted or incomplete (length: ${key.length})`);
+    }
+    
+    // Validate that key content exists between markers
+    const keyContent = key.substring(
+      key.indexOf('-----BEGIN PRIVATE KEY-----') + '-----BEGIN PRIVATE KEY-----'.length,
+      key.indexOf('-----END PRIVATE KEY-----')
+    ).trim();
+    
+    if (keyContent.length < 1500) {
+      console.error("❌ Private key content is too short");
+      throw new Error(`Private key content is incomplete (content length: ${keyContent.length})`);
     }
     
     // Log key info (without exposing the actual key)
