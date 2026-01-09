@@ -37,6 +37,13 @@ export interface AnalyticsLogEntry {
   userEmail?: string;
   userId?: string;
   page?: string;
+  sessionId?: string;
+  deviceInfo?: {
+    userAgent?: string;
+    screenWidth?: number;
+    screenHeight?: number;
+    language?: string;
+  };
 }
 
 export interface AnalyticsStats {

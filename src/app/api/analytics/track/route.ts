@@ -5,7 +5,7 @@ import { AnalyticsEventType } from "@/types";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { type, userId, userEmail, page } = body;
+    const { type, userId, userEmail, page, sessionId, deviceInfo } = body;
 
     if (!type || !["visit", "login", "dashboard"].includes(type)) {
       return NextResponse.json(
@@ -22,6 +22,10 @@ export async function POST(req: Request) {
       type,
       timestamp,
     };
+
+    // Add session ID and device info to all events
+    if (sessionId) eventData.sessionId = sessionId;
+    if (deviceInfo) eventData.deviceInfo = deviceInfo;
 
     switch (type) {
       case "visit":

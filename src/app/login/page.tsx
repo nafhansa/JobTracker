@@ -5,17 +5,25 @@ import { loginWithGoogle } from "@/lib/firebase/auth";
 import { useRouter } from "next/navigation"; 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function LoginPage() {
   const router = useRouter(); 
   const handleLogin = async () => {
     try {
+      const sessionId = getOrCreateSessionId();
+      const deviceInfo = getDeviceInfo();
+      
       // Track login attempt
       try {
         await fetch("/api/analytics/track", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "login" }),
+          body: JSON.stringify({ 
+            type: "login",
+            sessionId,
+            deviceInfo,
+          }),
         });
       } catch (error) {
         console.error("Failed to track login attempt:", error);
@@ -32,6 +40,8 @@ export default function LoginPage() {
               type: "dashboard", 
               userId: user.uid,
               userEmail: user.email || undefined,
+              sessionId,
+              deviceInfo,
             }),
           });
         } catch (error) {
