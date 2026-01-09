@@ -3,7 +3,26 @@ import admin from "firebase-admin";
 // Validate environment variables
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+// Handle private key with multiple format support (Vercel can store it in different ways)
+let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+if (privateKey) {
+  // Handle various newline formats that Vercel might use
+  // 1. Replace escaped newlines (\n) with actual newlines
+  privateKey = privateKey.replace(/\\n/g, '\n');
+  // 2. Replace double-escaped newlines (\\n) with actual newlines
+  privateKey = privateKey.replace(/\\\\n/g, '\n');
+  // 3. Ensure proper format with BEGIN/END markers
+  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    // If it's missing the header, try to reconstruct it
+    privateKey = privateKey.trim();
+    if (!privateKey.startsWith('-----')) {
+      privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
+    }
+  }
+  // Trim any extra whitespace
+  privateKey = privateKey.trim();
+}
 
 if (!projectId || !clientEmail || !privateKey) {
   console.error("❌ Firebase Admin: Missing required environment variables");
@@ -27,10 +46,26 @@ if (!admin.apps.length) {
       throw new Error("Missing required service account fields");
     }
 
-    // Check if private key format is valid
-    if (!serviceAccount.privateKey.includes("BEGIN PRIVATE KEY") || !serviceAccount.privateKey.includes("END PRIVATE KEY")) {
-      console.warn("⚠️ Private key format might be incorrect. Expected format: -----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----");
+    // Validate private key format more thoroughly
+    const key = serviceAccount.privateKey;
+    if (!key.includes("BEGIN PRIVATE KEY") || !key.includes("END PRIVATE KEY")) {
+      console.error("❌ Private key format is incorrect. Expected format: -----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----");
+      throw new Error("Invalid private key format: missing BEGIN/END markers");
     }
+    
+    // Check if key is too short (likely corrupted)
+    if (key.length < 100) {
+      console.error("❌ Private key appears to be too short or corrupted");
+      throw new Error("Private key appears to be corrupted or incomplete");
+    }
+    
+    // Log key info (without exposing the actual key)
+    console.log("Private key validation:", {
+      hasBeginMarker: key.includes("BEGIN PRIVATE KEY"),
+      hasEndMarker: key.includes("END PRIVATE KEY"),
+      keyLength: key.length,
+      lineCount: key.split('\n').length,
+    });
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
