@@ -31,6 +31,14 @@ export interface AnalyticsEvent {
   page?: string;
 }
 
+export interface AnalyticsLogEntry {
+  id: string;
+  timestamp: string;
+  userEmail?: string;
+  userId?: string;
+  page?: string;
+}
+
 export interface AnalyticsStats {
   totalVisitors: number;
   loginAttempts: number;
@@ -40,4 +48,6 @@ export interface AnalyticsStats {
   recentVisits: Array<{ timestamp: string; count: number }>;
   recentLogins: Array<{ timestamp: string; count: number }>;
   recentDashboardVisits: Array<{ timestamp: string; count: number }>;
+  visitorLogs: AnalyticsLogEntry[];
+  loginLogs: AnalyticsLogEntry[];
 }
