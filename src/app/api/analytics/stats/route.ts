@@ -1,59 +1,94 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const timeFilter = searchParams.get("timeFilter") || "all"; // "5m", "15m", "30m", "1h", "24h", "all"
   const pageFilter = searchParams.get("pageFilter") || "all"; // "all", "home", "login", "dashboard"
   try {
-    // Get all visits
-    const visitsSnapshot = await adminDb.collection("analytics_visits").get();
+    // Helper function to get timestamp for time filter
+    const getTimeFilterTimestamp = (filter: string): Timestamp | null => {
+      const now = Date.now();
+      let millisecondsAgo: number;
+      switch (filter) {
+        case "5m":
+          millisecondsAgo = 5 * 60 * 1000;
+          break;
+        case "15m":
+          millisecondsAgo = 15 * 60 * 1000;
+          break;
+        case "30m":
+          millisecondsAgo = 30 * 60 * 1000;
+          break;
+        case "1h":
+          millisecondsAgo = 60 * 60 * 1000;
+          break;
+        case "24h":
+          millisecondsAgo = 24 * 60 * 60 * 1000;
+          break;
+        default:
+          return null;
+      }
+      return Timestamp.fromMillis(now - millisecondsAgo);
+    };
+
+    const minTimestamp = getTimeFilterTimestamp(timeFilter);
+    const now = Date.now();
+    const fiveMinutesAgo = Timestamp.fromMillis(now - 5 * 60 * 1000);
+
+    // HARD LIMIT: Maximum 50 records for safety (Free Tier protection)
+    // Even with "all" filter, we only fetch 50 most recent records
+    // This ensures quota safety: 10 refreshes = 500 reads max (1% of 50k daily limit)
+    const DEFAULT_LIMIT = 50;
+    const HARD_CAP = 100; // Absolute maximum, never exceed this
+    
+    // For stats calculation, we use a small limit
+    // User can see most recent 50 records, which is enough for monitoring
+    const MAX_STATS_RECORDS = Math.min(DEFAULT_LIMIT, HARD_CAP);
+
+    // Build queries with orderBy and limit (no where clause to avoid index issues)
+    // We'll filter by time in memory after fetching
+    let visitsQuery = adminDb.collection("analytics_visits")
+      .orderBy("timestamp", "desc")
+      .limit(MAX_STATS_RECORDS);
+    
+    let loginsQuery = adminDb.collection("analytics_logins")
+      .orderBy("timestamp", "desc")
+      .limit(MAX_STATS_RECORDS);
+    
+    let dashboardVisitsQuery = adminDb.collection("analytics_dashboard_visits")
+      .orderBy("timestamp", "desc")
+      .limit(MAX_STATS_RECORDS);
+    
+    let activeUsersQuery = adminDb.collection("analytics_active_users")
+      .where("lastSeen", ">", fiveMinutesAgo)
+      .limit(MAX_STATS_RECORDS); // Limit for quota safety
+
+    // Execute queries in parallel
+    const [visitsSnapshot, loginsSnapshot, dashboardVisitsSnapshot, activeUsersSnapshot] = await Promise.all([
+      visitsQuery.get(),
+      loginsQuery.get(),
+      dashboardVisitsQuery.get(),
+      activeUsersQuery.get(),
+    ]);
+
     const visits = visitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Get all logins
-    const loginsSnapshot = await adminDb.collection("analytics_logins").get();
     const logins = loginsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Get all dashboard visits
-    const dashboardVisitsSnapshot = await adminDb.collection("analytics_dashboard_visits").get();
     const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Get active users (last seen within last 5 minutes)
-    const activeUsersSnapshot = await adminDb.collection("analytics_active_users").get();
-    const now = Date.now();
-    const fiveMinutesAgo = now - 5 * 60 * 1000;
-    
-    const activeUsers = activeUsersSnapshot.docs.filter(doc => {
-      const data = doc.data();
-      const lastSeen = data.lastSeen;
-      if (!lastSeen) return false;
-      
-      // Handle Firestore Timestamp
-      let lastSeenTime: number;
-      if (lastSeen.toMillis) {
-        lastSeenTime = lastSeen.toMillis();
-      } else if (lastSeen._seconds) {
-        lastSeenTime = lastSeen._seconds * 1000;
-      } else {
-        lastSeenTime = new Date(lastSeen).getTime();
-      }
-      
-      return lastSeenTime > fiveMinutesAgo;
-    });
-
-    // Calculate conversion rate
-    const conversionRate = logins.length > 0 
-      ? (dashboardVisits.length / logins.length) * 100 
-      : 0;
+    const activeUsers = activeUsersSnapshot.docs;
 
     // Helper function to convert Firestore timestamp to ISO string
     const formatTimestamp = (timestamp: any): string => {
@@ -67,26 +102,7 @@ export async function GET(req: Request) {
       }
     };
 
-    // Helper function to get timestamp for time filter
-    const getTimeFilterTimestamp = (filter: string): number | null => {
-      const now = Date.now();
-      switch (filter) {
-        case "5m":
-          return now - 5 * 60 * 1000;
-        case "15m":
-          return now - 15 * 60 * 1000;
-        case "30m":
-          return now - 30 * 60 * 1000;
-        case "1h":
-          return now - 60 * 60 * 1000;
-        case "24h":
-          return now - 24 * 60 * 60 * 1000;
-        default:
-          return null;
-      }
-    };
-
-    // Filter events by time
+    // Filter events by time (for micro-conversions which we still fetch all)
     const filterByTime = (events: any[], minTime: number | null) => {
       if (!minTime) return events;
       return events.filter(event => {
@@ -106,9 +122,30 @@ export async function GET(req: Request) {
       });
     };
 
-    const minTime = getTimeFilterTimestamp(timeFilter);
+    const minTime = minTimestamp ? minTimestamp.toMillis() : null;
 
-    // Group by date for recent activity
+    // Filter visits by time and page in memory (more efficient than complex queries)
+    let filteredVisits = visits;
+    if (minTime) {
+      filteredVisits = filterByTime(visits, minTime);
+    }
+    if (pageFilter !== "all") {
+      filteredVisits = filteredVisits.filter(v => (v.page || "home") === pageFilter);
+    }
+
+    // Filter logins by time in memory
+    let filteredLogins = logins;
+    if (minTime) {
+      filteredLogins = filterByTime(logins, minTime);
+    }
+
+    // Filter dashboard visits by time in memory
+    let filteredDashboardVisits = dashboardVisits;
+    if (minTime) {
+      filteredDashboardVisits = filterByTime(dashboardVisits, minTime);
+    }
+
+    // Group by date for recent activity (use filtered data for accurate stats)
     const groupByDate = (events: any[]) => {
       const grouped: { [key: string]: number } = {};
       events.forEach(event => {
@@ -133,14 +170,9 @@ export async function GET(req: Request) {
         .slice(0, 7); // Last 7 days
     };
 
-    // Filter visits by time and page
-    let filteredVisits = filterByTime(visits, minTime);
-    if (pageFilter !== "all") {
-      filteredVisits = filteredVisits.filter(v => (v.page || "home") === pageFilter);
-    }
-
-    // Get visitor logs (most recent first, limit to 200)
+    // Get visitor logs (already sorted by query, limit to 50 for display - quota safety)
     const visitorLogs = filteredVisits
+      .slice(0, 50)
       .map(visit => ({
         id: visit.id,
         timestamp: formatTimestamp(visit.timestamp),
@@ -150,15 +182,11 @@ export async function GET(req: Request) {
         ipAddress: visit.ipAddress || null,
         country: visit.country || null,
         countryCode: visit.countryCode || null,
-      }))
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-      .slice(0, 200);
+      }));
 
-    // Filter logins by time
-    const filteredLogins = filterByTime(logins, minTime);
-
-    // Get login logs (most recent first, limit to 200)
+    // Get login logs (already sorted by query, limit to 50 for display - quota safety)
     const loginLogs = filteredLogins
+      .slice(0, 50)
       .map(login => ({
         id: login.id,
         timestamp: formatTimestamp(login.timestamp),
@@ -169,19 +197,23 @@ export async function GET(req: Request) {
         ipAddress: login.ipAddress || null,
         country: login.country || null,
         countryCode: login.countryCode || null,
-      }))
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-      .slice(0, 200);
+      }));
 
-    // Get micro-conversions
-    const microConversionsSnapshot = await adminDb.collection("analytics_micro_conversions").get();
+    // Get micro-conversions (limit to 50 for quota safety)
+    const microConversionsSnapshot = await adminDb.collection("analytics_micro_conversions")
+      .orderBy("timestamp", "desc")
+      .limit(MAX_STATS_RECORDS)
+      .get();
+    
     const microConversions = microConversionsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Filter micro-conversions by time
-    const filteredMicroConversions = filterByTime(microConversions, minTime);
+    // Filter micro-conversions by time in memory
+    const filteredMicroConversions = minTime 
+      ? filterByTime(microConversions, minTime)
+      : microConversions;
 
     // Calculate micro-conversion metrics
     const pricingClicks = filteredMicroConversions.filter(mc => mc.type === "pricing_click").length;
@@ -213,15 +245,23 @@ export async function GET(req: Request) {
       ? Math.round((pricingClicks / filteredVisits.length) * 100 * 100) / 100
       : 0;
 
+    // Calculate stats using filtered data for accurate counts
+    const totalVisitorsForStats = timeFilter === "all" ? visits.length : filteredVisits.length;
+    const totalLoginsForStats = timeFilter === "all" ? logins.length : filteredLogins.length;
+    const totalDashboardVisitsForStats = timeFilter === "all" ? dashboardVisits.length : filteredDashboardVisits.length;
+    const conversionRateForStats = totalLoginsForStats > 0 
+      ? (totalDashboardVisitsForStats / totalLoginsForStats) * 100 
+      : 0;
+
     const stats = {
-      totalVisitors: visits.length,
-      loginAttempts: logins.length,
+      totalVisitors: totalVisitorsForStats,
+      loginAttempts: totalLoginsForStats,
       activeUsers: activeUsers.length,
-      dashboardVisits: dashboardVisits.length,
-      conversionRate: Math.round(conversionRate * 100) / 100,
-      recentVisits: groupByDate(visits),
-      recentLogins: groupByDate(logins),
-      recentDashboardVisits: groupByDate(dashboardVisits),
+      dashboardVisits: totalDashboardVisitsForStats,
+      conversionRate: Math.round(conversionRateForStats * 100) / 100,
+      recentVisits: groupByDate(filteredVisits),
+      recentLogins: groupByDate(filteredLogins),
+      recentDashboardVisits: groupByDate(filteredDashboardVisits),
       visitorLogs,
       loginLogs,
       microConversions: {

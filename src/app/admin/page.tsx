@@ -28,17 +28,43 @@ export default function AdminPage() {
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [pageFilter, setPageFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false); // Track if initial fetch is done
   const admins = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
-  const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string, showLoading = false) => {
+  // Simple cache: store last fetch time and data
+  const cacheKey = `analytics_${timeFilter}_${pageFilter}`;
+  const CACHE_DURATION = 60000; // 1 minute cache
+
+  const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string, showLoading = false, forceRefresh = false) => {
     if (showLoading) {
       setIsRefreshing(true);
     }
+    
+    const timeFilterToUse = visitorTimeFilter ?? timeFilter;
+    const pageFilterToUse = visitorPageFilter ?? pageFilter;
+    const currentCacheKey = `analytics_${timeFilterToUse}_${pageFilterToUse}`;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && typeof window !== "undefined") {
+      const cached = localStorage.getItem(currentCacheKey);
+      if (cached) {
+        try {
+          const { data, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          if (age < CACHE_DURATION) {
+            setAnalytics(data);
+            setLastUpdated(new Date(timestamp));
+            if (showLoading) setIsRefreshing(false);
+            return;
+          }
+        } catch (e) {
+          // Cache invalid, continue to fetch
+        }
+      }
+    }
+    
     try {
       const params = new URLSearchParams();
-      const timeFilterToUse = visitorTimeFilter || timeFilter;
-      const pageFilterToUse = visitorPageFilter || pageFilter;
-      
       if (timeFilterToUse !== "all") params.append("timeFilter", timeFilterToUse);
       if (pageFilterToUse !== "all") params.append("pageFilter", pageFilterToUse);
       
@@ -48,6 +74,15 @@ export default function AdminPage() {
       if (response.ok) {
         setAnalytics(data);
         setLastUpdated(new Date());
+        setHasFetched(true);
+        
+        // Cache the result
+        if (typeof window !== "undefined") {
+          localStorage.setItem(currentCacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+        }
       } else {
         console.error("Failed to fetch analytics");
       }
@@ -60,9 +95,9 @@ export default function AdminPage() {
     }
   }, [timeFilter, pageFilter]);
 
+  // Initial fetch only once on mount
   useEffect(() => {
-    if (!loading) {
-      // Ganti email ini dengan email admin kamu
+    if (!loading && !hasFetched) {
       if (user && admins.includes(user.email || "")) {
         setIsAdmin(true);
 
@@ -82,24 +117,20 @@ export default function AdminPage() {
         };
         
         fetchUsers();
-        fetchAnalytics();
-
-        // Auto-refresh analytics every 30 seconds
-        const interval = setInterval(fetchAnalytics, 30000);
-        return () => clearInterval(interval);
+        fetchAnalytics(undefined, undefined, false, false);
       } else {
         // Kalau bukan admin, tendang ke dashboard biasa
         router.push("/dashboard");
       }
     }
-  }, [user, loading, router, fetchAnalytics]);
+  }, [user, loading, router]); // Removed fetchAnalytics from deps to prevent re-fetch
 
-  // Re-fetch when time filter changes (for both logs)
+  // Re-fetch when time filter or page filter changes (but only if already fetched once)
   useEffect(() => {
-    if (isAdmin && !loading) {
-      fetchAnalytics();
+    if (isAdmin && !loading && hasFetched) {
+      fetchAnalytics(undefined, undefined, false, true); // Force refresh when filter changes
     }
-  }, [timeFilter, isAdmin, loading, fetchAnalytics]);
+  }, [timeFilter, pageFilter]); // Only depend on filters, not fetchAnalytics
 
   if (loading || !isAdmin) {
     return (
@@ -127,7 +158,10 @@ export default function AdminPage() {
         {/* Analytics Dashboard */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Analytics Dashboard</h2>
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Analytics Dashboard</h2>
+              <p className="text-xs text-[#FFF0C4]/50 mt-0.5">Stats from 50 most recent records (quota optimized)</p>
+            </div>
             <div className="flex items-center gap-2 text-sm text-[#FFF0C4]/60">
               <Clock className="w-4 h-4" />
               <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
@@ -307,16 +341,20 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-[#8C1007]" />
-              <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Visitor Logs</h2>
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Visitor Logs</h2>
+                <p className="text-xs text-[#FFF0C4]/50 mt-0.5">Showing 50 most recent records (quota optimized)</p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => fetchAnalytics()}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
+                onClick={() => fetchAnalytics(undefined, undefined, true, true)}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
                 title="Refresh logs"
               >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? "Refreshing..." : "Refresh"}
               </button>
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-[#FFF0C4]/60" />
@@ -335,11 +373,7 @@ export default function AdminPage() {
               </div>
               <select
                 value={pageFilter}
-                onChange={(e) => {
-                  setPageFilter(e.target.value);
-                  // Immediately fetch with new page filter
-                  fetchAnalytics(timeFilter, e.target.value);
-                }}
+                onChange={(e) => setPageFilter(e.target.value)}
                 className="bg-[#2a0401] border border-[#FFF0C4]/10 rounded-lg px-3 py-1.5 text-sm text-[#FFF0C4] focus:outline-none focus:border-[#8C1007]"
               >
                 <option value="all">All Pages</option>
@@ -538,14 +572,17 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <LogIn className="w-5 h-5 text-[#8C1007]" />
-              <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Login Logs</h2>
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Login Logs</h2>
+                <p className="text-xs text-[#FFF0C4]/50 mt-0.5">Showing 50 most recent records (quota optimized)</p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-sm text-[#FFF0C4]/60">
                 Showing {analytics?.loginLogs?.length || 0} login attempts
               </div>
               <button
-                onClick={() => fetchAnalytics(undefined, undefined, true)}
+                onClick={() => fetchAnalytics(undefined, undefined, true, true)}
                 disabled={isRefreshing}
                 className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
                 title="Refresh logs"
