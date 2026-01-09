@@ -76,17 +76,17 @@ export async function GET(req: Request) {
     const visits = visitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    }));
+    })) as Array<{ id: string; page?: string; timestamp?: any; [key: string]: any }>;
 
     const logins = loginsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    }));
+    })) as Array<{ id: string; timestamp?: any; [key: string]: any }>;
 
     const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    }));
+    })) as Array<{ id: string; timestamp?: any; [key: string]: any }>;
 
     const activeUsers = activeUsersSnapshot.docs;
 
