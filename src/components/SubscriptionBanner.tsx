@@ -127,7 +127,7 @@ export function SubscriptionBanner() {
               </div>
 
               <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
-              <p className="text-sm text-[#FFF0C4]/60 mb-6">$17.99 one-time payment</p>
+              <p className="text-sm text-[#FFF0C4]/60 mb-6">$9.99 one-time payment</p>
               
               <div className="flex-1 space-y-3 mb-6">
                  <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
@@ -157,8 +157,8 @@ export function SubscriptionBanner() {
                         return actions.order.create({
                           intent: "CAPTURE",
                           purchase_units: [{
-                            amount: { value: "17.99", currency_code: "USD" },
-                            description: "JobTracker Lifetime Pro Access",
+                            amount: { value: "9.99", currency_code: "USD" },
+                            description: "JobTracker Lifetime Pro Access (Early Bird)",
                             custom_id: user?.uid
                           }]
                         });
