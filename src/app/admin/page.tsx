@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -236,6 +236,14 @@ export default function AdminPage() {
               <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Visitor Logs</h2>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchAnalytics()}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
+                title="Refresh logs"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-[#FFF0C4]/60" />
                 <select
@@ -324,14 +332,14 @@ export default function AdminPage() {
                                 {log.page}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-6 py-4 text-sm">
                               {log.sessionId ? (
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono text-xs text-[#8C1007]">
-                                    {log.sessionId.slice(0, 12)}...
+                                  <span className="font-mono text-xs text-[#8C1007] break-all">
+                                    {log.sessionId}
                                   </span>
                                   {isRepeatVisitor && (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#8C1007]/30 text-[#8C1007] text-[10px] font-medium">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#8C1007]/30 text-[#8C1007] text-[10px] font-medium shrink-0">
                                       <Repeat className="w-3 h-3" />
                                       {sessionCounts[log.sessionId]}x
                                     </span>
@@ -381,8 +389,18 @@ export default function AdminPage() {
               <LogIn className="w-5 h-5 text-[#8C1007]" />
               <h2 className="text-2xl font-serif font-bold text-[#FFF0C4]">Login Logs</h2>
             </div>
-            <div className="text-sm text-[#FFF0C4]/60">
-              Showing {analytics?.loginLogs?.length || 0} login attempts
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-[#FFF0C4]/60">
+                Showing {analytics?.loginLogs?.length || 0} login attempts
+              </div>
+              <button
+                onClick={() => fetchAnalytics()}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] rounded-lg text-sm font-medium transition-colors"
+                title="Refresh logs"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
             </div>
           </div>
 
@@ -431,10 +449,10 @@ export default function AdminPage() {
                               <span className="text-[#FFF0C4]/40 italic">Anonymous</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <td className="px-6 py-4 text-sm">
                             {log.sessionId ? (
-                              <span className="font-mono text-xs text-[#8C1007]">
-                                {log.sessionId.slice(0, 12)}...
+                              <span className="font-mono text-xs text-[#8C1007] break-all">
+                                {log.sessionId}
                               </span>
                             ) : (
                               <span className="text-[#FFF0C4]/40 text-xs">-</span>
