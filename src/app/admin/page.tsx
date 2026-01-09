@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -275,48 +275,95 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Page</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Session</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Device</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
                   </tr>
                 </thead>
                 <tbody className="bg-[#2a0401] divide-y divide-[#FFF0C4]/5">
                   {analytics?.visitorLogs && analytics.visitorLogs.length > 0 ? (
-                    analytics.visitorLogs.map((log) => {
-                      const logDate = new Date(log.timestamp);
-                      const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
-                      const formatTimeAgo = () => {
-                        if (timeAgo < 60) return `${timeAgo}s ago`;
-                        if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
-                        if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
-                        return `${Math.floor(timeAgo / 86400)}d ago`;
-                      };
-                      
-                      return (
-                        <tr key={log.id} className="hover:bg-[#3E0703]/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4] font-mono">
-                            {logDate.toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/80">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#8C1007]/20 text-[#8C1007] text-xs font-medium">
-                              <Globe className="w-3 h-3" />
-                              {log.page}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60">
-                            {formatTimeAgo()}
-                          </td>
-                        </tr>
-                      );
-                    })
+                    (() => {
+                      // Group by session ID to identify repeat visitors
+                      const sessionCounts: { [key: string]: number } = {};
+                      analytics.visitorLogs.forEach(log => {
+                        if (log.sessionId) {
+                          sessionCounts[log.sessionId] = (sessionCounts[log.sessionId] || 0) + 1;
+                        }
+                      });
+
+                      return analytics.visitorLogs.map((log) => {
+                        const logDate = new Date(log.timestamp);
+                        const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
+                        const formatTimeAgo = () => {
+                          if (timeAgo < 60) return `${timeAgo}s ago`;
+                          if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
+                          if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
+                          return `${Math.floor(timeAgo / 86400)}d ago`;
+                        };
+
+                        const isRepeatVisitor = log.sessionId && sessionCounts[log.sessionId] > 1;
+                        const deviceType = log.deviceInfo?.userAgent 
+                          ? (log.deviceInfo.userAgent.includes("Mobile") ? "Mobile" : "Desktop")
+                          : "Unknown";
+                        
+                        return (
+                          <tr key={log.id} className={`hover:bg-[#3E0703]/30 transition-colors ${isRepeatVisitor ? "bg-[#8C1007]/5" : ""}`}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4] font-mono">
+                              {logDate.toLocaleString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/80">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#8C1007]/20 text-[#8C1007] text-xs font-medium">
+                                <Globe className="w-3 h-3" />
+                                {log.page}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {log.sessionId ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs text-[#8C1007]">
+                                    {log.sessionId.slice(0, 12)}...
+                                  </span>
+                                  {isRepeatVisitor && (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#8C1007]/30 text-[#8C1007] text-[10px] font-medium">
+                                      <Repeat className="w-3 h-3" />
+                                      {sessionCounts[log.sessionId]}x
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[#FFF0C4]/40 text-xs">-</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center gap-2">
+                                <Smartphone className="w-4 h-4 text-[#FFF0C4]/60" />
+                                <span className="text-[#FFF0C4]/80 text-xs">
+                                  {deviceType}
+                                  {log.deviceInfo?.screenWidth && (
+                                    <span className="text-[#FFF0C4]/40 ml-1">
+                                      ({log.deviceInfo.screenWidth}x{log.deviceInfo.screenHeight})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60">
+                              {formatTimeAgo()}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()
                   ) : (
                     <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                      <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
                         No visitor logs found
                       </td>
                     </tr>
@@ -346,7 +393,8 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Timestamp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">User Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Session</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Device</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-[#FFF0C4]/60 uppercase tracking-wider">Time Ago</th>
                   </tr>
                 </thead>
@@ -361,6 +409,10 @@ export default function AdminPage() {
                         if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
                         return `${Math.floor(timeAgo / 86400)}d ago`;
                       };
+
+                      const deviceType = log.deviceInfo?.userAgent 
+                        ? (log.deviceInfo.userAgent.includes("Mobile") ? "Mobile" : "Desktop")
+                        : "Unknown";
                       
                       return (
                         <tr key={log.id} className="hover:bg-[#3E0703]/30 transition-colors">
@@ -379,12 +431,27 @@ export default function AdminPage() {
                               <span className="text-[#FFF0C4]/40 italic">Anonymous</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60 font-mono text-xs">
-                            {log.userId ? (
-                              <span className="text-[#8C1007]">{log.userId.slice(0, 8)}...</span>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {log.sessionId ? (
+                              <span className="font-mono text-xs text-[#8C1007]">
+                                {log.sessionId.slice(0, 12)}...
+                              </span>
                             ) : (
-                              <span className="text-[#FFF0C4]/40">-</span>
+                              <span className="text-[#FFF0C4]/40 text-xs">-</span>
                             )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="w-4 h-4 text-[#FFF0C4]/60" />
+                              <span className="text-[#FFF0C4]/80 text-xs">
+                                {deviceType}
+                                {log.deviceInfo?.screenWidth && (
+                                  <span className="text-[#FFF0C4]/40 ml-1">
+                                    ({log.deviceInfo.screenWidth}x{log.deviceInfo.screenHeight})
+                                  </span>
+                                )}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FFF0C4]/60">
                             {formatTimeAgo()}
@@ -394,7 +461,7 @@ export default function AdminPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
+                      <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#FFF0C4]/40">
                         No login logs found
                       </td>
                     </tr>

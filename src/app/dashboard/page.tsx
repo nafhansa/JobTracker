@@ -14,7 +14,8 @@ import { checkIsPro } from "@/lib/firebase/subscription";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
-import { SubscriptionInfo } from "@/components/SubscriptionInfo"; 
+import { SubscriptionInfo } from "@/components/SubscriptionInfo";
+import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics"; 
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -40,6 +41,9 @@ export default function DashboardPage() {
     if (user && !authLoading) {
       const trackDashboard = async () => {
         try {
+          const sessionId = getOrCreateSessionId();
+          const deviceInfo = getDeviceInfo();
+          
           await fetch("/api/analytics/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -47,6 +51,8 @@ export default function DashboardPage() {
               type: "dashboard", 
               userId: user.uid,
               userEmail: user.email || undefined,
+              sessionId,
+              deviceInfo,
             }),
           });
         } catch (error) {

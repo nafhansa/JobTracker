@@ -145,6 +145,8 @@ export async function GET(req: Request) {
         id: visit.id,
         timestamp: formatTimestamp(visit.timestamp),
         page: visit.page || "home",
+        sessionId: visit.sessionId || null,
+        deviceInfo: visit.deviceInfo || null,
       }))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 200);
@@ -159,6 +161,8 @@ export async function GET(req: Request) {
         timestamp: formatTimestamp(login.timestamp),
         userEmail: login.userEmail || null,
         userId: login.userId || null,
+        sessionId: login.sessionId || null,
+        deviceInfo: login.deviceInfo || null,
       }))
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 200);

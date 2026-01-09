@@ -8,16 +8,25 @@ import { ArrowRight, Star, CreditCard, Check, X, Quote } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
+import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function LandingPage() {
   // Track page visit
   useEffect(() => {
     const trackVisit = async () => {
       try {
+        const sessionId = getOrCreateSessionId();
+        const deviceInfo = getDeviceInfo();
+        
         await fetch("/api/analytics/track", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "visit", page: "home" }),
+          body: JSON.stringify({ 
+            type: "visit", 
+            page: "home",
+            sessionId,
+            deviceInfo,
+          }),
         });
       } catch (error) {
         console.error("Failed to track visit:", error);
