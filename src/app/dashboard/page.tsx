@@ -35,6 +35,28 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, router]);
 
+  // Track dashboard visit
+  useEffect(() => {
+    if (user && !authLoading) {
+      const trackDashboard = async () => {
+        try {
+          await fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              type: "dashboard", 
+              userId: user.uid,
+              userEmail: user.email || undefined,
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to track dashboard visit:", error);
+        }
+      };
+      trackDashboard();
+    }
+  }, [user, authLoading]);
+
   useEffect(() => {
     // 1. Jika User Login & Subscribed (atau Admin): Ambil Data Jobs
     if (user && isSubscribed) {
