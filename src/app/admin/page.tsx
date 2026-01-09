@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
 import { getOrCreateSessionId } from "@/lib/utils/analytics";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network, MousePointer, Scroll, Timer } from "lucide-react";
 
 interface AppUser {
   uid: string;
@@ -223,6 +223,71 @@ export default function AdminPage() {
                   <p className="text-xs text-[#FFF0C4]/40 mt-1">
                     {analytics.dashboardVisits} of {analytics.totalVisitors} visitors
                   </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Micro-Conversions Card */}
+          {analytics?.microConversions && (
+            <div className="bg-[#3E0703] border border-[#8C1007]/50 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-[#FFF0C4] mb-4">Micro-Conversions Analytics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#2a0401] rounded-lg p-4 border border-[#FFF0C4]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MousePointer className="w-4 h-4 text-[#8C1007]" />
+                    <p className="text-sm text-[#FFF0C4]/60">Pricing Clicks</p>
+                  </div>
+                  <p className="text-2xl font-bold text-[#FFF0C4]">{analytics.microConversions.pricingClicks}</p>
+                  <p className="text-xs text-[#FFF0C4]/40 mt-1">
+                    {analytics.microConversions.pricingClickRate}% of visitors
+                  </p>
+                </div>
+                
+                <div className="bg-[#2a0401] rounded-lg p-4 border border-[#FFF0C4]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MousePointer className="w-4 h-4 text-[#8C1007]" />
+                    <p className="text-sm text-[#FFF0C4]/60">CTA Clicks</p>
+                  </div>
+                  <p className="text-2xl font-bold text-[#FFF0C4]">{analytics.microConversions.ctaClicks}</p>
+                  <p className="text-xs text-[#FFF0C4]/40 mt-1">
+                    {analytics.totalVisitors > 0 
+                      ? Math.round((analytics.microConversions.ctaClicks / analytics.totalVisitors) * 100 * 100) / 100
+                      : 0}% click rate
+                  </p>
+                </div>
+
+                <div className="bg-[#2a0401] rounded-lg p-4 border border-[#FFF0C4]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Scroll className="w-4 h-4 text-[#8C1007]" />
+                    <p className="text-sm text-[#FFF0C4]/60">Avg Scroll Depth</p>
+                  </div>
+                  <p className="text-2xl font-bold text-[#FFF0C4]">{analytics.microConversions.avgScrollDepth}%</p>
+                  <p className="text-xs text-[#FFF0C4]/40 mt-1">How far users scroll</p>
+                </div>
+
+                <div className="bg-[#2a0401] rounded-lg p-4 border border-[#FFF0C4]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Timer className="w-4 h-4 text-[#8C1007]" />
+                    <p className="text-sm text-[#FFF0C4]/60">Avg Time on Page</p>
+                  </div>
+                  <p className="text-2xl font-bold text-[#FFF0C4]">
+                    {Math.floor(analytics.microConversions.avgTimeOnPage / 60)}m {analytics.microConversions.avgTimeOnPage % 60}s
+                  </p>
+                  <p className="text-xs text-[#FFF0C4]/40 mt-1">Average engagement time</p>
+                </div>
+              </div>
+
+              {/* Scroll Depth Distribution */}
+              <div className="mt-4">
+                <p className="text-sm font-bold text-[#FFF0C4]/80 mb-3">Scroll Depth Distribution</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {analytics.microConversions.scrollDepthDistribution.map((item, idx) => (
+                    <div key={idx} className="bg-[#2a0401] rounded-lg p-3 border border-[#FFF0C4]/10 text-center">
+                      <p className="text-xs text-[#FFF0C4]/60 mb-1">{item.range}</p>
+                      <p className="text-lg font-bold text-[#FFF0C4]">{item.count}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

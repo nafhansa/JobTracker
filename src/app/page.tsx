@@ -1,16 +1,28 @@
 // /home/nafhan/Documents/projek/job/src/app/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, Star, CreditCard, Check, X, Quote } from "lucide-react";
+import { ArrowRight, Star, CreditCard, Check, X, Quote, Clock, TrendingUp } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
+import { UrgencyBanner } from "../components/UrgencyBanner";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function LandingPage() {
+  const [ctaVariant, setCtaVariant] = useState<"A" | "B" | "C">("A");
+  const [startTime] = useState(Date.now());
+  const scrollDepthRef = useRef<number>(0);
+
+  // A/B Testing: Randomly assign CTA variant
+  useEffect(() => {
+    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
+    const randomVariant = variants[Math.floor(Math.random() * variants.length)];
+    setCtaVariant(randomVariant);
+  }, []);
+
   // Track page visit
   useEffect(() => {
     const trackVisit = async () => {
@@ -35,8 +47,85 @@ export default function LandingPage() {
     trackVisit();
   }, []);
 
+  // Track scroll depth
+  useEffect(() => {
+    const handleScroll = () => {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      const scrollDepth = Math.round(((scrollTop + windowHeight) / documentHeight) * 100);
+      
+      if (scrollDepth > scrollDepthRef.current) {
+        scrollDepthRef.current = scrollDepth;
+        
+        // Track at milestones: 25%, 50%, 75%, 100%
+        if ([25, 50, 75, 100].includes(scrollDepth)) {
+          trackMicroConversion("scroll_depth", scrollDepth);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Track time on page (when user leaves)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const timeOnPage = Math.round((Date.now() - startTime) / 1000);
+      trackMicroConversion("time_on_page", timeOnPage);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [startTime]);
+
+  // Track micro-conversions
+  const trackMicroConversion = async (type: string, value?: number) => {
+    try {
+      const sessionId = getOrCreateSessionId();
+      await fetch("/api/analytics/micro-conversion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          value,
+          sessionId,
+          page: "home",
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to track micro-conversion:", error);
+    }
+  };
+
+  // Track CTA click
+  const handleCTAClick = () => {
+    trackMicroConversion("cta_click");
+  };
+
+  // Track pricing click
+  const handlePricingClick = () => {
+    trackMicroConversion("pricing_click");
+  };
+
+  // Get CTA text based on variant
+  const getCTAText = () => {
+    switch (ctaVariant) {
+      case "A":
+        return "Get Started Now";
+      case "B":
+        return "Try Free Demo";
+      case "C":
+        return "Start Tracking Jobs";
+      default:
+        return "Get Started Now";
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen justify-center bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
+      <UrgencyBanner />
       <Navbar />
       
       {/* --- Background Effects --- */}
@@ -65,23 +154,46 @@ export default function LandingPage() {
             </span>
           </h1>
           
-          <p className="text-lg md:text-xl text-[#FFF0C4]/70 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-lg md:text-xl text-[#FFF0C4]/70 max-w-2xl mx-auto font-light leading-relaxed mb-4">
             Track your job search with elegance. Monitor status, salaries, and follow-ups in one <span className="text-[#FFF0C4] font-semibold underline decoration-[#8C1007] decoration-2 underline-offset-4">sophisticated dashboard</span>.
           </p>
+
+          {/* Value Proposition Benefits */}
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6 mb-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#8C1007]/20 border border-[#8C1007]/50 rounded-full">
+              <Clock className="w-4 h-4 text-[#8C1007]" />
+              <span className="text-sm md:text-base text-[#FFF0C4] font-medium">
+                Save <span className="font-bold text-[#8C1007]">5 hours/week</span> on job tracking
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#8C1007]/20 border border-[#8C1007]/50 rounded-full">
+              <TrendingUp className="w-4 h-4 text-[#8C1007]" />
+              <span className="text-sm md:text-base text-[#FFF0C4] font-medium">
+                Never miss a <span className="font-bold text-[#8C1007]">follow-up</span> again
+              </span>
+            </div>
+          </div>
           
           <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
             <Link 
               href="/login" 
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold tracking-widest text-[#FFF0C4] bg-[#8C1007] rounded-sm hover:bg-[#a31208] transition-all duration-300 shadow-[0_0_20px_rgba(140,16,7,0.4)] hover:shadow-[0_0_40px_rgba(140,16,7,0.6)] uppercase overflow-hidden"
+              onClick={handleCTAClick}
+              className={`group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold tracking-widest text-[#FFF0C4] bg-[#8C1007] rounded-sm hover:bg-[#a31208] transition-all duration-300 shadow-[0_0_20px_rgba(140,16,7,0.4)] hover:shadow-[0_0_40px_rgba(140,16,7,0.6)] uppercase overflow-hidden ${
+                ctaVariant === "B" ? "text-lg px-10 py-5" : ""
+              }`}
             >
               <span className="relative z-10 flex items-center">
-                Get Started Now
+                {getCTAText()}
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
             </Link>
             
-            <Link href="#pricing" className="inline-flex items-center justify-center px-8 py-4 text-base font-bold tracking-widest text-[#FFF0C4] border border-[#FFF0C4]/20 rounded-sm hover:bg-[#FFF0C4]/10 transition-all duration-300 uppercase">
+            <Link 
+              href="#pricing" 
+              onClick={handlePricingClick}
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold tracking-widest text-[#FFF0C4] border border-[#FFF0C4]/20 rounded-sm hover:bg-[#FFF0C4]/10 transition-all duration-300 uppercase"
+            >
               View Pricing
             </Link>
           </div>

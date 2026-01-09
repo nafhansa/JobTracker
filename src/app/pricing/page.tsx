@@ -6,11 +6,28 @@ import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Early bird pricing check (same as UrgencyBanner)
+const EARLY_BIRD_END_DATE = new Date();
+EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
+EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
+
+const EARLY_BIRD_LIFETIME_PRICE = "9.99";
+const REGULAR_LIFETIME_PRICE = "17.99";
+
+function isEarlyBirdActive(): boolean {
+  return new Date().getTime() < EARLY_BIRD_END_DATE.getTime();
+}
 
 export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [isEarlyBird, setIsEarlyBird] = useState(false);
+
+  useEffect(() => {
+    setIsEarlyBird(isEarlyBirdActive());
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
@@ -68,10 +85,10 @@ export default function PricingPage() {
             {/* LIFETIME PLAN */}
             <PricingCard
               plan="Lifetime Pro"
-              price="$17.99"
-              originalPrice="$24.99"
+              price={isEarlyBird ? `$${EARLY_BIRD_LIFETIME_PRICE}` : `$${REGULAR_LIFETIME_PRICE}`}
+              originalPrice={isEarlyBird ? `$${REGULAR_LIFETIME_PRICE}` : "$24.99"}
               period="one-time"
-              description="Pay once, own it forever."
+              description={isEarlyBird ? "🎉 Early Bird Special - Limited Time!" : "Pay once, own it forever."}
               features={[
                 "Everything in Monthly Plan",
                 "Pay Once, Own Forever",
@@ -82,6 +99,7 @@ export default function PricingPage() {
               isFeatured
               planId={PAYPAL_PLANS.lifetime}
               planType="lifetime"
+              earlyBirdPrice={isEarlyBird ? EARLY_BIRD_LIFETIME_PRICE : undefined}
             />
           </div>
         </section>
@@ -105,6 +123,7 @@ function PricingCard({
   isFeatured = false,
   planId,
   planType,
+  earlyBirdPrice,
 }: {
   plan: string;
   price: string;
@@ -116,6 +135,7 @@ function PricingCard({
   isFeatured?: boolean;
   planId: string;
   planType: "subscription" | "lifetime";
+  earlyBirdPrice?: string;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -229,14 +249,17 @@ function PricingCard({
               <PayPalButtons
                 style={{ layout: 'vertical', shape: 'rect', color: 'gold' }}
                 createOrder={(data, actions) => {
+                  const finalPrice = earlyBirdPrice || "17.99";
                   return actions.order.create({
                     intent: "CAPTURE", // ✅ REQUIRED: Capture payment immediately
                     purchase_units: [{
                       amount: {
-                        value: "17.99",
+                        value: finalPrice,
                         currency_code: "USD"
                       },
-                      description: "JobTracker Lifetime Pro Access",
+                      description: earlyBirdPrice 
+                        ? "JobTracker Lifetime Pro Access (Early Bird)" 
+                        : "JobTracker Lifetime Pro Access",
                       custom_id: user.uid // CRITICAL: Pass user ID for webhook
                     }],
                     application_context: {

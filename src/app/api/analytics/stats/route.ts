@@ -173,6 +173,46 @@ export async function GET(req: Request) {
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 200);
 
+    // Get micro-conversions
+    const microConversionsSnapshot = await adminDb.collection("analytics_micro_conversions").get();
+    const microConversions = microConversionsSnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+    }));
+
+    // Filter micro-conversions by time
+    const filteredMicroConversions = filterByTime(microConversions, minTime);
+
+    // Calculate micro-conversion metrics
+    const pricingClicks = filteredMicroConversions.filter(mc => mc.type === "pricing_click").length;
+    const ctaClicks = filteredMicroConversions.filter(mc => mc.type === "cta_click").length;
+    
+    const scrollDepths = filteredMicroConversions
+      .filter(mc => mc.type === "scroll_depth" && mc.value !== undefined)
+      .map(mc => mc.value as number);
+    const avgScrollDepth = scrollDepths.length > 0
+      ? Math.round(scrollDepths.reduce((a, b) => a + b, 0) / scrollDepths.length)
+      : 0;
+
+    const timeOnPages = filteredMicroConversions
+      .filter(mc => mc.type === "time_on_page" && mc.value !== undefined)
+      .map(mc => mc.value as number);
+    const avgTimeOnPage = timeOnPages.length > 0
+      ? Math.round(timeOnPages.reduce((a, b) => a + b, 0) / timeOnPages.length)
+      : 0;
+
+    // Scroll depth distribution
+    const scrollDepthDistribution = [
+      { range: "0-25%", count: scrollDepths.filter(d => d >= 0 && d <= 25).length },
+      { range: "26-50%", count: scrollDepths.filter(d => d > 25 && d <= 50).length },
+      { range: "51-75%", count: scrollDepths.filter(d => d > 50 && d <= 75).length },
+      { range: "76-100%", count: scrollDepths.filter(d => d > 75 && d <= 100).length },
+    ];
+
+    const pricingClickRate = filteredVisits.length > 0
+      ? Math.round((pricingClicks / filteredVisits.length) * 100 * 100) / 100
+      : 0;
+
     const stats = {
       totalVisitors: visits.length,
       loginAttempts: logins.length,
@@ -184,6 +224,14 @@ export async function GET(req: Request) {
       recentDashboardVisits: groupByDate(dashboardVisits),
       visitorLogs,
       loginLogs,
+      microConversions: {
+        pricingClicks,
+        avgScrollDepth,
+        avgTimeOnPage,
+        ctaClicks,
+        pricingClickRate,
+        scrollDepthDistribution,
+      },
     };
 
     return NextResponse.json(stats);

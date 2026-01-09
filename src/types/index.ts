@@ -49,6 +49,15 @@ export interface AnalyticsLogEntry {
   countryCode?: string;
 }
 
+export interface MicroConversionEvent {
+  id: string;
+  timestamp: string;
+  type: "pricing_click" | "scroll_depth" | "time_on_page" | "cta_click";
+  value?: number; // For scroll_depth (0-100), time_on_page (seconds)
+  sessionId?: string;
+  page?: string;
+}
+
 export interface AnalyticsStats {
   totalVisitors: number;
   loginAttempts: number;
@@ -60,4 +69,12 @@ export interface AnalyticsStats {
   recentDashboardVisits: Array<{ timestamp: string; count: number }>;
   visitorLogs: AnalyticsLogEntry[];
   loginLogs: AnalyticsLogEntry[];
+  microConversions: {
+    pricingClicks: number;
+    avgScrollDepth: number;
+    avgTimeOnPage: number;
+    ctaClicks: number;
+    pricingClickRate: number;
+    scrollDepthDistribution: Array<{ range: string; count: number }>;
+  };
 }
