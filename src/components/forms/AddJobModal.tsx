@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle } from "lucide-react";
 import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { checkCanAddJob, canEditDelete } from "@/lib/firebase/subscription";
-import { useAuth } from "@/lib/firebase/auth-context";
 
 interface JobModalProps {
   userId: string;
@@ -164,7 +163,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-semibold mb-1">Job limit reached</p>
-              <p className="text-xs">You've reached the limit of {FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited jobs.</p>
+              <p className="text-xs">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited jobs.</p>
             </div>
           </div>
         )}

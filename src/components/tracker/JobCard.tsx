@@ -30,11 +30,10 @@ interface JobCardProps {
   job: JobApplication;
   onEdit: (job: JobApplication) => void; // <--- Props baru buat oper data ke parent
   isFreeUser?: boolean;
-  plan?: string;
   isAdmin?: boolean;
 }
 
-export default function JobCard({ job, onEdit, isFreeUser = false, plan, isAdmin = false }: JobCardProps) {
+export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = false }: JobCardProps) {
   const router = useRouter();
   
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...

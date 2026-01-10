@@ -171,7 +171,7 @@ export default function DashboardPage() {
                 <div className="p-4 bg-yellow-600/10 border border-yellow-600/30 rounded-xl flex items-center justify-between">
                   <div>
                     <p className="text-yellow-400 font-semibold mb-1">Job limit reached!</p>
-                    <p className="text-[#FFF0C4]/70 text-sm">You've reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
+                    <p className="text-[#FFF0C4]/70 text-sm">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
                   </div>
                   <Button
                     onClick={() => router.push("/upgrade")}
@@ -182,7 +182,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-            <DashboardClient initialJobs={jobs} userId={user.uid} subscription={subscription} plan={plan} />
+            <DashboardClient initialJobs={jobs} userId={user.uid} plan={plan} />
           </>
         ) : (
           <SubscriptionBanner />

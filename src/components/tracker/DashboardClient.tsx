@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
+import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
 import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru tadi
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus } from "lucide-react";
@@ -13,11 +13,10 @@ import { useAuth } from "@/lib/firebase/auth-context";
 interface DashboardClientProps {
   initialJobs: JobApplication[];
   userId: string;
-  subscription?: any;
   plan?: string;
 }
 
-export default function DashboardClient({ initialJobs, userId, subscription, plan }: DashboardClientProps) {
+export default function DashboardClient({ initialJobs, userId, plan }: DashboardClientProps) {
   const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,7 +171,6 @@ export default function DashboardClient({ initialJobs, userId, subscription, pla
               job={job} 
               onEdit={handleEditJob} // <--- Oper Fungsi Edit ke Card
               isFreeUser={isFreeUser}
-              plan={plan}
               isAdmin={isAdmin}
             />
           ))}
