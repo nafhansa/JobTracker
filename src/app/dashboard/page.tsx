@@ -113,7 +113,7 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          {ADMIN_EMAILS.includes(user.email || "") && (
+          {isAdmin && (
             <Button
               variant="ghost"
               size="sm"
@@ -152,7 +152,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Info Langganan (muncul untuk semua users yang bukan admin) */}
-        {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
+        {(subscription && !isAdmin) && (
           <div className="mb-8">
             <SubscriptionInfo />
           </div>
