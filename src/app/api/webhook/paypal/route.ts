@@ -179,12 +179,20 @@ export async function POST(req: Request) {
           _seconds?: number;
         }
         const existingEndsAtTyped = existingEndsAt as FirestoreTimestampLike | string | Date;
-        if (typeof existingEndsAtTyped === "object" && typeof existingEndsAtTyped.toDate === "function") {
-          const existingDate = existingEndsAtTyped.toDate();
-          endDate = existingDate > new Date() ? existingEndsAt : Timestamp.now();
-        } else if (typeof existingEndsAtTyped === "string") {
+        
+        // Check if it's a Date object
+        if (existingEndsAtTyped instanceof Date) {
+          endDate = existingEndsAtTyped > new Date() ? Timestamp.fromDate(existingEndsAtTyped) : Timestamp.now();
+        }
+        // Check if it's a string
+        else if (typeof existingEndsAtTyped === "string") {
           const existingDate = new Date(existingEndsAtTyped);
           endDate = existingDate > new Date() ? Timestamp.fromDate(existingDate) : Timestamp.now();
+        }
+        // Check if it's an object with toDate method
+        else if (typeof existingEndsAtTyped === "object" && existingEndsAtTyped !== null && typeof (existingEndsAtTyped as FirestoreTimestampLike).toDate === "function") {
+          const existingDate = (existingEndsAtTyped as FirestoreTimestampLike).toDate!();
+          endDate = existingDate > new Date() ? existingEndsAt : Timestamp.now();
         } else {
           endDate = Timestamp.now();
         }
@@ -195,12 +203,25 @@ export async function POST(req: Request) {
           _seconds?: number;
         }
         const renewsAtTyped = currentSub.renewsAt as FirestoreTimestampLike | string | Date;
-        if (typeof renewsAtTyped === "object" && typeof renewsAtTyped.toDate === "function") {
-          renewsAtDate = renewsAtTyped.toDate();
-        } else if (typeof renewsAtTyped === "string") {
+        
+        // Check if it's a Date object
+        if (renewsAtTyped instanceof Date) {
+          renewsAtDate = renewsAtTyped;
+        }
+        // Check if it's a string
+        else if (typeof renewsAtTyped === "string") {
           renewsAtDate = new Date(renewsAtTyped);
-        } else if (typeof renewsAtTyped === "object" && renewsAtTyped._seconds) {
-          renewsAtDate = new Date(renewsAtTyped._seconds * 1000);
+        }
+        // Check if it's an object with toDate method
+        else if (typeof renewsAtTyped === "object" && renewsAtTyped !== null) {
+          const typed = renewsAtTyped as FirestoreTimestampLike;
+          if (typeof typed.toDate === "function") {
+            renewsAtDate = typed.toDate();
+          } else if (typeof typed._seconds === "number") {
+            renewsAtDate = new Date(typed._seconds * 1000);
+          } else {
+            renewsAtDate = new Date();
+          }
         } else {
           renewsAtDate = new Date();
         }

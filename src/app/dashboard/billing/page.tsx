@@ -87,9 +87,7 @@ export default function BillingPage() {
   const rawEndsAt = subscription?.endsAt;
 
   const endsAt = subscription?.endsAt
-    ? new Date(subscription.endsAt).toLocaleDateString("en-US", { 
-        year: "numeric", month: "long", day: "numeric" 
-      })
+    ? formatDate(subscription.endsAt)
     : null;
 
   return (
@@ -211,7 +209,9 @@ export default function BillingPage() {
                   <div className="flex justify-between items-center py-3">
                     <span className="text-[#FFF0C4]/60">Subscription ID</span>
                     <span className="font-mono text-xs text-[#FFF0C4]/80">
-                      {subscription.paypalSubscriptionId.slice(0, 20)}...
+                      {typeof subscription.paypalSubscriptionId === "string" 
+                        ? `${subscription.paypalSubscriptionId.slice(0, 20)}...`
+                        : "N/A"}
                     </span>
                   </div>
                 )}
@@ -341,8 +341,14 @@ function parseFirebaseDate(dateValue: unknown): Date | null {
   if (dateValue instanceof Date) return dateValue;
   
   // Jika berupa Firebase Timestamp object { seconds, nanoseconds }
-  if (typeof dateValue === "object" && typeof dateValue.toDate === "function") {
-    return dateValue.toDate();
+  if (typeof dateValue === "object" && dateValue !== null) {
+    interface FirestoreTimestampLike {
+      toDate?: () => Date;
+    }
+    const typed = dateValue as FirestoreTimestampLike;
+    if (typeof typed.toDate === "function") {
+      return typed.toDate();
+    }
   }
 
   // Jika berupa number (timestamp)

@@ -118,29 +118,58 @@ export async function GET(req: Request) {
     // Helper function to convert Firestore timestamp to ISO string
     const formatTimestamp = (timestamp: FirestoreTimestamp | Date | string | undefined): string => {
       if (!timestamp) return new Date().toISOString();
-      if (timestamp.toDate) {
-        return timestamp.toDate().toISOString();
-      } else if (timestamp._seconds) {
-        return new Date(timestamp._seconds * 1000).toISOString();
-      } else {
+      
+      // Check if it's a Date object
+      if (timestamp instanceof Date) {
+        return timestamp.toISOString();
+      }
+      
+      // Check if it's a string
+      if (typeof timestamp === "string") {
         return new Date(timestamp).toISOString();
       }
+      
+      // Now TypeScript knows it's FirestoreTimestamp
+      if (typeof timestamp === "object" && timestamp !== null) {
+        if (typeof timestamp.toDate === "function") {
+          return timestamp.toDate().toISOString();
+        } else if (typeof timestamp._seconds === "number") {
+          return new Date(timestamp._seconds * 1000).toISOString();
+        }
+      }
+      
+      // Fallback
+      return new Date().toISOString();
     };
 
     // Filter events by time (for micro-conversions which we still fetch all)
-    const filterByTime = (events: Array<{ timestamp?: FirestoreTimestamp | Date | string }>, minTime: number | null) => {
+    const filterByTime = <T extends { timestamp?: FirestoreTimestamp | Date | string }>(events: T[], minTime: number | null): T[] => {
       if (!minTime) return events;
       return events.filter(event => {
         const timestamp = event.timestamp;
         if (!timestamp) return false;
         
         let eventTime: number;
-        if (timestamp.toDate) {
-          eventTime = timestamp.toDate().getTime();
-        } else if (timestamp._seconds) {
-          eventTime = timestamp._seconds * 1000;
-        } else {
+        
+        // Check if it's a Date object
+        if (timestamp instanceof Date) {
+          eventTime = timestamp.getTime();
+        }
+        // Check if it's a string
+        else if (typeof timestamp === "string") {
           eventTime = new Date(timestamp).getTime();
+        }
+        // Now TypeScript knows it's FirestoreTimestamp
+        else if (typeof timestamp === "object" && timestamp !== null) {
+          if (typeof timestamp.toDate === "function") {
+            eventTime = timestamp.toDate().getTime();
+          } else if (typeof timestamp._seconds === "number") {
+            eventTime = timestamp._seconds * 1000;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
         }
         
         return eventTime >= minTime;
@@ -178,12 +207,26 @@ export async function GET(req: Request) {
         if (!timestamp) return;
         
         let date: string;
-        if (timestamp.toDate) {
-          date = timestamp.toDate().toISOString().split('T')[0];
-        } else if (timestamp._seconds) {
-          date = new Date(timestamp._seconds * 1000).toISOString().split('T')[0];
-        } else {
+        
+        // Check if it's a Date object
+        if (timestamp instanceof Date) {
+          date = timestamp.toISOString().split('T')[0];
+        }
+        // Check if it's a string
+        else if (typeof timestamp === "string") {
           date = new Date(timestamp).toISOString().split('T')[0];
+        }
+        // Now TypeScript knows it's FirestoreTimestamp
+        else if (typeof timestamp === "object" && timestamp !== null) {
+          if (typeof timestamp.toDate === "function") {
+            date = timestamp.toDate().toISOString().split('T')[0];
+          } else if (typeof timestamp._seconds === "number") {
+            date = new Date(timestamp._seconds * 1000).toISOString().split('T')[0];
+          } else {
+            return;
+          }
+        } else {
+          return;
         }
         
         grouped[date] = (grouped[date] || 0) + 1;
@@ -230,10 +273,20 @@ export async function GET(req: Request) {
       .limit(MAX_STATS_RECORDS)
       .get();
     
+    interface MicroConversionData {
+      id: string;
+      type?: string;
+      timestamp?: FirestoreTimestamp | Date | string;
+      value?: number;
+      page?: string;
+      sessionId?: string;
+      [key: string]: unknown;
+    }
+
     const microConversions = microConversionsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    }));
+    })) as MicroConversionData[];
 
     // Filter micro-conversions by time in memory
     const filteredMicroConversions = minTime 
@@ -310,8 +363,8 @@ export async function GET(req: Request) {
     });
     return NextResponse.json(
       { 
-        error: error.message || "Failed to fetch analytics stats",
-        code: error.code || "UNKNOWN_ERROR",
+        error: err.message || "Failed to fetch analytics stats",
+        code: err.code || "UNKNOWN_ERROR",
       },
       { status: 500 }
     );

@@ -135,18 +135,28 @@ export const getAnalyticsStats = async () => {
       : 0;
 
     // Group by date for recent activity
-    interface EventWithTimestamp {
-      timestamp?: { toDate?: () => Date };
-    }
-    const groupByDate = (events: EventWithTimestamp[]) => {
+    const groupByDate = (events: Array<{ timestamp?: { toDate?: () => Date } | Date | string; [key: string]: unknown }>) => {
       const grouped: { [key: string]: number } = {};
       events.forEach(event => {
         const timestamp = event.timestamp;
         if (!timestamp) return;
         
-        const date = timestamp.toDate 
-          ? timestamp.toDate().toISOString().split('T')[0]
-          : new Date(timestamp).toISOString().split('T')[0];
+        let date: string;
+        
+        // Check if it's a Date object
+        if (timestamp instanceof Date) {
+          date = timestamp.toISOString().split('T')[0];
+        }
+        // Check if it's a string
+        else if (typeof timestamp === "string") {
+          date = new Date(timestamp).toISOString().split('T')[0];
+        }
+        // Check if it's an object with toDate method
+        else if (typeof timestamp === "object" && timestamp !== null && typeof timestamp.toDate === "function") {
+          date = timestamp.toDate().toISOString().split('T')[0];
+        } else {
+          return;
+        }
         
         grouped[date] = (grouped[date] || 0) + 1;
       });

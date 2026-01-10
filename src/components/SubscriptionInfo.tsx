@@ -11,8 +11,14 @@ import { getJobCount } from "@/lib/firebase/firestore";
 function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
   if (dateValue instanceof Date) return dateValue;
-  if (typeof dateValue === "object" && typeof dateValue.toDate === "function") {
-    return dateValue.toDate();
+  if (typeof dateValue === "object" && dateValue !== null) {
+    interface FirestoreTimestampLike {
+      toDate?: () => Date;
+    }
+    const typed = dateValue as FirestoreTimestampLike;
+    if (typeof typed.toDate === "function") {
+      return typed.toDate();
+    }
   }
   if (typeof dateValue === "number") return new Date(dateValue);
   if (typeof dateValue === "string") {
@@ -58,8 +64,14 @@ export function SubscriptionInfo() {
 
   if (dateToShow) {
   // 1. Cek kalau Firestore Timestamp (punya method toDate)
-  if (typeof dateToShow === "object" && typeof dateToShow.toDate === "function") {
-    parsedDate = dateToShow.toDate();
+  if (typeof dateToShow === "object" && dateToShow !== null) {
+    interface FirestoreTimestampLike {
+      toDate?: () => Date;
+    }
+    const typed = dateToShow as FirestoreTimestampLike;
+    if (typeof typed.toDate === "function") {
+      parsedDate = typed.toDate();
+    }
   } 
   // 2. Cek kalau format string kayak "February 8, 2026 at 5:00:00 PM UTC+7"
   else if (typeof dateToShow === "string") {

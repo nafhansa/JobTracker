@@ -127,7 +127,7 @@ if (!admin.apps.length) {
       hasPrivateKey: !!serviceAccount.privateKey,
       privateKeyLength: serviceAccount.privateKey?.length || 0,
     });
-    throw new Error(`Firebase Admin initialization failed: ${error.message}`);
+    throw new Error(`Firebase Admin initialization failed: ${err.message || "Unknown error"}`);
   }
 }
 

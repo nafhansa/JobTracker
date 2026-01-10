@@ -157,8 +157,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(
       { 
-        error: error.message || "Failed to track analytics event",
-        code: error.code || "UNKNOWN_ERROR",
+        error: err.message || "Failed to track analytics event",
+        code: err.code || "UNKNOWN_ERROR",
       },
       { status: 500 }
     );

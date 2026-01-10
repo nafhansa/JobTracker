@@ -48,11 +48,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const sub = await getSubscription(user.uid);
         setSubscription(sub?.subscription || null);
         setUpdatedAt(sub?.updatedAt || null);
-        setCreatedAt(sub?.createdAt || null);
       } else {
         setSubscription(null);
         setUpdatedAt(null);
-        setCreatedAt(null);
       }
       setLoading(false);
     });
