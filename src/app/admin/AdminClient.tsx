@@ -1,13 +1,16 @@
 // 📁 src/app/admin/AdminClient.tsx
 "use client"; // ✅ Ini Client Component
 
-import { useState } from "react";
-
 // Sesuaikan tipe data dengan yang kamu return di admin.ts
+interface SubscriptionData {
+  plan?: string;
+  status?: string;
+}
+
 type UserData = {
   uid: string;
   email: string;
-  subscription: any;
+  subscription?: SubscriptionData | null;
   createdAt: string;
 };
 

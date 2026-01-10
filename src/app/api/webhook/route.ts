@@ -97,7 +97,10 @@ export async function POST(req: Request) {
         // ==========================================
         case "order.completed": {
           const items = event.data.items || [];
-          const subscriptionItem = items.find((item: any) => item.subscription);
+          interface WebhookItem {
+            subscription?: unknown;
+          }
+          const subscriptionItem = items.find((item: WebhookItem) => item.subscription);
           
           if (subscriptionItem) {
             // SUBSCRIPTION BARU
@@ -203,8 +206,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string };
     console.error("❌ Webhook error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
 }

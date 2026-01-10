@@ -15,7 +15,14 @@ export async function POST(req: Request) {
 
     const timestamp = new Date();
 
-    const eventData: any = {
+    interface MicroConversionData {
+      type: string;
+      timestamp: Date;
+      page: string;
+      sessionId?: string;
+      value?: number;
+    }
+    const eventData: MicroConversionData = {
       type,
       timestamp,
       page: page || "home",
@@ -29,10 +36,11 @@ export async function POST(req: Request) {
     await eventsRef.add(eventData);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string };
     console.error("Error tracking micro-conversion:", error);
     return NextResponse.json(
-      { error: error.message },
+      { error: err.message || "Internal server error" },
       { status: 500 }
     );
   }

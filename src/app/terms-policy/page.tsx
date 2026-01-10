@@ -138,7 +138,7 @@ export default function TermsPolicyPage() {
                 </h2>
                 <div className="space-y-4 text-base md:text-lg text-[#FFF0C4]/80">
                   <p>
-                    JobTracker uses "cookies" to help us identify and track visitors, their usage of our website, and their website access preferences.
+                    JobTracker uses &quot;cookies&quot; to help us identify and track visitors, their usage of our website, and their website access preferences.
                   </p>
                   <p>
                     Visitors who do not wish to have cookies placed on their computers should set their browsers to refuse cookies before using our websites, with the drawback that certain features may not function properly without the aid of cookies.

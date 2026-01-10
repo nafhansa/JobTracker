@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { AnalyticsEventType } from "@/types";
 
 // Helper function to get IP address from request
 function getClientIP(req: Request): string {
@@ -76,7 +75,19 @@ export async function POST(req: Request) {
 
     // Store event in appropriate collection
     let collectionPath = "";
-    const eventData: any = {
+    interface EventData {
+      type: string;
+      timestamp: Date;
+      sessionId?: string;
+      deviceInfo?: string;
+      ipAddress?: string;
+      country?: string;
+      countryCode?: string;
+      page?: string;
+      userId?: string;
+      userEmail?: string;
+    }
+    const eventData: EventData = {
       type,
       timestamp,
     };
@@ -136,11 +147,12 @@ export async function POST(req: Request) {
     await eventsRef.add(eventData);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; code?: string };
     console.error("❌ Error tracking analytics event:", error);
     console.error("Error details:", {
-      message: error.message,
-      code: error.code,
+      message: err.message,
+      code: err.code,
       type: type,
     });
     return NextResponse.json(

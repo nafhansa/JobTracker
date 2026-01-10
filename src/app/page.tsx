@@ -1,26 +1,22 @@
 // /home/nafhan/Documents/projek/job/src/app/page.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, Star, CreditCard, Check, X, Quote, Clock, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, Star, Check, X, Clock, TrendingUp, Zap } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function LandingPage() {
-  const [ctaVariant, setCtaVariant] = useState<"A" | "B" | "C">("A");
-  const [startTime] = useState(Date.now());
-  const scrollDepthRef = useRef<number>(0);
-
-  // A/B Testing: Randomly assign CTA variant
-  useEffect(() => {
+  const [ctaVariant] = useState<"A" | "B" | "C">(() => {
     const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
-    const randomVariant = variants[Math.floor(Math.random() * variants.length)];
-    setCtaVariant(randomVariant);
-  }, []);
+    return variants[Math.floor(Math.random() * variants.length)];
+  });
+  const [startTime] = useState(() => Date.now());
+  const scrollDepthRef = useRef<number>(0);
 
   // Track page visit
   useEffect(() => {
@@ -46,6 +42,25 @@ export default function LandingPage() {
     trackVisit();
   }, []);
 
+  // Track micro-conversions
+  const trackMicroConversion = useCallback(async (type: string, value?: number) => {
+    try {
+      const sessionId = getOrCreateSessionId();
+      await fetch("/api/analytics/micro-conversion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          value,
+          sessionId,
+          page: "home",
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to track micro-conversion:", error);
+    }
+  }, []);
+
   // Track scroll depth
   useEffect(() => {
     const handleScroll = () => {
@@ -66,7 +81,7 @@ export default function LandingPage() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [trackMicroConversion]);
 
   // Track time on page (when user leaves)
   useEffect(() => {
@@ -77,26 +92,7 @@ export default function LandingPage() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [startTime]);
-
-  // Track micro-conversions
-  const trackMicroConversion = async (type: string, value?: number) => {
-    try {
-      const sessionId = getOrCreateSessionId();
-      await fetch("/api/analytics/micro-conversion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          value,
-          sessionId,
-          page: "home",
-        }),
-      });
-    } catch (error) {
-      console.error("Failed to track micro-conversion:", error);
-    }
-  };
+  }, [startTime, trackMicroConversion]);
 
   // Track CTA click
   const handleCTAClick = () => {
@@ -123,43 +119,60 @@ export default function LandingPage() {
   };
 
   // Early bird countdown logic
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+  const EARLY_BIRD_END_DATE = new Date();
+  EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
+  EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
+
+  const calculateTimeLeft = () => {
+    const now = new Date().getTime();
+    const end = EARLY_BIRD_END_DATE.getTime();
+    const difference = end - now;
+
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+    }
+
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      expired: false,
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const initial = calculateTimeLeft();
+    return {
+      days: initial.days,
+      hours: initial.hours,
+      minutes: initial.minutes,
+      seconds: initial.seconds,
+    };
   });
-  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(false);
+  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(() => calculateTimeLeft().expired);
 
   useEffect(() => {
-    const EARLY_BIRD_END_DATE = new Date();
-    EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
-    EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
-
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = EARLY_BIRD_END_DATE.getTime();
-      const difference = end - now;
-
-      if (difference <= 0) {
-        setIsEarlyBirdExpired(true);
-        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-      }
-
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      };
-    };
-
-    setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      const result = calculateTimeLeft();
+      setTimeLeft((prev) => {
+        if (prev.days === result.days && prev.hours === result.hours && 
+            prev.minutes === result.minutes && prev.seconds === result.seconds) {
+          return prev;
+        }
+        return {
+          days: result.days,
+          hours: result.hours,
+          minutes: result.minutes,
+          seconds: result.seconds,
+        };
+      });
+      setIsEarlyBirdExpired((prev) => prev !== result.expired ? result.expired : prev);
     }, 1000);
 
     return () => clearInterval(timer);
+  // calculateTimeLeft is stable (doesn't depend on props/state), so we can safely ignore
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

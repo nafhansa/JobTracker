@@ -1,6 +1,5 @@
-import { collection, addDoc, query, where, getDocs, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "./config";
-import { AnalyticsEventType } from "@/types";
 
 const VISITS_COLLECTION = "analytics_visits";
 const LOGINS_COLLECTION = "analytics_logins";
@@ -136,7 +135,10 @@ export const getAnalyticsStats = async () => {
       : 0;
 
     // Group by date for recent activity
-    const groupByDate = (events: any[]) => {
+    interface EventWithTimestamp {
+      timestamp?: { toDate?: () => Date };
+    }
+    const groupByDate = (events: EventWithTimestamp[]) => {
       const grouped: { [key: string]: number } = {};
       events.forEach(event => {
         const timestamp = event.timestamp;

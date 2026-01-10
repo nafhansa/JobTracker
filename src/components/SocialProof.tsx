@@ -112,7 +112,7 @@ const SocialProof = () => {
               <StarRating rating={item.rating} />
               
               <p className="text-[#FFF0C4]/80 text-sm leading-relaxed italic line-clamp-3">
-                "{item.content}"
+                &quot;{item.content}&quot;
               </p>
             </div>
           ))}

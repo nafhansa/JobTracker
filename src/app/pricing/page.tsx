@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { CheckCircle2, ArrowRight, Star, Tag, Gift } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
 // Early bird pricing check (same as UrgencyBanner)
@@ -20,13 +20,7 @@ function isEarlyBirdActive(): boolean {
 }
 
 export default function PricingPage() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [isEarlyBird, setIsEarlyBird] = useState(false);
-
-  useEffect(() => {
-    setIsEarlyBird(isEarlyBirdActive());
-  }, []);
+  const [isEarlyBird] = useState(() => isEarlyBirdActive());
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
@@ -71,7 +65,6 @@ export default function PricingPage() {
                 "View & Track Status",
               ]}
               buttonText="Get Started Free"
-              planType="free"
               isFree
             />
 
@@ -89,7 +82,6 @@ export default function PricingPage() {
                 "Priority Email Support",
               ]}
               buttonText="Start Monthly"
-              planType="subscription"
             />
 
             {/* LIFETIME PLAN */}
@@ -107,8 +99,6 @@ export default function PricingPage() {
               ]}
               buttonText="Get Lifetime Access"
               isFeatured
-              planType="lifetime"
-              earlyBirdPrice={isEarlyBird ? EARLY_BIRD_LIFETIME_PRICE : undefined}
             />
           </div>
         </section>
@@ -130,8 +120,6 @@ function PricingCard({
   features,
   buttonText,
   isFeatured = false,
-  planType,
-  earlyBirdPrice,
   isFree = false,
 }: {
   plan: string;
@@ -142,8 +130,6 @@ function PricingCard({
   features: string[];
   buttonText: string;
   isFeatured?: boolean;
-  planType: "free" | "subscription" | "lifetime";
-  earlyBirdPrice?: string;
   isFree?: boolean;
 }) {
   const { user } = useAuth();

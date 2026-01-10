@@ -70,7 +70,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
         
         {showLimitMessage && (
           <p className="text-lg text-[#FFF0C4]/70 mb-4">
-            You're currently tracking {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!
+            You&apos;re currently tracking {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!
           </p>
         )}
 

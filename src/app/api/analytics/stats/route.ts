@@ -49,19 +49,19 @@ export async function GET(req: Request) {
 
     // Build queries with orderBy and limit (no where clause to avoid index issues)
     // We'll filter by time in memory after fetching
-    let visitsQuery = adminDb.collection("analytics_visits")
+    const visitsQuery = adminDb.collection("analytics_visits")
       .orderBy("timestamp", "desc")
       .limit(MAX_STATS_RECORDS);
     
-    let loginsQuery = adminDb.collection("analytics_logins")
+    const loginsQuery = adminDb.collection("analytics_logins")
       .orderBy("timestamp", "desc")
       .limit(MAX_STATS_RECORDS);
     
-    let dashboardVisitsQuery = adminDb.collection("analytics_dashboard_visits")
+    const dashboardVisitsQuery = adminDb.collection("analytics_dashboard_visits")
       .orderBy("timestamp", "desc")
       .limit(MAX_STATS_RECORDS);
     
-    let activeUsersQuery = adminDb.collection("analytics_active_users")
+    const activeUsersQuery = adminDb.collection("analytics_active_users")
       .where("lastSeen", ">", fiveMinutesAgo)
       .limit(MAX_STATS_RECORDS); // Limit for quota safety
 
@@ -73,25 +73,50 @@ export async function GET(req: Request) {
       activeUsersQuery.get(),
     ]);
 
+    interface FirestoreTimestamp {
+      toDate?: () => Date;
+      _seconds?: number;
+    }
+
+    interface VisitData {
+      id: string;
+      page?: string;
+      timestamp?: FirestoreTimestamp | Date | string;
+      sessionId?: string;
+      deviceInfo?: string;
+      ipAddress?: string;
+      country?: string;
+      countryCode?: string;
+      [key: string]: unknown;
+    }
+
+    interface LoginData {
+      id: string;
+      timestamp?: FirestoreTimestamp | Date | string;
+      userId?: string;
+      userEmail?: string;
+      [key: string]: unknown;
+    }
+
     const visits = visitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    })) as Array<{ id: string; page?: string; timestamp?: any; [key: string]: any }>;
+    })) as VisitData[];
 
     const logins = loginsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    })) as Array<{ id: string; timestamp?: any; [key: string]: any }>;
+    })) as LoginData[];
 
     const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
-    })) as Array<{ id: string; timestamp?: any; [key: string]: any }>;
+    })) as LoginData[];
 
     const activeUsers = activeUsersSnapshot.docs;
 
     // Helper function to convert Firestore timestamp to ISO string
-    const formatTimestamp = (timestamp: any): string => {
+    const formatTimestamp = (timestamp: FirestoreTimestamp | Date | string | undefined): string => {
       if (!timestamp) return new Date().toISOString();
       if (timestamp.toDate) {
         return timestamp.toDate().toISOString();
@@ -103,7 +128,7 @@ export async function GET(req: Request) {
     };
 
     // Filter events by time (for micro-conversions which we still fetch all)
-    const filterByTime = (events: any[], minTime: number | null) => {
+    const filterByTime = (events: Array<{ timestamp?: FirestoreTimestamp | Date | string }>, minTime: number | null) => {
       if (!minTime) return events;
       return events.filter(event => {
         const timestamp = event.timestamp;
@@ -146,7 +171,7 @@ export async function GET(req: Request) {
     }
 
     // Group by date for recent activity (use filtered data for accurate stats)
-    const groupByDate = (events: any[]) => {
+    const groupByDate = (events: Array<{ timestamp?: FirestoreTimestamp | Date | string }>) => {
       const grouped: { [key: string]: number } = {};
       events.forEach(event => {
         const timestamp = event.timestamp;
@@ -275,12 +300,13 @@ export async function GET(req: Request) {
     };
 
     return NextResponse.json(stats);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; code?: string; stack?: string };
     console.error("❌ Error getting analytics stats:", error);
     console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      stack: error.stack?.split('\n').slice(0, 3),
+      message: err.message,
+      code: err.code,
+      stack: err.stack?.split('\n').slice(0, 3),
     });
     return NextResponse.json(
       { 

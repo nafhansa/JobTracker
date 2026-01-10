@@ -5,13 +5,19 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./config";
 import { getSubscription, checkIsPro, ensureFreePlan } from "./subscription"; // 👈 Import helper tadi
 
+interface SubscriptionData {
+  plan?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  subscription: any;
+  subscription: SubscriptionData | null;
   isPro: boolean; // 👈 Tambah field ini
-  updatedAt?: any;
-  createdAt?: any;
+  updatedAt?: Date | string | null;
+  createdAt?: Date | string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,9 +32,8 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState(null);
-  const [updatedAt, setUpdatedAt] = useState(null);
-  const [createdAt, setCreatedAt] = useState(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | string | null>(null);
   
   // State isPro kita hitung berdasarkan subscription
   const isPro = checkIsPro(subscription); 

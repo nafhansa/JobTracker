@@ -118,8 +118,9 @@ if (!admin.apps.length) {
     console.log("✅ Firebase Admin initialized successfully");
     console.log("Project ID:", serviceAccount.projectId);
     console.log("Client Email:", serviceAccount.clientEmail);
-  } catch (error: any) {
-    console.error("❌ Firebase Admin initialization failed:", error.message);
+  } catch (error) {
+    const err = error as { message?: string };
+    console.error("❌ Firebase Admin initialization failed:", err.message);
     console.error("Service Account Check:", {
       hasProjectId: !!serviceAccount.projectId,
       hasClientEmail: !!serviceAccount.clientEmail,

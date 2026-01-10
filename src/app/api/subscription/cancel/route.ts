@@ -165,10 +165,11 @@ export async function POST(req: Request) {
       message: "Subscription cancelled successfully",
       endsAt: endDate,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string };
     console.error("❌ Cancel API Error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: err.message || "Internal server error" },
       { status: 500 }
     );
   }

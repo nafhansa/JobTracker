@@ -8,6 +8,9 @@ import { AnalyticsStats } from "@/types";
 import { getOrCreateSessionId } from "@/lib/utils/analytics";
 import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network, MousePointer, Scroll, Timer } from "lucide-react";
 
+// Admin emails - constant outside component
+const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
+
 interface AppUser {
   uid: string;
   email: string | null;
@@ -29,10 +32,8 @@ export default function AdminPage() {
   const [pageFilter, setPageFilter] = useState<string>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasFetched, setHasFetched] = useState(false); // Track if initial fetch is done
-  const admins = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
 
   // Simple cache: store last fetch time and data
-  const cacheKey = `analytics_${timeFilter}_${pageFilter}`;
   const CACHE_DURATION = 60000; // 1 minute cache
 
   const fetchAnalytics = useCallback(async (visitorTimeFilter?: string, visitorPageFilter?: string, showLoading = false, forceRefresh = false) => {
@@ -57,7 +58,7 @@ export default function AdminPage() {
             if (showLoading) setIsRefreshing(false);
             return;
           }
-        } catch (e) {
+        } catch {
           // Cache invalid, continue to fetch
         }
       }
@@ -98,7 +99,7 @@ export default function AdminPage() {
   // Initial fetch only once on mount
   useEffect(() => {
     if (!loading && !hasFetched) {
-      if (user && admins.includes(user.email || "")) {
+      if (user && ADMIN_EMAILS.includes(user.email || "")) {
         setIsAdmin(true);
 
         const fetchUsers = async () => {
@@ -123,14 +124,14 @@ export default function AdminPage() {
         router.push("/dashboard");
       }
     }
-  }, [user, loading, router]); // Removed fetchAnalytics from deps to prevent re-fetch
+  }, [user, loading, router, hasFetched, fetchAnalytics]); // Include all dependencies
 
   // Re-fetch when time filter or page filter changes (but only if already fetched once)
   useEffect(() => {
     if (isAdmin && !loading && hasFetched) {
       fetchAnalytics(undefined, undefined, false, true); // Force refresh when filter changes
     }
-  }, [timeFilter, pageFilter]); // Only depend on filters, not fetchAnalytics
+  }, [timeFilter, pageFilter, isAdmin, loading, hasFetched, fetchAnalytics]); // Include all dependencies
 
   if (loading || !isAdmin) {
     return (
@@ -428,7 +429,7 @@ export default function AdminPage() {
                       // Get admin session IDs from login logs
                       const adminSessionIds = new Set<string>();
                       analytics.loginLogs?.forEach(log => {
-                        if (log.userEmail && admins.includes(log.userEmail) && log.sessionId) {
+                        if (log.userEmail && ADMIN_EMAILS.includes(log.userEmail) && log.sessionId) {
                           adminSessionIds.add(log.sessionId);
                         }
                       });
@@ -643,7 +644,7 @@ export default function AdminPage() {
                         return `${Math.floor(timeAgo / 86400)}d ago`;
                       };
 
-                      const isAdminEmail = log.userEmail && admins.includes(log.userEmail);
+                      const isAdminEmail = log.userEmail && ADMIN_EMAILS.includes(log.userEmail);
                       const deviceType = log.deviceInfo?.userAgent 
                         ? (log.deviceInfo.userAgent.includes("Mobile") ? "Mobile" : "Desktop")
                         : "Unknown";

@@ -8,7 +8,7 @@ import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { useEffect, useState } from "react";
 import { getJobCount } from "@/lib/firebase/firestore";
 
-function parseFirebaseDate(dateValue: any): Date | null {
+function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
   if (dateValue instanceof Date) return dateValue;
   if (typeof dateValue === "object" && typeof dateValue.toDate === "function") {
@@ -23,7 +23,7 @@ function parseFirebaseDate(dateValue: any): Date | null {
       const d = new Date(dateValue);
       return isNaN(d.getTime()) ? null : d;
     }
-    const [_, datePart, timePart, ampm, tz] = match;
+    const [, datePart, timePart, ampm, tz] = match;
     let formatted = `${datePart} ${timePart}`;
     if (ampm) formatted += ` ${ampm}`;
     formatted += " GMT"; 
@@ -34,54 +34,25 @@ function parseFirebaseDate(dateValue: any): Date | null {
   return null;
 }
 
-function formatDate(dateValue: any) {
-  const parsedDate = parseFirebaseDate(dateValue);
-  return parsedDate
-    ? parsedDate.toLocaleDateString("id-ID", { 
-        day: "numeric", 
-        month: "long", 
-        year: "numeric" 
-      })
-    : null;
-}
-
 export function SubscriptionInfo() {
   const router = useRouter(); // 2. Init router
   const { subscription, updatedAt, user } = useAuth();
   const [jobCount, setJobCount] = useState<number | null>(null);
 
-  if (!subscription) return null;
-
-  const isFreePlan = subscription.plan === "free";
+  const isFreePlan = subscription?.plan === "free";
   
-  // Fetch job count for free users
+  // Fetch job count for free users - MUST be before early return
   useEffect(() => {
     if (isFreePlan && user) {
       getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
     }
   }, [isFreePlan, user]);
 
+  if (!subscription) return null;
+
   const dateToShow = subscription.status === 'active' 
     ? updatedAt
     : subscription.endsAt;
-
-  function parseFirebaseDate(dateStr: string): Date | null {
-    // Contoh: "February 8, 2026 at 5:00:00 PM UTC+7"
-    const match = dateStr.match(
-      /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
-    );
-    if (!match) return null;
-
-    // Gabungkan jadi format yang bisa diparse JS Date
-    const [_, datePart, timePart, ampm, tz] = match;
-    let formatted = `${datePart} ${timePart}`;
-    if (ampm) formatted += ` ${ampm}`;
-    formatted += " GMT"; // UTC+7 jadi GMT+7, tapi JS Date bisa parse "GMT+7"
-    if (tz) formatted += tz;
-
-    const d = new Date(formatted);
-    return isNaN(d.getTime()) ? null : d;
-  }
 
   let parsedDate: Date | null = null;
 
@@ -167,7 +138,7 @@ export function SubscriptionInfo() {
 
         {isFreePlan ? (
           <Button 
-            onClick={() => router.push("/pricing")}
+            onClick={() => router.push("/upgrade")}
             className="bg-green-600 text-white hover:bg-green-700 hover:scale-105 transition-all font-bold shadow-lg shadow-green-600/20"
           >
             <ArrowUpRight className="w-4 h-4 mr-2" />

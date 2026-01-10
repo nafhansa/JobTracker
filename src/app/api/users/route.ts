@@ -25,11 +25,12 @@ export async function GET() {
     });
 
     return NextResponse.json(users);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; code?: string };
     console.error("❌ Error fetching users:", error);
     console.error("Error details:", {
-      message: error.message,
-      code: error.code,
+      message: err.message,
+      code: err.code,
     });
     return NextResponse.json(
       { 

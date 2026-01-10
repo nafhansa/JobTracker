@@ -13,37 +13,52 @@ EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
 const EARLY_BIRD_LIFETIME_PRICE = "9.99";
 const REGULAR_LIFETIME_PRICE = "17.99";
 
+const calculateTimeLeft = () => {
+  const now = new Date().getTime();
+  const end = EARLY_BIRD_END_DATE.getTime();
+  const difference = end - now;
+
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  }
+
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((difference % (1000 * 60)) / 1000),
+    expired: false,
+  };
+};
+
 export function UrgencyBanner() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const initial = calculateTimeLeft();
+    return {
+      days: initial.days,
+      hours: initial.hours,
+      minutes: initial.minutes,
+      seconds: initial.seconds,
+    };
   });
-  const [isExpired, setIsExpired] = useState(false);
+  const [isExpired, setIsExpired] = useState(() => calculateTimeLeft().expired);
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = EARLY_BIRD_END_DATE.getTime();
-      const difference = end - now;
-
-      if (difference <= 0) {
-        setIsExpired(true);
-        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-      }
-
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      };
-    };
-
-    setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      const result = calculateTimeLeft();
+      setTimeLeft((prev) => {
+        if (prev.days === result.days && prev.hours === result.hours && 
+            prev.minutes === result.minutes && prev.seconds === result.seconds) {
+          return prev;
+        }
+        return {
+          days: result.days,
+          hours: result.hours,
+          minutes: result.minutes,
+          seconds: result.seconds,
+        };
+      });
+      setIsExpired((prev) => prev !== result.expired ? result.expired : prev);
     }, 1000);
 
     return () => clearInterval(timer);

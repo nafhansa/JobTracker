@@ -225,7 +225,7 @@ export default function BillingPage() {
                         Subscription Cancelled
                       </p>
                       <p className="text-sm text-[#FFF0C4]/70">
-                        You'll continue to have access until {endsAt}. 
+                        You&apos;ll continue to have access until {endsAt}. 
                         After that, your account will revert to the free plan.
                       </p>
                     </div>
@@ -273,7 +273,7 @@ export default function BillingPage() {
                           Are you sure?
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-[#FFF0C4]/60">
-                          Your subscription will be cancelled, but you'll keep access until the end of 
+                          Your subscription will be cancelled, but you&apos;ll keep access until the end of 
                           your current billing period ({formatDate(rawRenewsAt)}). You can resubscribe anytime.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -295,7 +295,7 @@ export default function BillingPage() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-[#FFF0C4]/60 mb-4">
-                  You don't have an active subscription
+                  You don&apos;t have an active subscription
                 </p>
                 <Button
                   onClick={() => router.push("/pricing")}
@@ -319,7 +319,7 @@ export default function BillingPage() {
           <CardContent>
             <p className="text-[#FFF0C4]/80 mb-4">
               If you have any questions about your subscription or need assistance, 
-              we're here to help.
+              we&apos;re here to help.
             </p>
             <a 
               href="mailto:official.jobtrackerapp@gmail.com"
@@ -334,7 +334,7 @@ export default function BillingPage() {
   );
 }
 
-function parseFirebaseDate(dateValue: any): Date | null {
+function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
   
   // Jika sudah berupa Date object
@@ -361,7 +361,7 @@ function parseFirebaseDate(dateValue: any): Date | null {
         return isNaN(d.getTime()) ? null : d;
     }
 
-    const [_, datePart, timePart, ampm, tz] = match;
+    const [, datePart, timePart, ampm, tz] = match;
     let formatted = `${datePart} ${timePart}`;
     if (ampm) formatted += ` ${ampm}`;
     formatted += " GMT"; 
@@ -374,7 +374,7 @@ function parseFirebaseDate(dateValue: any): Date | null {
   return null;
 }
 
-function formatDate(dateValue: any) {
+function formatDate(dateValue: unknown) {
   const parsedDate = parseFirebaseDate(dateValue);
   return parsedDate
     ? parsedDate.toLocaleDateString("id-ID", { 

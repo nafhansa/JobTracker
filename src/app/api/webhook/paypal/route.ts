@@ -174,23 +174,33 @@ export async function POST(req: Request) {
       if (nextBillingTime) {
         endDate = Timestamp.fromDate(new Date(nextBillingTime));
       } else if (existingEndsAt) {
-        if (typeof (existingEndsAt as any).toDate === "function") {
-          const existingDate = (existingEndsAt as any).toDate();
+        interface FirestoreTimestampLike {
+          toDate?: () => Date;
+          _seconds?: number;
+        }
+        const existingEndsAtTyped = existingEndsAt as FirestoreTimestampLike | string | Date;
+        if (typeof existingEndsAtTyped === "object" && typeof existingEndsAtTyped.toDate === "function") {
+          const existingDate = existingEndsAtTyped.toDate();
           endDate = existingDate > new Date() ? existingEndsAt : Timestamp.now();
-        } else if (typeof existingEndsAt === "string") {
-          const existingDate = new Date(existingEndsAt);
+        } else if (typeof existingEndsAtTyped === "string") {
+          const existingDate = new Date(existingEndsAtTyped);
           endDate = existingDate > new Date() ? Timestamp.fromDate(existingDate) : Timestamp.now();
         } else {
           endDate = Timestamp.now();
         }
       } else if (currentSub?.renewsAt) {
         let renewsAtDate: Date;
-        if (typeof (currentSub.renewsAt as any).toDate === "function") {
-          renewsAtDate = (currentSub.renewsAt as any).toDate();
-        } else if (typeof currentSub.renewsAt === "string") {
-          renewsAtDate = new Date(currentSub.renewsAt);
-        } else if ((currentSub.renewsAt as any)._seconds) {
-          renewsAtDate = new Date((currentSub.renewsAt as any)._seconds * 1000);
+        interface FirestoreTimestampLike {
+          toDate?: () => Date;
+          _seconds?: number;
+        }
+        const renewsAtTyped = currentSub.renewsAt as FirestoreTimestampLike | string | Date;
+        if (typeof renewsAtTyped === "object" && typeof renewsAtTyped.toDate === "function") {
+          renewsAtDate = renewsAtTyped.toDate();
+        } else if (typeof renewsAtTyped === "string") {
+          renewsAtDate = new Date(renewsAtTyped);
+        } else if (typeof renewsAtTyped === "object" && renewsAtTyped._seconds) {
+          renewsAtDate = new Date(renewsAtTyped._seconds * 1000);
         } else {
           renewsAtDate = new Date();
         }
@@ -250,8 +260,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string };
     console.error("❌ PayPal Webhook Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
 }
