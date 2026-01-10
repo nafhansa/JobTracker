@@ -1,6 +1,6 @@
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "./config";
-import { SubscriptionPlan, FREE_PLAN_JOB_LIMIT } from "@/types";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
 const USER_COLLECTION = "users";
 const SUBSCRIPTION_COLLECTION = "subscriptions";
@@ -56,7 +56,14 @@ export const getSubscription = async (userId: string) => {
 
 // 👇👇👇 TAMBAHKAN FUNGSI INI DI PALING BAWAH 👇👇👇
 
-export const checkIsPro = (subscription: any): boolean => {
+interface SubscriptionData {
+  status?: string;
+  plan?: string;
+  renewsAt?: Timestamp | Date | string | { _seconds?: number };
+  endsAt?: Timestamp | Date | string | { _seconds?: number };
+}
+
+export const checkIsPro = (subscription: SubscriptionData | null | undefined): boolean => {
   if (!subscription) return false;
 
   const { status, plan, renewsAt, endsAt } = subscription;
@@ -82,8 +89,8 @@ export const checkIsPro = (subscription: any): boolean => {
       endDate = candidate;
     } else if (typeof candidate === "string") {
       endDate = new Date(candidate);
-    } else if ((candidate as any)?._seconds) {
-      endDate = new Date((candidate as any)._seconds * 1000);
+    } else if (typeof candidate === "object" && "_seconds" in candidate && typeof candidate._seconds === "number") {
+      endDate = new Date(candidate._seconds * 1000);
     } else {
       return false; // Format tidak dikenal
     }

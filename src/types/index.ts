@@ -25,7 +25,7 @@ export type AnalyticsEventType = "visit" | "login" | "dashboard";
 
 export interface AnalyticsEvent {
   type: AnalyticsEventType;
-  timestamp: any;
+  timestamp: Date | string | number;
   userId?: string;
   userEmail?: string;
   page?: string;
