@@ -11,6 +11,7 @@ import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck } from "lucide-react"; 
 import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -87,9 +88,9 @@ export default function DashboardPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] flex items-center justify-center flex-col gap-4">
-          <div className="w-8 h-8 border-4 border-[#8C1007] border-t-[#FFF0C4] rounded-full animate-spin"></div>
-          <p className="text-[#FFF0C4]/60 animate-pulse">Loading experience...</p>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-muted-foreground animate-pulse">Loading experience...</p>
       </div>
     );
   }
@@ -97,41 +98,36 @@ export default function DashboardPage() {
   if (!user) return null; 
 
   return (
-    <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4]">
-      {/* Background Effect */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#500905] via-[#1a0201] to-[#000000]"></div>
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
-      </div>
-
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
       {/* Navbar */}
-      <nav className="relative z-30 border-b border-[#FFF0C4]/10 bg-[#3E0703]/80 backdrop-blur-md sticky top-0 px-6 py-4 flex items-center justify-between shadow-lg">
+      <nav className="relative z-30 border-b border-border bg-background/80 dark:bg-card/80 backdrop-blur-xl sticky top-0 px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
-          <h1 className="font-serif font-bold text-xl tracking-widest text-[#FFF0C4]">
-            Job<span className="text-[#8C1007]">Tracker</span>.
+          <h1 className="font-bold text-xl tracking-widest text-foreground transition-colors">
+            Job<span className="text-primary">Tracker</span>.
           </h1>
         </div>
         
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           {isAdmin && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/admin")}
-              className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50"
+              className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors"
             >
               <ShieldCheck className="w-4 h-4 mr-2" />
               Admin
             </Button>
           )}
-          <span className="hidden md:inline text-xs font-medium tracking-wide text-[#FFF0C4]/60 uppercase">
+          <span className="hidden md:inline text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors">
             {user.email}
           </span>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleLogout}
-            className="text-[#FFF0C4] hover:text-[#8C1007] hover:bg-[#FFF0C4]/10 border border-[#FFF0C4]/20 hover:border-[#8C1007]/50"
+            className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
@@ -143,10 +139,10 @@ export default function DashboardPage() {
       <main className="relative z-10 max-w-6xl mx-auto p-6 md:py-10">
         
         <div className="mb-8">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FFF0C4] to-[#ffdca0] mb-2 drop-shadow-sm">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
               Your Applications
             </h2>
-            <p className="text-[#FFF0C4]/60 text-lg">
+            <p className="text-muted-foreground text-lg">
               Manage your journey. Filter by status to stay focused.
             </p>
         </div>
@@ -161,21 +157,21 @@ export default function DashboardPage() {
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-56 bg-[#3E0703]/30 border border-[#FFF0C4]/5 rounded-xl" />
+              <div key={i} className="h-56 bg-card border border-border rounded-xl" />
             ))}
           </div>
         ) : isSubscribed || isFreeUser ? (
           <>
             {isFreeUser && jobs.length >= FREE_PLAN_JOB_LIMIT && (
               <div className="mb-6">
-                <div className="p-4 bg-yellow-600/10 border border-yellow-600/30 rounded-xl flex items-center justify-between">
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center justify-between shadow-sm">
                   <div>
-                    <p className="text-yellow-400 font-semibold mb-1">Job limit reached!</p>
-                    <p className="text-[#FFF0C4]/70 text-sm">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
+                    <p className="text-yellow-700 font-semibold mb-1">Job limit reached!</p>
+                    <p className="text-muted-foreground text-sm">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
                   </div>
                   <Button
                     onClick={() => router.push("/upgrade")}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     Upgrade to Pro Now
                   </Button>

@@ -136,10 +136,10 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-[#FFF0C4] text-[#3E0703] border-[#8C1007]/20 shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] bg-card text-foreground border-border shadow-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-serif font-bold text-[#3E0703] flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-[#8C1007] flex items-center justify-center text-white shadow-md">
+          <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-md">
               {isEditMode ? <Pencil className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
             </span>
             {isEditMode ? "Edit Application" : "Track New Job"}
@@ -170,7 +170,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
         {/* Usage indicator for free users */}
         {isFreeUser && !isEditMode && (
-          <div className="p-2 bg-[#FFF0C4]/50 border border-[#3E0703]/20 rounded text-xs text-[#3E0703]/70">
+          <div className="p-2 bg-muted/50 border border-border rounded text-xs text-muted-foreground">
             Using {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs
           </div>
         )}
@@ -179,14 +179,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           
           {/* Job Title */}
           <div className="grid gap-2">
-            <Label htmlFor="title" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Job Title *</Label>
+            <Label htmlFor="title" className="text-foreground font-semibold tracking-wide text-xs uppercase">Job Title *</Label>
             <div className="relative">
-              <Briefcase className="absolute left-3 top-3 h-4 w-4 text-[#8C1007]/50" />
+              <Briefcase className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
               <Input
                 id="title"
                 required
                 placeholder="e.g. Frontend Developer"
-                className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
+                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                 value={formData.jobTitle}
                 onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
               />
@@ -195,14 +195,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
           {/* Company */}
           <div className="grid gap-2">
-            <Label htmlFor="industry" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Company / Industry *</Label>
+            <Label htmlFor="industry" className="text-foreground font-semibold tracking-wide text-xs uppercase">Company / Industry *</Label>
             <div className="relative">
-              <Building className="absolute left-3 top-3 h-4 w-4 text-[#8C1007]/50" />
+              <Building className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
               <Input
                 id="industry"
                 required
                 placeholder="e.g. Google / Tech"
-                className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
+                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                 value={formData.industry}
                 onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
               />
@@ -212,14 +212,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           <div className="grid grid-cols-2 gap-4">
             {/* Salary */}
             <div className="grid gap-2">
-              <Label htmlFor="salary" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Salary (IDR)</Label>
+              <Label htmlFor="salary" className="text-foreground font-semibold tracking-wide text-xs uppercase">Salary (IDR)</Label>
               <div className="relative">
-                <Wallet className="absolute left-3 top-3 h-4 w-4 text-[#8C1007]/50" />
+                <Wallet className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
                 <Input
                   id="salary"
                   type="number"
                   placeholder="0"
-                  className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
+                  className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                   value={formData.potentialSalary}
                   onChange={(e) => setFormData({ ...formData, potentialSalary: e.target.value })}
                 />
@@ -228,14 +228,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             
             {/* Email (OPSIONAL - required dihapus) */}
             <div className="grid gap-2">
-              <Label htmlFor="email" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Recruiter Email</Label>
+              <Label htmlFor="email" className="text-foreground font-semibold tracking-wide text-xs uppercase">Recruiter Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-[#8C1007]/50" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="hr@mail.com (Optional)" 
-                  className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
+                  className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                   value={formData.recruiterEmail}
                   onChange={(e) => setFormData({ ...formData, recruiterEmail: e.target.value })}
                 />
@@ -245,13 +245,13 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
           {/* URL */}
           <div className="grid gap-2">
-            <Label htmlFor="url" className="text-[#3E0703]/80 font-bold tracking-wide text-xs uppercase">Job Link</Label>
+            <Label htmlFor="url" className="text-foreground font-semibold tracking-wide text-xs uppercase">Job Link</Label>
             <div className="relative">
-              <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-[#8C1007]/50" />
+              <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
               <Input
                 id="url"
                 placeholder="https://..."
-                className="pl-9 bg-white/60 border-[#3E0703]/10 text-[#3E0703] placeholder:text-[#3E0703]/30 focus-visible:ring-[#8C1007] focus-visible:bg-white transition-all"
+                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                 value={formData.applicationUrl}
                 onChange={(e) => setFormData({ ...formData, applicationUrl: e.target.value })}
               />
@@ -261,7 +261,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           <Button 
             type="submit" 
             disabled={loading || (isEditMode && !canEdit) || (!isEditMode && !canAdd)}
-            className="w-full bg-[#8C1007] hover:bg-[#a31208] text-white font-bold py-6 mt-2 shadow-[0_4px_14px_0_rgba(140,16,7,0.39)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 mt-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -280,7 +280,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             <Button
               type="button"
               onClick={() => router.push("/upgrade")}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mt-2"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 mt-2"
             >
               Upgrade to Pro Now
             </Button>

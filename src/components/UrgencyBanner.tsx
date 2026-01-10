@@ -69,35 +69,35 @@ export function UrgencyBanner() {
   }
 
   return (
-    <div className="relative w-full bg-gradient-to-r from-[#8C1007] via-[#a01208] to-[#8C1007] border-b border-[#FFF0C4]/20">
+    <div className="relative w-full bg-blue-50 border-b border-blue-200">
       <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[#FFF0C4] animate-pulse" />
-          <span className="text-sm sm:text-base font-bold text-[#FFF0C4]">
-            🎉 Early Bird Special:
+          <Zap className="w-4 h-4 text-blue-600" />
+          <span className="text-sm sm:text-base font-semibold text-blue-900">
+            Early Bird Special:
           </span>
-          <span className="text-sm sm:text-base font-bold text-[#FFF0C4]">
+          <span className="text-sm sm:text-base font-semibold text-blue-900">
             Lifetime Access Only ${EARLY_BIRD_LIFETIME_PRICE} (Was ${REGULAR_LIFETIME_PRICE})
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-[#FFF0C4]" />
-          <span className="text-xs sm:text-sm text-[#FFF0C4]/90">Ends in:</span>
-          <div className="flex items-center gap-2 font-mono text-sm sm:text-base font-bold text-[#FFF0C4]">
-            <span className="bg-[#FFF0C4]/20 px-2 py-1 rounded">
+          <Clock className="w-4 h-4 text-blue-600" />
+          <span className="text-xs sm:text-sm text-blue-700">Ends in:</span>
+          <div className="flex items-center gap-2 font-mono text-sm sm:text-base font-bold text-blue-900">
+            <span className="bg-white border border-blue-200 px-2 py-1 rounded shadow-sm">
               {String(timeLeft.days).padStart(2, "0")}d
             </span>
-            <span>:</span>
-            <span className="bg-[#FFF0C4]/20 px-2 py-1 rounded">
+            <span className="text-blue-600">:</span>
+            <span className="bg-white border border-blue-200 px-2 py-1 rounded shadow-sm">
               {String(timeLeft.hours).padStart(2, "0")}h
             </span>
-            <span>:</span>
-            <span className="bg-[#FFF0C4]/20 px-2 py-1 rounded">
+            <span className="text-blue-600">:</span>
+            <span className="bg-white border border-blue-200 px-2 py-1 rounded shadow-sm">
               {String(timeLeft.minutes).padStart(2, "0")}m
             </span>
-            <span>:</span>
-            <span className="bg-[#FFF0C4]/20 px-2 py-1 rounded">
+            <span className="text-blue-600">:</span>
+            <span className="bg-white border border-blue-200 px-2 py-1 rounded shadow-sm">
               {String(timeLeft.seconds).padStart(2, "0")}s
             </span>
           </div>
@@ -105,7 +105,7 @@ export function UrgencyBanner() {
 
         <Link
           href="/pricing"
-          className="ml-auto text-xs sm:text-sm font-bold text-[#FFF0C4] underline hover:text-white transition-colors"
+          className="ml-auto text-xs sm:text-sm font-semibold text-primary underline hover:text-primary/80 transition-colors"
         >
           Claim Offer →
         </Link>

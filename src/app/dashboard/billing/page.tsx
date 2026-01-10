@@ -73,8 +73,8 @@ export default function BillingPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen bg-[#1a0201] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#8C1007] animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -91,51 +91,46 @@ export default function BillingPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4]">
-      {/* Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#500905] via-[#3E0703] to-[#150201]"></div>
-      </div>
-
+    <div className="min-h-screen bg-background text-foreground">
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <Button
             variant="ghost"
             onClick={() => router.push("/dashboard")}
-            className="text-[#FFF0C4] hover:text-black hover:bg-[#FFF0C4] mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold text-[#FFF0C4] mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Billing & Subscription
           </h1>
-          <p className="text-[#FFF0C4]/60">
+          <p className="text-muted-foreground">
             Manage your subscription and payment details
           </p>
         </div>
 
         {/* Success Message */}
         {cancelSuccess && (
-          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-400" />
-            <p className="text-green-400">
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-3 shadow-sm">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            <p className="text-emerald-700">
               Subscription cancelled successfully. Your access will continue until the end of the billing period.
             </p>
           </div>
         )}
 
         {/* Current Plan Card */}
-        <Card className="bg-[#3E0703]/40 border-[#FFF0C4]/10 mb-6">
+        <Card className="bg-card border-border mb-6 shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-[#FFF0C4] flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
                   Current Plan
                 </CardTitle>
-                <CardDescription className="text-[#FFF0C4]/60">
+                <CardDescription className="text-muted-foreground">
                   Your subscription details
                 </CardDescription>
               </div>
@@ -143,8 +138,8 @@ export default function BillingPage() {
                 variant={isActive ? "default" : "outline"}
                 className={
                   isActive 
-                    ? "bg-green-500/20 text-green-400 border-green-500/30" 
-                    : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                    : "bg-yellow-50 text-yellow-700 border-yellow-200"
                 }
               >
                 {subscription?.status || "No Plan"}
@@ -155,12 +150,12 @@ export default function BillingPage() {
             {subscription ? (
               <>
                 {/* Plan Type */}
-                <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
-                  <span className="text-[#FFF0C4]/60">Plan Type</span>
-                  <span className="font-semibold text-[#FFF0C4] flex items-center gap-2">
+                <div className="flex justify-between items-center py-3 border-b border-border">
+                  <span className="text-muted-foreground">Plan Type</span>
+                  <span className="font-semibold text-foreground flex items-center gap-2">
                     {isFreePlan ? (
                       <>
-                        <Gift className="w-4 h-4 text-green-400" />
+                        <Gift className="w-4 h-4 text-emerald-500" />
                         Free Plan
                       </>
                     ) : isLifetime ? (
@@ -172,18 +167,18 @@ export default function BillingPage() {
                 </div>
 
                 {/* Pricing */}
-                <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
-                  <span className="text-[#FFF0C4]/60">Price</span>
-                  <span className="font-semibold text-[#FFF0C4]">
+                <div className="flex justify-between items-center py-3 border-b border-border">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-semibold text-foreground">
                     {isFreePlan ? "Free" : isLifetime ? "$17.99 (One-time)" : "$2.99/month"}
                   </span>
                 </div>
                 
                 {/* Usage for Free Plan */}
                 {isFreePlan && jobCount !== null && (
-                  <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
-                    <span className="text-[#FFF0C4]/60">Jobs Used</span>
-                    <span className="font-semibold text-[#FFF0C4]">
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-muted-foreground">Jobs Used</span>
+                    <span className="font-semibold text-foreground">
                       {jobCount}/{FREE_PLAN_JOB_LIMIT}
                     </span>
                   </div>
@@ -191,12 +186,12 @@ export default function BillingPage() {
 
                 {/* Next Billing / End Date */}
                 {!isLifetime && (
-                  <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
-                    <span className="text-[#FFF0C4]/60 flex items-center gap-2">
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {isCancelled ? "Access Ends" : "Next Billing"}
                     </span>
-                    <span className="font-semibold text-[#FFF0C4]">
+                    <span className="font-semibold text-foreground">
                      {isCancelled
                         ? formatDate(rawEndsAt)
                         : formatDate(rawRenewsAt)}
@@ -207,8 +202,8 @@ export default function BillingPage() {
                 {/* Subscription ID */}
                 {subscription.paypalSubscriptionId && (
                   <div className="flex justify-between items-center py-3">
-                    <span className="text-[#FFF0C4]/60">Subscription ID</span>
-                    <span className="font-mono text-xs text-[#FFF0C4]/80">
+                    <span className="text-muted-foreground">Subscription ID</span>
+                    <span className="font-mono text-xs text-muted-foreground">
                       {typeof subscription.paypalSubscriptionId === "string" 
                         ? `${subscription.paypalSubscriptionId.slice(0, 20)}...`
                         : "N/A"}
@@ -218,13 +213,13 @@ export default function BillingPage() {
 
                 {/* Cancellation Warning */}
                 {isCancelled && endsAt && (
-                  <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3 shadow-sm">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-yellow-400 mb-1">
+                      <p className="font-semibold text-yellow-700 mb-1">
                         Subscription Cancelled
                       </p>
-                      <p className="text-sm text-[#FFF0C4]/70">
+                      <p className="text-sm text-muted-foreground">
                         You&apos;ll continue to have access until {endsAt}. 
                         After that, your account will revert to the free plan.
                       </p>
@@ -234,13 +229,13 @@ export default function BillingPage() {
 
                 {/* Upgrade CTA for Free Plan */}
                 {isFreePlan && (
-                  <div className="mt-6 p-4 bg-green-600/10 border border-green-600/30 rounded-lg">
-                    <p className="text-sm text-[#FFF0C4]/80 mb-4">
+                  <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg shadow-sm">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Upgrade to Pro for unlimited job tracking and advanced features!
                     </p>
                     <Button
                       onClick={() => router.push("/pricing")}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
                     >
                       <ArrowUpRight className="w-4 h-4 mr-2" />
                       Upgrade to Pro
@@ -267,23 +262,23 @@ export default function BillingPage() {
                         )}
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#2a0401] border-[#FFF0C4]/10">
+                    <AlertDialogContent className="bg-card border-border">
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-[#FFF0C4]">
+                        <AlertDialogTitle className="text-foreground">
                           Are you sure?
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-[#FFF0C4]/60">
+                        <AlertDialogDescription className="text-muted-foreground">
                           Your subscription will be cancelled, but you&apos;ll keep access until the end of 
                           your current billing period ({formatDate(rawRenewsAt)}). You can resubscribe anytime.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-[#3E0703] border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#3E0703]/80">
+                        <AlertDialogCancel>
                           Keep Subscription
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleCancelSubscription}
-                          className="bg-red-600 hover:bg-red-700"
+                          className="bg-red-500 hover:bg-red-600 text-white"
                         >
                           Yes, Cancel
                         </AlertDialogAction>
@@ -294,12 +289,12 @@ export default function BillingPage() {
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-[#FFF0C4]/60 mb-4">
+                <p className="text-muted-foreground mb-4">
                   You don&apos;t have an active subscription
                 </p>
                 <Button
                   onClick={() => router.push("/pricing")}
-                  className="bg-[#8C1007] hover:bg-[#a31208] text-white"
+                  className="bg-primary hover:bg-primary/90 text-white"
                 >
                   View Plans
                 </Button>
@@ -309,21 +304,21 @@ export default function BillingPage() {
         </Card>
 
         {/* Support Card */}
-        <Card className="bg-[#3E0703]/40 border-[#FFF0C4]/10">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-[#FFF0C4]">Need Help?</CardTitle>
-            <CardDescription className="text-[#FFF0C4]/60">
+            <CardTitle className="text-foreground">Need Help?</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Contact our support team
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-[#FFF0C4]/80 mb-4">
+            <p className="text-muted-foreground mb-4">
               If you have any questions about your subscription or need assistance, 
               we&apos;re here to help.
             </p>
             <a 
               href="mailto:official.jobtrackerapp@gmail.com"
-              className="inline-flex items-center text-[#8C1007] hover:text-[#FFF0C4] transition-colors"
+              className="inline-flex items-center text-primary hover:text-primary/80 transition-colors"
             >
               official.jobtrackerapp@gmail.com
             </a>

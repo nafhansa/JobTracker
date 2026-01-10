@@ -23,28 +23,15 @@ export default function PricingPage() {
   const [isEarlyBird] = useState(() => isEarlyBirdActive());
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
       <Navbar />
-      
-      {/* Background Effect */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#500905] via-[#3E0703] to-[#150201]"></div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
-        <div 
-          className="absolute inset-0" 
-          style={{ 
-            backgroundImage: 'linear-gradient(rgba(255, 240, 196, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 240, 196, 0.03) 1px, transparent 1px)', 
-            backgroundSize: '40px 40px' 
-          }}
-        ></div>
-      </div>
 
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
         <section className="text-center max-w-4xl mx-auto px-6 space-y-6">
-          <h1 className="text-4xl md:text-6xl font-serif font-bold tracking-tight text-[#FFF0C4]">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground">
             Invest in Your Career
           </h1>
-          <p className="text-lg md:text-xl text-[#FFF0C4]/70 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Stop losing track of opportunities. Choose the plan that fits your ambition.
           </p>
         </section>
@@ -104,7 +91,7 @@ export default function PricingPage() {
         </section>
       </main>
 
-      <footer className="py-10 border-t border-[#FFF0C4]/10 text-center text-sm text-[#FFF0C4]/40 relative z-10">
+      <footer className="py-10 border-t border-border text-center text-sm text-muted-foreground relative z-10">
         <p>&copy; {new Date().getFullYear()} JobTracker.</p>
       </footer>
     </div>
@@ -137,17 +124,17 @@ function PricingCard({
 
   return (
     <div
-      className={`group relative p-8 rounded-2xl transition-all duration-300 ${
+      className={`group relative p-8 rounded-2xl transition-all duration-300 bg-card border shadow-sm ${
         isFeatured 
-          ? "border border-[#8C1007] bg-gradient-to-b from-[#3E0703]/90 to-[#1a0201] shadow-[0_0_40px_-10px_rgba(140,16,7,0.4)] md:-translate-y-4 z-10" 
+          ? "border-primary border-2 shadow-md md:-translate-y-4 z-10" 
           : isFree
-          ? "border border-[#FFF0C4]/20 bg-[#2a0401]/60 hover:border-[#FFF0C4]/30 hover:bg-[#3E0703]/20"
-          : "border border-[#FFF0C4]/10 bg-[#2a0401]/80 hover:border-[#8C1007]/30 hover:bg-[#3E0703]/30"
+          ? "border-border hover:border-primary/30 hover:shadow-md"
+          : "border-border hover:border-primary/30 hover:shadow-md"
       }`}
     >
       {isFeatured && (
         <div className="absolute -top-4 right-6">
-          <span className="bg-[#8C1007] text-[#FFF0C4] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
+          <span className="bg-blue-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
             <Star className="w-3 h-3 fill-current" /> Best Value
           </span>
         </div>
@@ -155,22 +142,22 @@ function PricingCard({
       
       {isFree && (
         <div className="absolute -top-4 right-6">
-          <span className="bg-green-600 text-[#FFF0C4] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
+          <span className="bg-emerald-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
             <Gift className="w-3 h-3 fill-current" /> Free
           </span>
         </div>
       )}
 
-      <h3 className="text-2xl font-serif font-bold text-[#FFF0C4]">{plan}</h3>
-      <p className="text-[#FFF0C4]/50 text-sm mt-2">{description}</p>
+      <h3 className="text-2xl font-bold text-foreground">{plan}</h3>
+      <p className="text-muted-foreground text-sm mt-2">{description}</p>
       
       <div className="mt-6">
         {originalPrice && (
-          <div className="flex items-center gap-2 mb-1 animate-pulse">
-            <span className="text-lg text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2 font-medium">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg text-muted-foreground line-through decoration-muted-foreground decoration-2 font-medium">
               {originalPrice}
             </span>
-            <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 border border-blue-200">
               <Tag className="w-3 h-3" /> 
               {(() => {
                 // Calculate discount percentage
@@ -184,18 +171,18 @@ function PricingCard({
         )}
 
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl md:text-5xl font-bold text-[#FFF0C4]">{price}</span>
-          <span className="text-[#FFF0C4]/60 font-medium">{period}</span>
+          <span className="text-4xl md:text-5xl font-bold text-foreground">{price}</span>
+          <span className="text-muted-foreground font-medium">{period}</span>
         </div>
       </div>
 
       <ul className="mt-8 space-y-4">
         {features.map((feature, index) => (
           <li key={index} className="flex items-start gap-3">
-            <div className={`mt-0.5 p-0.5 rounded-full ${isFeatured ? "bg-[#8C1007]/20 text-[#8C1007]" : "text-[#FFF0C4]/40"}`}>
-              <CheckCircle2 className={`w-5 h-5 ${isFeatured ? "text-[#FF4D4D]" : "text-[#FFF0C4]/60"}`} />
+            <div className={`mt-0.5 p-0.5 rounded-full ${isFeatured ? "bg-primary/20 text-primary" : "text-muted-foreground/40"}`}>
+              <CheckCircle2 className={`w-5 h-5 ${isFeatured ? "text-emerald-500" : "text-muted-foreground"}`} />
             </div>
-            <span className={`text-sm ${isFeatured ? "text-[#FFF0C4] font-medium" : "text-[#FFF0C4]/80"}`}>
+            <span className={`text-sm ${isFeatured ? "text-foreground font-medium" : "text-muted-foreground"}`}>
               {feature}
             </span>
           </li>
@@ -213,12 +200,12 @@ function PricingCard({
               router.push("/login");
             }
           }}
-          className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
+          className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-semibold rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
             isFeatured
-              ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
+              ? "bg-primary text-white hover:bg-primary/90 shadow-md"
               : isFree
-              ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
-              : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
+              ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md"
+              : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
           {user ? "Go to Dashboard" : buttonText}
@@ -227,7 +214,7 @@ function PricingCard({
       </div>
 
       {isFeatured && (
-        <p className="text-center text-[10px] text-[#FFF0C4]/30 mt-4">
+        <p className="text-center text-[10px] text-muted-foreground mt-4">
           30-day money-back guarantee
         </p>
       )}

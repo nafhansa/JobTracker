@@ -48,28 +48,26 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
 
   return (
     <PayPalScriptProvider options={paypalOptions}>
-      <div className="relative overflow-hidden rounded-2xl border border-[#8C1007]/50 bg-gradient-to-br from-[#3E0703] to-[#1a0201] p-6 md:p-10 text-center shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 md:p-10 text-center shadow-lg">
         
         {PAYPAL_ENV.isSandbox && (
-          <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs">
+          <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">
             🧪 SANDBOX MODE - Testing with fake money
           </div>
         )}
         
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#8C1007] to-transparent opacity-50"></div>
-        
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4] text-xs font-bold tracking-wider uppercase mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold tracking-wider uppercase mb-4">
           <Sparkles className="w-3 h-3" />
           {showLimitMessage ? "Upgrade to Add More Jobs" : "Premium Access Required"}
         </div>
 
-        <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#FFF0C4] mb-4">
+        <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
           {showLimitMessage ? "You've Reached Your Free Plan Limit" : "Choose Your Plan"}
         </h2>
         
         {showLimitMessage && (
-          <p className="text-lg text-[#FFF0C4]/70 mb-4">
+          <p className="text-lg text-muted-foreground mb-4">
             You&apos;re currently tracking {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!
           </p>
         )}
@@ -78,32 +76,32 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
             
             {/* === MONTHLY PLAN === */}
             <div 
-              className={`flex flex-col rounded-xl border transition-all duration-300 ${
+              className={`flex flex-col rounded-xl border transition-all duration-300 shadow-sm ${
                 selectedPlan === 'monthly' 
-                  ? "border-[#FFF0C4] bg-[#1a0201]/90 ring-1 ring-[#FFF0C4]/50" 
-                  : "border-[#FFF0C4]/10 bg-[#1a0201]/60 hover:border-[#FFF0C4]/30"
-              } p-6 backdrop-blur-sm text-left`}
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
+                  : "border-border bg-card hover:border-primary/30"
+              } p-6 text-left`}
             >
-              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Monthly Plan</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2">Monthly Plan</h3>
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm text-[#FFF0C4]/40 line-through decoration-[#8C1007] decoration-2">
+                  <span className="text-sm text-muted-foreground line-through decoration-muted-foreground decoration-2">
                     $2.99
                   </span>
-                  <span className="text-[10px] font-bold text-[#8C1007] bg-[#FFF0C4] px-2 py-0.5 rounded-full uppercase tracking-wide">
+                  <span className="text-[10px] font-semibold text-primary bg-blue-50 border border-primary/30 px-2 py-0.5 rounded-full uppercase tracking-wide">
                     Save 33%
                   </span>
                 </div>
-                <p className="text-sm text-[#FFF0C4]/60">$1.99/month subscription</p>
+                <p className="text-sm text-muted-foreground">$1.99/month subscription</p>
               </div>
               
               <div className="flex-1 space-y-3 mb-6">
-                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                 <div className="flex items-center gap-3 text-foreground text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-primary" />
                    <span>Track Unlimited Applications</span>
                  </div>
-                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                 <div className="flex items-center gap-3 text-foreground text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-primary" />
                    <span>Smart Filters & Reminders</span>
                  </div>
               </div>
@@ -112,7 +110,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
                 {selectedPlan !== 'monthly' ? (
                   <button
                     onClick={() => { setSelectedPlan('monthly'); setStatusMsg(null); }}
-                    className="w-full py-3 rounded-lg bg-[#FFF0C4]/10 hover:bg-[#FFF0C4]/20 text-[#FFF0C4] text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-lg bg-accent hover:bg-accent/80 text-accent-foreground text-sm font-semibold transition-colors flex items-center justify-center gap-2 border border-border"
                   >
                     Select Monthly <ArrowRight className="w-4 h-4" />
                   </button>
@@ -141,26 +139,26 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
 
             {/* === LIFETIME PLAN === */}
             <div 
-              className={`relative flex flex-col rounded-xl border transition-all duration-300 ${
+              className={`relative flex flex-col rounded-xl border transition-all duration-300 shadow-md ${
                 selectedPlan === 'lifetime' 
-                  ? "border-[#8C1007] bg-[#3E0703]/60 ring-1 ring-[#8C1007]" 
-                  : "border-[#8C1007]/50 bg-[#3E0703]/40 hover:border-[#8C1007]"
-              } p-6 backdrop-blur-sm shadow-lg text-left transform md:scale-105`}
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
+                  : "border-primary/50 bg-card hover:border-primary"
+              } p-6 text-left transform md:scale-105`}
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8C1007] text-[#FFF0C4] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-semibold px-3 py-1 rounded-full uppercase shadow-md">
                  <Zap className="w-3 h-3 inline mr-1" /> Best Value
               </div>
 
-              <h3 className="text-xl font-bold text-[#FFF0C4] mb-2">Lifetime Access</h3>
-              <p className="text-sm text-[#FFF0C4]/60 mb-6">$9.99 one-time payment</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">Lifetime Access</h3>
+              <p className="text-sm text-muted-foreground mb-6">$9.99 one-time payment</p>
               
               <div className="flex-1 space-y-3 mb-6">
-                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                 <div className="flex items-center gap-3 text-foreground text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-primary" />
                    <span>Pay Once, Own Forever</span>
                  </div>
-                 <div className="flex items-center gap-3 text-[#FFF0C4]/80 text-sm">
-                   <CheckCircle2 className="w-4 h-4 text-[#8C1007]" />
+                 <div className="flex items-center gap-3 text-foreground text-sm">
+                   <CheckCircle2 className="w-4 h-4 text-primary" />
                    <span>Future Features Included</span>
                  </div>
               </div>
@@ -169,7 +167,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
                 {selectedPlan !== 'lifetime' ? (
                   <button
                     onClick={() => { setSelectedPlan('lifetime'); setStatusMsg(null); }}
-                    className="w-full py-3 rounded-lg bg-[#8C1007] hover:bg-[#a01208] text-[#FFF0C4] text-sm font-semibold transition-colors shadow-lg flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors shadow-md flex items-center justify-center gap-2"
                   >
                     Select Lifetime <ArrowRight className="w-4 h-4" />
                   </button>
@@ -210,7 +208,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
         {selectedPlan && (
            <button 
              onClick={() => { setSelectedPlan(null); setStatusMsg(null); }}
-             className="mt-6 text-[#FFF0C4]/50 hover:text-[#FFF0C4] text-xs underline cursor-pointer"
+             className="mt-6 text-muted-foreground hover:text-foreground text-xs underline cursor-pointer transition-colors"
            >
              Compare plans again
            </button>
@@ -219,15 +217,15 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
         {/* Status Message */}
         {statusMsg && (
           <div className="mt-6 w-full max-w-2xl animate-in slide-in-from-bottom-2">
-            <div className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold shadow-lg ${
+            <div className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold shadow-md border ${
                 statusMsg.type === 'success' 
-                  ? "bg-green-500/10 text-green-200 border border-green-500/30" 
-                  : "bg-red-500/10 text-red-200 border border-red-500/30"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                  : "bg-red-50 text-red-700 border-red-200"
               }`}>
               <span>{statusMsg.text}</span>
               <button 
                 onClick={() => setStatusMsg(null)} 
-                className="text-xs uppercase hover:opacity-100 opacity-80"
+                className="text-xs uppercase hover:opacity-100 opacity-80 transition-opacity"
               >
                 Close
               </button>

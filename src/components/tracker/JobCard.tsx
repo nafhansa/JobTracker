@@ -101,29 +101,29 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
 
   return (
     <TooltipProvider>
-    <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-lg transition-all duration-300
+    <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-md transition-all duration-300
       ${isRejected 
-        ? "bg-[#1a0201]/60 border-red-900/30 hover:border-red-500/30" 
-        : "bg-[#3E0703]/40 border-[#FFF0C4]/10 hover:shadow-[0_0_20px_rgba(140,16,7,0.3)] hover:border-[#8C1007]/50"
+        ? "bg-card border-red-200 hover:border-red-300" 
+        : "bg-card border-border hover:shadow-lg hover:border-primary/50"
       }
     `}>
       
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none bg-gradient-to-br 
-        ${isRejected ? "from-red-900/10 to-transparent" : "from-[#8C1007]/10 to-transparent"}`} 
+        ${isRejected ? "from-red-50/50 to-transparent" : "from-primary/5 to-transparent"}`} 
       />
 
       {/* Header */}
       <div className="p-5 flex justify-between items-start relative z-10">
         <div className="flex-1">
           <div className="flex items-start gap-2">
-            <h3 className={`font-serif font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-[#FFF0C4]/50 line-through decoration-red-500/50" : "text-[#FFF0C4] group-hover:text-white"}`}>
+            <h3 className={`font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
               {job.jobTitle}
             </h3>
             {isFreeUser && !isAdmin && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex-shrink-0 pt-0.5 cursor-help">
-                    <Lock className="w-4 h-4 text-yellow-500/70" />
+                    <Lock className="w-4 h-4 text-yellow-500" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -132,7 +132,7 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
               </Tooltip>
             )}
           </div>
-          <div className="flex items-center text-[#FFF0C4]/60 text-xs uppercase tracking-widest mt-1 gap-2 font-medium">
+          <div className="flex items-center text-muted-foreground text-xs uppercase tracking-widest mt-1 gap-2 font-medium">
             <Building2 className="w-3.5 h-3.5" />
             <span>{job.industry}</span>
           </div>
@@ -140,11 +140,11 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#FFF0C4]/70 hover:text-[#FFF0C4] hover:bg-[#FFF0C4]/10">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent">
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-[#1a0201] border-[#FFF0C4]/10 text-[#FFF0C4]">
+          <DropdownMenuContent align="end" className="bg-card border-border text-foreground shadow-lg">
             
             {/* --- MENU EDIT --- */}
             <Tooltip>
@@ -153,7 +153,7 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
                   <DropdownMenuItem 
                     onClick={handleEditClick} 
                     disabled={!canEdit}
-                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "cursor-pointer"} hover:bg-[#FFF0C4]/10`}
+                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "cursor-pointer"} hover:bg-accent`}
                   >
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Application
@@ -168,21 +168,21 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
               )}
             </Tooltip>
 
-            <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-[#FFF0C4]/10">
+            <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-accent">
               {isRejected ? (
                 <>
-                  <Rocket className="w-4 h-4 mr-2 text-green-400" />
+                  <Rocket className="w-4 h-4 mr-2 text-emerald-500" />
                   Mark as Active
                 </>
               ) : (
                 <>
-                  <Ban className="w-4 h-4 mr-2 text-red-400" />
+                  <Ban className="w-4 h-4 mr-2 text-red-500" />
                   Mark as Rejected
                 </>
               )}
             </DropdownMenuItem>
             
-            <DropdownMenuSeparator className="bg-[#FFF0C4]/10" />
+            <DropdownMenuSeparator className="bg-border" />
             
             <Tooltip>
               <TooltipTrigger asChild>
@@ -190,7 +190,7 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
                   <DropdownMenuItem 
                     onClick={handleDelete} 
                     disabled={!canEdit}
-                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "text-red-500 focus:text-red-400 focus:bg-[#3E0703] cursor-pointer"}`}
+                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "text-red-500 focus:text-red-400 focus:bg-red-50 cursor-pointer"}`}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Application
@@ -211,10 +211,10 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
       {/* Body Information */}
       <div className="px-5 pb-4 space-y-4 flex-1 relative z-10">
         {job.potentialSalary ? (
-          <div className={`inline-flex items-center text-xs font-bold tracking-wide px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(140,16,7,0.2)]
+          <div className={`inline-flex items-center text-xs font-semibold tracking-wide px-3 py-1.5 rounded-full shadow-sm
             ${isRejected 
-              ? "text-[#FFF0C4]/40 bg-red-900/10 border border-red-900/20 grayscale" 
-              : "text-[#FFF0C4] bg-[#8C1007]/20 border border-[#8C1007]/30"
+              ? "text-muted-foreground bg-red-50 border border-red-200 grayscale" 
+              : "text-emerald-700 bg-emerald-50 border border-emerald-200"
             }`}>
             <Banknote className="w-3.5 h-3.5 mr-2" />
             {formattedSalary}
@@ -225,19 +225,19 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
 
         {/* --- TAMPILKAN EMAIL JIKA ADA --- */}
         {job.recruiterEmail && (
-           <div className="flex items-center gap-2 text-xs text-[#FFF0C4]/60">
-             <Mail className="w-3.5 h-3.5 text-[#8C1007]" />
+           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+             <Mail className="w-3.5 h-3.5 text-primary" />
              <span>{job.recruiterEmail}</span>
            </div>
         )}
 
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-[#FFF0C4]/40 mt-4 border-t border-[#FFF0C4]/5 pt-3">
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mt-4 border-t border-border pt-3">
           <div className="flex items-center gap-1">
              <CalendarDays className="w-3 h-3" />
              {job.createdAt ? formatDistance(job.createdAt, new Date(), { addSuffix: true }) : "Just now"}
           </div>
           {job.applicationUrl && (
-            <a href={job.applicationUrl} target="_blank" rel="noreferrer" className="flex items-center hover:text-[#8C1007] transition-colors duration-300">
+            <a href={job.applicationUrl} target="_blank" rel="noreferrer" className="flex items-center hover:text-primary transition-colors duration-300">
               View Job <ExternalLink className="w-3 h-3 ml-1" />
             </a>
           )}
@@ -246,26 +246,26 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
 
       {/* Footer / Status Bar (SAMA PERSIS) */}
       <div className={`relative z-10 border-t p-4 rounded-b-xl backdrop-blur-sm transition-colors duration-300
-         ${isRejected ? "bg-red-950/20 border-red-900/20" : "bg-[#1a0201]/40 border-[#FFF0C4]/5"}
+         ${isRejected ? "bg-red-50 border-red-200" : "bg-muted/30 border-border"}
       `}>
          {/* ... render progress bar (sama kayak kode lamamu) ... */}
          <div className="flex justify-between items-end mb-3">
           <div className="flex flex-col">
-            <span className="text-[9px] uppercase tracking-widest text-[#FFF0C4]/40 font-bold mb-0.5">
+            <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
               {isRejected ? "Final Status" : "Current Stage"}
             </span>
             <div className="flex items-center gap-2">
               {isRejected && <XCircle className="w-4 h-4 text-red-500" />}
-              <span className={`text-sm font-bold tracking-wide ${
+              <span className={`text-sm font-semibold tracking-wide ${
                 isRejected 
-                  ? "text-red-400" 
-                  : completedCount === 5 ? "text-[#8C1007] text-glow" : "text-[#FFF0C4]"
+                  ? "text-red-500" 
+                  : completedCount === 5 ? "text-emerald-600" : "text-foreground"
               }`}>
                 {currentStatusText}
               </span>
             </div>
           </div>
-          <span className="text-[10px] font-mono text-[#FFF0C4]/50">
+          <span className="text-[10px] font-mono text-muted-foreground">
             {isRejected ? "CLOSED" : `${completedCount}/5`}
           </span>
         </div>
@@ -278,10 +278,10 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
               title={statusLabels[key]} 
               className={`flex-1 rounded-sm transition-all duration-300 
                 ${isRejected 
-                  ? "bg-red-900/20 cursor-not-allowed"
+                  ? "bg-red-200 cursor-not-allowed"
                   : job.status[key] 
-                    ? "bg-[#8C1007] shadow-[0_0_8px_#8C1007] scale-y-110 cursor-pointer" 
-                    : "bg-[#FFF0C4]/10 hover:bg-[#FFF0C4]/20 cursor-pointer"
+                    ? "bg-emerald-500 shadow-sm scale-y-110 cursor-pointer" 
+                    : "bg-muted hover:bg-primary/20 cursor-pointer"
                 }`}
             />
           ))}

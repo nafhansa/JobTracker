@@ -43,7 +43,7 @@ const FAQSection = () => {
   return (
     <section id="faq" className="py-20 w-full max-w-2xl px-6 mx-auto">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-serif font-bold text-[#FFF0C4] mb-4">
+        <h2 className="text-3xl font-bold text-foreground mb-4">
           Frequently Asked Questions
         </h2>
       </div>
@@ -52,23 +52,23 @@ const FAQSection = () => {
         {faqs.map((faq, idx) => (
           <div 
             key={idx} 
-            className={`border rounded-lg transition-all duration-300 ${
+            className={`border rounded-lg transition-all duration-300 shadow-sm ${
               openIndex === idx 
-                ? "bg-[#2a0401] border-[#8C1007]/50" 
-                : "bg-transparent border-[#FFF0C4]/10 hover:border-[#FFF0C4]/30"
+                ? "bg-card border-primary/50 shadow-md" 
+                : "bg-card border-border hover:border-primary/30"
             }`}
           >
             <button
               onClick={() => toggleFAQ(idx)}
               className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
             >
-              <span className={`font-medium ${openIndex === idx ? "text-[#FFF0C4]" : "text-[#FFF0C4]/80"}`}>
+              <span className={`font-medium ${openIndex === idx ? "text-foreground" : "text-foreground"}`}>
                 {faq.question}
               </span>
               {openIndex === idx ? (
-                <ChevronUp className="w-5 h-5 text-[#8C1007]" />
+                <ChevronUp className="w-5 h-5 text-primary" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-[#FFF0C4]/40" />
+                <ChevronDown className="w-5 h-5 text-muted-foreground" />
               )}
             </button>
             
@@ -77,7 +77,7 @@ const FAQSection = () => {
                 openIndex === idx ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <div className="p-5 pt-0 text-[#FFF0C4]/60 text-sm leading-relaxed whitespace-pre-line">
+              <div className="p-5 pt-0 text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
                 {faq.answer}
               </div>
             </div>
