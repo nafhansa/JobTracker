@@ -507,7 +507,7 @@ export default function LandingPage() {
         <div className="relative w-full max-w-6xl px-4 mt-8 md:mt-16 mb-24 perspective-[2000px] group">
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-primary/10 rounded-full blur-[100px]"></div>
            
-           <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl backdrop-blur-sm transform rotate-x-[10deg] group-hover:rotate-x-[0deg] transition-all duration-700 ease-out">
+           <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl backdrop-blur-sm transform rotate-x-[0deg] group-hover:rotate-x-[10deg] transition-all duration-700 ease-out">
               {/* Browser Bar */}
               <div className="h-8 bg-muted/50 flex items-center px-4 space-x-2 border-b border-border">
                   <div className="w-3 h-3 rounded-full bg-red-400"></div>
