@@ -86,12 +86,12 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
       
       {/* Usage Indicator for Free Users */}
       {isFreeUser && (
-        <div className="mb-4 p-3 rounded-lg bg-[#3E0703]/40 border border-[#FFF0C4]/20 flex items-center justify-between">
-          <span className="text-sm text-[#FFF0C4]/80">
-            Jobs tracked: <span className="font-bold text-[#FFF0C4]">{usageText}</span>
+        <div className="mb-4 p-3 rounded-lg bg-card border border-border flex items-center justify-between shadow-sm">
+          <span className="text-sm text-muted-foreground">
+            Jobs tracked: <span className="font-bold text-foreground">{usageText}</span>
           </span>
           {jobs.length >= planLimit && (
-            <span className="text-xs text-yellow-400 font-semibold">Limit reached</span>
+            <span className="text-xs text-yellow-600 font-semibold">Limit reached</span>
           )}
         </div>
       )}
@@ -99,10 +99,10 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">        
         
         <div className="relative w-full md:w-1/3">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-[#FFF0C4]/50" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search role or company..." 
-            className="pl-10 bg-[#3E0703]/20 border-[#FFF0C4]/20 text-[#FFF0C4] placeholder:text-[#FFF0C4]/30 focus-visible:ring-[#8C1007] rounded-xl"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary rounded-xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -111,7 +111,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
         {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
         <Button 
           onClick={handleAddNew}
-          className="bg-[#FFF0C4] text-[#3E0703] hover:bg-white border border-[#FFF0C4] font-bold tracking-wide shadow-[0_0_15px_rgba(255,240,196,0.3)] transition-all"
+          className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Application
@@ -132,15 +132,15 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               key={tab.id}
               onClick={() => setFilterStatus(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 border
+                flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border
                 ${isActive 
-                  ? "bg-[#FFF0C4] text-[#3E0703] border-[#FFF0C4] shadow-[0_0_15px_rgba(255,240,196,0.2)]" 
-                  : "bg-transparent text-[#FFF0C4]/60 border-[#FFF0C4]/10 hover:border-[#FFF0C4]/40 hover:text-[#FFF0C4]"}
+                  ? "bg-primary text-white border-primary shadow-md" 
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}
               `}
             >
               <Icon className="w-4 h-4" />
               {tab.label}
-              <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-[#3E0703]/20" : "bg-[#FFF0C4]/10"}`}>
+              <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-muted"}`}>
                 {count}
               </span>
             </button>
@@ -150,16 +150,16 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
       
       {/* List Jobs */}
       {filteredJobs.length === 0 ? (
-        <div className="border-2 border-dashed border-[#FFF0C4]/30 bg-[#3E0703]/20 rounded-xl p-12 text-center">
+        <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-4 bg-[#8C1007]/20 rounded-full text-[#FFF0C4]">
+            <div className="p-4 bg-primary/10 rounded-full text-primary">
               <Sparkles className="w-8 h-8" />
             </div>
           </div>
-          <h3 className="text-xl font-serif font-bold text-[#FFF0C4] mb-2">
+          <h3 className="text-xl font-bold text-foreground mb-2">
             {searchQuery ? "No matching jobs found" : "No applications in this stage"}
           </h3>
-          <p className="text-[#FFF0C4]/60 max-w-sm mx-auto">
+          <p className="text-muted-foreground max-w-sm mx-auto">
             {searchQuery ? "Try adjusting your search terms." : "Keep pushing! Your dream job is waiting."}
           </p>
         </div>

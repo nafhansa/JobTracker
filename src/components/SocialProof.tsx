@@ -58,8 +58,7 @@ const StarRating = ({ rating }: { rating: number }) => (
     {[...Array(5)].map((_, i) => (
       <Star
         key={i}
-        // Menggunakan warna emas klasik agar menonjol, tapi tetap masuk dengan tema gelap
-        className={`w-4 h-4 ${i < rating ? "fill-[#FFD700] text-[#FFD700]" : "fill-transparent text-[#FFF0C4]/20"}`}
+        className={`w-4 h-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-transparent text-muted-foreground/30"}`}
       />
     ))}
   </div>
@@ -67,13 +66,13 @@ const StarRating = ({ rating }: { rating: number }) => (
 
 const SocialProof = () => {
   return (
-    <section className="py-16 w-full bg-[#1a0201]/50 border-y border-[#FFF0C4]/5 overflow-hidden">
+    <section className="py-16 w-full bg-background border-y border-border overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 mb-10">
         <div className="text-center">
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#FFF0C4] mb-3">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
             Trusted by Job Seekers
           </h2>
-          <p className="text-[#FFF0C4]/50 text-base">
+          <p className="text-muted-foreground text-base">
             See why they switched from spreadsheets.
           </p>
         </div>
@@ -83,8 +82,8 @@ const SocialProof = () => {
       {/* 'group' ditambahkan di sini agar saat di-hover, animasinya berhenti (pause) */}
       <div className="relative w-full group">
         {/* Efek Fade di kiri kanan agar kartu terlihat muncul/hilang perlahan */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#1a0201] to-transparent z-10 pointer-events-none"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#1a0201] to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
 
         {/* Track Animasi */}
         {/* animate-marquee-reverse: Custom animation (lihat CSS di bawah) */}
@@ -94,24 +93,24 @@ const SocialProof = () => {
             <div 
               key={idx} 
               // Ukuran kartu fix (w-[350px]) agar rapi saat berjalan
-              className="w-[350px] flex-shrink-0 bg-[#2a0401] p-6 rounded-xl border border-[#FFF0C4]/10 relative select-none"
+              className="w-[350px] flex-shrink-0 bg-card p-6 rounded-xl border border-border shadow-sm relative select-none"
             >
-               <Quote className="absolute top-6 right-6 w-8 h-8 text-[#8C1007]/20" />
+               <Quote className="absolute top-6 right-6 w-8 h-8 text-primary/10" />
               
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#3E0703] border border-[#8C1007]/30 flex items-center justify-center text-[#FFF0C4] font-bold text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
                   {item.initials}
                 </div>
                 <div>
-                  <div className="text-[#FFF0C4] font-medium text-sm">{item.name}</div>
-                  <div className="text-[#FFF0C4]/40 text-xs">{item.role}</div>
+                  <div className="text-foreground font-medium text-sm">{item.name}</div>
+                  <div className="text-muted-foreground text-xs">{item.role}</div>
                 </div>
               </div>
 
               {/* Tambahkan Rating */}
               <StarRating rating={item.rating} />
               
-              <p className="text-[#FFF0C4]/80 text-sm leading-relaxed italic line-clamp-3">
+              <p className="text-muted-foreground text-sm leading-relaxed italic line-clamp-3">
                 &quot;{item.content}&quot;
               </p>
             </div>
