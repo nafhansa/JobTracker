@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { logout } from "@/lib/firebase/auth";
 import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
-import { JobApplication } from "@/types";
+import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck } from "lucide-react"; 
 import { checkIsPro } from "@/lib/firebase/subscription";
@@ -29,6 +29,10 @@ export default function DashboardPage() {
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
   const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
   const isSubscribed = isAdmin || checkIsPro(subscription);
+  
+  // Check if user has free plan
+  const plan = subscription?.plan || "free";
+  const isFreeUser = plan === "free" && !isAdmin && !isSubscribed;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -64,8 +68,8 @@ export default function DashboardPage() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    // 1. Jika User Login & Subscribed (atau Admin): Ambil Data Jobs
-    if (user && isSubscribed) {
+    // Load jobs for all authenticated users (including free users)
+    if (user) {
       const unsubscribeDocs = subscribeToJobs(user.uid, (data) => {
         const sanitizedData = data.map((job) => ({
           ...job,
@@ -76,12 +80,8 @@ export default function DashboardPage() {
         setLoading(false);
       });
       return () => unsubscribeDocs();
-    } 
-    // 2. Jika User Login tapi BELUM Subscribe: Stop loading agar Banner muncul
-    else if (user && !isSubscribed) {
-      setLoading(false);
     }
-  }, [user, isSubscribed]);
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -154,8 +154,8 @@ export default function DashboardPage() {
             </p>
         </div>
 
-        {/* Info Langganan (Hanya muncul jika subscribed dan bukan admin) */}
-        {(isSubscribed && subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
+        {/* Info Langganan (muncul untuk semua users yang bukan admin) */}
+        {(subscription && !ADMIN_EMAILS.includes(user?.email || "")) && (
           <div className="mb-8">
             <SubscriptionInfo />
           </div>
@@ -167,8 +167,15 @@ export default function DashboardPage() {
               <div key={i} className="h-56 bg-[#3E0703]/30 border border-[#FFF0C4]/5 rounded-xl" />
             ))}
           </div>
-        ) : isSubscribed ? (
-            <DashboardClient initialJobs={jobs} userId={user.uid} />
+        ) : isSubscribed || isFreeUser ? (
+          <>
+            {isFreeUser && jobs.length >= FREE_PLAN_JOB_LIMIT && (
+              <div className="mb-6">
+                <SubscriptionBanner isLimitReached={true} currentJobCount={jobs.length} />
+              </div>
+            )}
+            <DashboardClient initialJobs={jobs} userId={user.uid} subscription={subscription} plan={plan} />
+          </>
         ) : (
           <SubscriptionBanner />
         )}

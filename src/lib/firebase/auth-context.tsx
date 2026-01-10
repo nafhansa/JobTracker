@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./config";
-import { getSubscription, checkIsPro } from "./subscription"; // 👈 Import helper tadi
+import { getSubscription, checkIsPro, ensureFreePlan } from "./subscription"; // 👈 Import helper tadi
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
+        // Ensure free plan is assigned if user doesn't have subscription
+        await ensureFreePlan(user.uid);
+        
         const sub = await getSubscription(user.uid);
         setSubscription(sub?.subscription || null);
         setUpdatedAt(sub?.updatedAt || null);

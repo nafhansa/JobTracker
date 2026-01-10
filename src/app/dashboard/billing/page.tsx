@@ -6,7 +6,9 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CreditCard, Calendar, AlertCircle, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, CreditCard, Calendar, AlertCircle, Loader2, CheckCircle, Gift, ArrowUpRight } from "lucide-react";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
+import { getJobCount } from "@/lib/firebase/firestore";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function BillingPage() {
@@ -14,6 +16,15 @@ export default function BillingPage() {
   const { user, subscription, loading: authLoading } = useAuth();
   const [cancelling, setCancelling] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [jobCount, setJobCount] = useState<number | null>(null);
+  
+  const isFreePlan = subscription?.plan === "free";
+  
+  useEffect(() => {
+    if (isFreePlan && user) {
+      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
+    }
+  }, [isFreePlan, user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -148,8 +159,17 @@ export default function BillingPage() {
                 {/* Plan Type */}
                 <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
                   <span className="text-[#FFF0C4]/60">Plan Type</span>
-                  <span className="font-semibold text-[#FFF0C4]">
-                    {isLifetime ? "Lifetime Access" : "Monthly Pro"}
+                  <span className="font-semibold text-[#FFF0C4] flex items-center gap-2">
+                    {isFreePlan ? (
+                      <>
+                        <Gift className="w-4 h-4 text-green-400" />
+                        Free Plan
+                      </>
+                    ) : isLifetime ? (
+                      "Lifetime Access"
+                    ) : (
+                      "Monthly Pro"
+                    )}
                   </span>
                 </div>
 
@@ -157,9 +177,19 @@ export default function BillingPage() {
                 <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
                   <span className="text-[#FFF0C4]/60">Price</span>
                   <span className="font-semibold text-[#FFF0C4]">
-                    {isLifetime ? "$17.99 (One-time)" : "$2.99/month"}
+                    {isFreePlan ? "Free" : isLifetime ? "$17.99 (One-time)" : "$2.99/month"}
                   </span>
                 </div>
+                
+                {/* Usage for Free Plan */}
+                {isFreePlan && jobCount !== null && (
+                  <div className="flex justify-between items-center py-3 border-b border-[#FFF0C4]/10">
+                    <span className="text-[#FFF0C4]/60">Jobs Used</span>
+                    <span className="font-semibold text-[#FFF0C4]">
+                      {jobCount}/{FREE_PLAN_JOB_LIMIT}
+                    </span>
+                  </div>
+                )}
 
                 {/* Next Billing / End Date */}
                 {!isLifetime && (
@@ -202,8 +232,24 @@ export default function BillingPage() {
                   </div>
                 )}
 
+                {/* Upgrade CTA for Free Plan */}
+                {isFreePlan && (
+                  <div className="mt-6 p-4 bg-green-600/10 border border-green-600/30 rounded-lg">
+                    <p className="text-sm text-[#FFF0C4]/80 mb-4">
+                      Upgrade to Pro for unlimited job tracking and advanced features!
+                    </p>
+                    <Button
+                      onClick={() => router.push("/pricing")}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <ArrowUpRight className="w-4 h-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                )}
+
                 {/* Cancel Button (Only for active monthly subscriptions) */}
-                {!isLifetime && isActive && (
+                {!isLifetime && !isFreePlan && isActive && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 

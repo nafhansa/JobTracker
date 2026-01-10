@@ -78,3 +78,9 @@ export interface AnalyticsStats {
     scrollDepthDistribution: Array<{ range: string; count: number }>;
   };
 }
+
+// Subscription Plan Types
+export type SubscriptionPlan = "free" | "monthly" | "lifetime";
+
+// Free Plan Constants
+export const FREE_PLAN_JOB_LIMIT = 3;

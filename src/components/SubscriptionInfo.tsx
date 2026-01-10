@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation"; // 1. Import router
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
-import { Crown, Calendar, CreditCard } from "lucide-react";
+import { Crown, Calendar, CreditCard, Gift, ArrowUpRight } from "lucide-react";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
+import { useEffect, useState } from "react";
+import { getJobCount } from "@/lib/firebase/firestore";
 
 function parseFirebaseDate(dateValue: any): Date | null {
   if (!dateValue) return null;
@@ -44,9 +47,19 @@ function formatDate(dateValue: any) {
 
 export function SubscriptionInfo() {
   const router = useRouter(); // 2. Init router
-  const { subscription, updatedAt } = useAuth();
+  const { subscription, updatedAt, user } = useAuth();
+  const [jobCount, setJobCount] = useState<number | null>(null);
 
   if (!subscription) return null;
+
+  const isFreePlan = subscription.plan === "free";
+  
+  // Fetch job count for free users
+  useEffect(() => {
+    if (isFreePlan && user) {
+      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
+    }
+  }, [isFreePlan, user]);
 
   const dateToShow = subscription.status === 'active' 
     ? updatedAt
@@ -112,13 +125,17 @@ export function SubscriptionInfo() {
       <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4]">
-            <Crown className="w-6 h-6" />
+          <div className={`p-3 rounded-lg border text-[#FFF0C4] ${
+            isFreePlan 
+              ? "bg-green-600/20 border-green-600/50" 
+              : "bg-[#8C1007]/20 border-[#8C1007]/50"
+          }`}>
+            {isFreePlan ? <Gift className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-bold text-[#FFF0C4]">
-                Plan: {isLifetime ? "Lifetime Access" : "Monthly Pro"}
+                Plan: {isFreePlan ? "Free Plan" : isLifetime ? "Lifetime Access" : "Monthly Pro"}
                 </h3>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
                     subscription.status === 'active' 
@@ -129,7 +146,15 @@ export function SubscriptionInfo() {
                 </span>
             </div>
 
-            {displayDate && (
+            {isFreePlan && jobCount !== null && (
+                <div className="flex items-center gap-2 mt-1 text-sm text-[#FFF0C4]/80">
+                    <span>
+                        Jobs: <span className="font-bold text-[#FFF0C4]">{jobCount}/{FREE_PLAN_JOB_LIMIT}</span>
+                    </span>
+                </div>
+            )}
+
+            {!isFreePlan && displayDate && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-[#FFF0C4]/60">
                     <Calendar className="w-3 h-3" />
                     <span>
@@ -140,7 +165,15 @@ export function SubscriptionInfo() {
           </div>
         </div>
 
-        {!isLifetime && (
+        {isFreePlan ? (
+          <Button 
+            onClick={() => router.push("/pricing")}
+            className="bg-green-600 text-white hover:bg-green-700 hover:scale-105 transition-all font-bold shadow-lg shadow-green-600/20"
+          >
+            <ArrowUpRight className="w-4 h-4 mr-2" />
+            Upgrade to Pro
+          </Button>
+        ) : !isLifetime && (
           <Button 
             onClick={handleManage}
             className="bg-[#FFF0C4] text-[#3E0703] hover:bg-[#FFF0C4]/90 hover:scale-105 transition-all font-bold shadow-lg shadow-[#FFF0C4]/10"

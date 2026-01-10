@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addJob, updateJob } from "@/lib/firebase/firestore"; // Pastikan import updateJob
 import { 
   Dialog, 
@@ -12,18 +13,40 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil } from "lucide-react";
-import { JobApplication, JobStatus } from "@/types";
+import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle } from "lucide-react";
+import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
+import { checkCanAddJob, canEditDelete } from "@/lib/firebase/subscription";
 
 interface JobModalProps {
   userId: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   jobToEdit?: JobApplication | null; // Data job kalau mau edit
+  plan?: string;
+  currentJobCount?: number;
 }
 
-export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }: JobModalProps) {
+export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, plan, currentJobCount = 0 }: JobModalProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  
+  const isFreeUser = plan === "free";
+  const isEditMode = !!jobToEdit;
+  const canEdit = canEditDelete(plan);
+  const canAdd = checkCanAddJob(plan, currentJobCount);
+  
+  // Block edit mode for free users
+  useEffect(() => {
+    if (isOpen && isEditMode && !canEdit) {
+      const upgrade = confirm(
+        "Upgrade to Pro to edit your job applications.\n\nWould you like to upgrade now?"
+      );
+      if (upgrade) {
+        router.push("/pricing");
+      }
+      onOpenChange(false);
+    }
+  }, [isOpen, isEditMode, canEdit, router, onOpenChange]);
   
   // State Form
   const [formData, setFormData] = useState({
@@ -67,6 +90,29 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Block edit for free users
+    if (isEditMode && !canEdit) {
+      const upgrade = confirm(
+        "Upgrade to Pro to edit your job applications.\n\nWould you like to upgrade now?"
+      );
+      if (upgrade) {
+        router.push("/pricing");
+      }
+      return;
+    }
+    
+    // Block add if limit reached
+    if (!isEditMode && !canAdd) {
+      const upgrade = confirm(
+        `You've reached the limit of ${FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.\n\nUpgrade to Pro for unlimited jobs.\n\nWould you like to upgrade now?`
+      );
+      if (upgrade) {
+        router.push("/pricing");
+      }
+      return;
+    }
+    
     setLoading(true);
     try {
       const payload = {
@@ -97,8 +143,6 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }
     }
   };
 
-  const isEditMode = !!jobToEdit;
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-[#FFF0C4] text-[#3E0703] border-[#8C1007]/20 shadow-2xl">
@@ -110,6 +154,35 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }
             {isEditMode ? "Edit Application" : "Track New Job"}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Warning for edit mode (free users) */}
+        {isEditMode && !canEdit && (
+          <div className="p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
+            <Lock className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold mb-1">Edit locked for Free Plan</p>
+              <p className="text-xs">Upgrade to Pro to edit your job applications.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Warning for add mode (limit reached) */}
+        {!isEditMode && !canAdd && (
+          <div className="p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold mb-1">Job limit reached</p>
+              <p className="text-xs">You've reached the limit of {FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited jobs.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Usage indicator for free users */}
+        {isFreeUser && !isEditMode && (
+          <div className="p-2 bg-[#FFF0C4]/50 border border-[#3E0703]/20 rounded text-xs text-[#3E0703]/70">
+            Using {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="grid gap-5 py-4">
           
@@ -196,11 +269,31 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit }
 
           <Button 
             type="submit" 
-            disabled={loading}
-            className="w-full bg-[#8C1007] hover:bg-[#a31208] text-white font-bold py-6 mt-2 shadow-[0_4px_14px_0_rgba(140,16,7,0.39)] transition-all"
+            disabled={loading || (isEditMode && !canEdit) || (!isEditMode && !canAdd)}
+            className="w-full bg-[#8C1007] hover:bg-[#a31208] text-white font-bold py-6 mt-2 shadow-[0_4px_14px_0_rgba(140,16,7,0.39)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? "Update Application" : "Start Tracking")}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (isEditMode && !canEdit) ? (
+              "Edit Locked - Upgrade Required"
+            ) : (!isEditMode && !canAdd) ? (
+              "Limit Reached - Upgrade Required"
+            ) : isEditMode ? (
+              "Update Application"
+            ) : (
+              "Start Tracking"
+            )}
           </Button>
+          
+          {((isEditMode && !canEdit) || (!isEditMode && !canAdd)) && (
+            <Button
+              type="button"
+              onClick={() => router.push("/pricing")}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mt-2"
+            >
+              Upgrade to Pro
+            </Button>
+          )}
         </form>
       </DialogContent>
     </Dialog>

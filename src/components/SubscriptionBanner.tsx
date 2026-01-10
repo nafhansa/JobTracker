@@ -7,14 +7,23 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter } from "next/navigation";
 import { PAYPAL_PLANS, PAYPAL_ENV, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 import { useState } from "react";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
 type PlanType = "monthly" | "lifetime" | null;
 
-export function SubscriptionBanner() {
-  const { user } = useAuth();
+interface SubscriptionBannerProps {
+  isLimitReached?: boolean;
+  currentJobCount?: number;
+}
+
+export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0 }: SubscriptionBannerProps = {}) {
+  const { user, subscription } = useAuth();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const isFreeUser = subscription?.plan === "free";
+  const showLimitMessage = isFreeUser && isLimitReached;
 
   const handleSuccess = (msg: string) => {
     setStatusMsg({ type: 'success', text: msg });
@@ -52,12 +61,18 @@ export function SubscriptionBanner() {
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8C1007]/20 border border-[#8C1007]/50 text-[#FFF0C4] text-xs font-bold tracking-wider uppercase mb-4">
           <Sparkles className="w-3 h-3" />
-          Premium Access Required
+          {showLimitMessage ? "Upgrade to Add More Jobs" : "Premium Access Required"}
         </div>
 
         <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#FFF0C4] mb-4">
-          Choose Your Plan
+          {showLimitMessage ? "You've Reached Your Free Plan Limit" : "Choose Your Plan"}
         </h2>
+        
+        {showLimitMessage && (
+          <p className="text-lg text-[#FFF0C4]/70 mb-4">
+            You're currently tracking {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!
+          </p>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
             

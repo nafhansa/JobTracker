@@ -1,5 +1,6 @@
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "./config";
+import { SubscriptionPlan, FREE_PLAN_JOB_LIMIT } from "@/types";
 
 const USER_COLLECTION = "users";
 const SUBSCRIPTION_COLLECTION = "subscriptions";
@@ -60,11 +61,14 @@ export const checkIsPro = (subscription: any): boolean => {
 
   const { status, plan, renewsAt, endsAt } = subscription;
 
+  // Free plan is never Pro
+  if (plan === "free") return false;
+
   // 1. Lifetime = Auto Pro
   if (plan === "lifetime") return true;
 
-  // 2. Status Active = Pro
-  if (status === "active") return true;
+  // 2. Status Active = Pro (but not free)
+  if (status === "active" && plan !== "free") return true;
 
   // 3. Status Cancelled = Cek Grace Period pakai endsAt (prioritas) atau renewsAt
   if (status === "cancelled" || status === "canceled") {
@@ -89,4 +93,74 @@ export const checkIsPro = (subscription: any): boolean => {
   }
 
   return false;
+};
+
+/**
+ * Get job limit for a subscription plan
+ */
+export const getPlanLimits = (plan: string | null | undefined): number => {
+  if (!plan || plan === "free") {
+    return FREE_PLAN_JOB_LIMIT;
+  }
+  // Pro plans have unlimited
+  return Infinity;
+};
+
+/**
+ * Check if user can add a new job based on their plan and current job count
+ */
+export const checkCanAddJob = (
+  plan: string | null | undefined,
+  currentJobCount: number
+): boolean => {
+  const limit = getPlanLimits(plan);
+  return currentJobCount < limit;
+};
+
+/**
+ * Check if user can edit/delete jobs based on their plan
+ * Free users cannot edit/delete
+ */
+export const canEditDelete = (plan: string | null | undefined): boolean => {
+  if (!plan || plan === "free") {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Auto-assign free plan to user if they don't have a subscription
+ */
+export const ensureFreePlan = async (userId: string): Promise<void> => {
+  try {
+    const userRef = doc(db, USER_COLLECTION, userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      // New user - create with free plan
+      await setDoc(userRef, {
+        subscription: {
+          plan: "free",
+          status: "active",
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      const userData = userDoc.data();
+      // Existing user without subscription - assign free plan
+      if (!userData.subscription || !userData.subscription.plan) {
+        await updateDoc(userRef, {
+          subscription: {
+            plan: "free",
+            status: "active",
+          },
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring free plan:", error);
+    // Don't throw - let user continue even if assignment fails
+  }
 };

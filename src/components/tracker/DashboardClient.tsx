@@ -1,22 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { JobApplication, JobStatus } from "@/types";
+import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
 import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru tadi
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { getPlanLimits } from "@/lib/firebase/subscription";
 
 interface DashboardClientProps {
   initialJobs: JobApplication[];
   userId: string;
+  subscription?: any;
+  plan?: string;
 }
 
-export default function DashboardClient({ initialJobs, userId }: DashboardClientProps) {
+export default function DashboardClient({ initialJobs, userId, subscription, plan }: DashboardClientProps) {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const jobs = initialJobs; 
+  const jobs = initialJobs;
+  
+  // Get plan limits
+  const planLimit = getPlanLimits(plan);
+  const isFreeUser = plan === "free";
+  const usageText = isFreeUser ? `${jobs.length}/${planLimit}` : "Unlimited"; 
 
   // --- STATE MODAL & EDIT ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,6 +80,18 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
 
   return (
     <div className="max-w-5xl mx-auto">      
+      
+      {/* Usage Indicator for Free Users */}
+      {isFreeUser && (
+        <div className="mb-4 p-3 rounded-lg bg-[#3E0703]/40 border border-[#FFF0C4]/20 flex items-center justify-between">
+          <span className="text-sm text-[#FFF0C4]/80">
+            Jobs tracked: <span className="font-bold text-[#FFF0C4]">{usageText}</span>
+          </span>
+          {jobs.length >= planLimit && (
+            <span className="text-xs text-yellow-400 font-semibold">Limit reached</span>
+          )}
+        </div>
+      )}
       
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">        
         
@@ -147,6 +167,8 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
               key={job.id} 
               job={job} 
               onEdit={handleEditJob} // <--- Oper Fungsi Edit ke Card
+              isFreeUser={isFreeUser}
+              plan={plan}
             />
           ))}
         </div>
@@ -158,6 +180,8 @@ export default function DashboardClient({ initialJobs, userId }: DashboardClient
         isOpen={isModalOpen} 
         onOpenChange={setIsModalOpen}
         jobToEdit={editingJob} // Kirim data kalau lagi ngedit
+        plan={plan}
+        currentJobCount={jobs.length}
       />
 
     </div>

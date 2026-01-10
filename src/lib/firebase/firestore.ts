@@ -9,7 +9,8 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  serverTimestamp 
+  serverTimestamp,
+  getDocs 
 } from "firebase/firestore";
 import { db } from "./config";
 import { JobApplication } from "@/types";
@@ -69,6 +70,23 @@ export const deleteJob = async (jobId: string) => {
     await deleteDoc(jobRef);
   } catch (error) {
     console.error("Error deleting job:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get the count of jobs for a specific user
+ */
+export const getJobCount = async (userId: string): Promise<number> => {
+  try {
+    const q = query(
+      collection(db, JOB_COLLECTION),
+      where("userId", "==", userId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  } catch (error) {
+    console.error("Error getting job count:", error);
     throw error;
   }
 };

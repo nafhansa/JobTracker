@@ -1,5 +1,6 @@
 import { JobApplication, JobStatus } from "@/types";
 import { formatDistance } from "date-fns";
+import { useRouter } from "next/navigation";
 import { 
   Building2, 
   MoreVertical, 
@@ -11,7 +12,8 @@ import {
   Ban,      
   Rocket,
   Pencil, // Import Pencil
-  Mail    // Import Mail
+  Mail,    // Import Mail
+  Lock     // Import Lock
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -26,9 +28,12 @@ import { deleteJob, updateJob } from "@/lib/firebase/firestore";
 interface JobCardProps {
   job: JobApplication;
   onEdit: (job: JobApplication) => void; // <--- Props baru buat oper data ke parent
+  isFreeUser?: boolean;
+  plan?: string;
 }
 
-export default function JobCard({ job, onEdit }: JobCardProps) {
+export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCardProps) {
+  const router = useRouter();
   
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...
   // Biar pendek, saya skip bagian yang tidak berubah. 
@@ -55,9 +60,32 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
   }).format(job.potentialSalary || 0);
 
   const handleDelete = async () => {
-      if (confirm("Delete this application permanently?")) {
-        await deleteJob(job.id!);
+    if (isFreeUser) {
+      const upgrade = confirm(
+        "Upgrade to Pro to edit or delete your job applications.\n\nWould you like to upgrade now?"
+      );
+      if (upgrade) {
+        router.push("/pricing");
       }
+      return;
+    }
+    
+    if (confirm("Delete this application permanently?")) {
+      await deleteJob(job.id!);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (isFreeUser) {
+      const upgrade = confirm(
+        "Upgrade to Pro to edit or delete your job applications.\n\nWould you like to upgrade now?"
+      );
+      if (upgrade) {
+        router.push("/pricing");
+      }
+      return;
+    }
+    onEdit(job);
   };
 
   const handleToggleReject = async () => {
@@ -92,10 +120,17 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
 
       {/* Header */}
       <div className="p-5 flex justify-between items-start relative z-10">
-        <div>
-          <h3 className={`font-serif font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-[#FFF0C4]/50 line-through decoration-red-500/50" : "text-[#FFF0C4] group-hover:text-white"}`}>
-            {job.jobTitle}
-          </h3>
+        <div className="flex-1">
+          <div className="flex items-start gap-2">
+            <h3 className={`font-serif font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-[#FFF0C4]/50 line-through decoration-red-500/50" : "text-[#FFF0C4] group-hover:text-white"}`}>
+              {job.jobTitle}
+            </h3>
+            {isFreeUser && (
+              <div className="flex-shrink-0 pt-0.5" title="Free Plan - Edit/Delete locked">
+                <Lock className="w-4 h-4 text-yellow-500/70" />
+              </div>
+            )}
+          </div>
           <div className="flex items-center text-[#FFF0C4]/60 text-xs uppercase tracking-widest mt-1 gap-2 font-medium">
             <Building2 className="w-3.5 h-3.5" />
             <span>{job.industry}</span>
@@ -111,9 +146,15 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
           <DropdownMenuContent align="end" className="bg-[#1a0201] border-[#FFF0C4]/10 text-[#FFF0C4]">
             
             {/* --- MENU EDIT --- */}
-            <DropdownMenuItem onClick={() => onEdit(job)} className="cursor-pointer hover:bg-[#FFF0C4]/10">
+            <DropdownMenuItem 
+              onClick={handleEditClick} 
+              disabled={isFreeUser}
+              className={`${isFreeUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"} hover:bg-[#FFF0C4]/10`}
+              title={isFreeUser ? "Upgrade to Pro to edit jobs" : "Edit Application"}
+            >
               <Pencil className="w-4 h-4 mr-2" />
               Edit Application
+              {isFreeUser && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
             </DropdownMenuItem>
 
             <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-[#FFF0C4]/10">
@@ -132,9 +173,15 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
             
             <DropdownMenuSeparator className="bg-[#FFF0C4]/10" />
             
-            <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-400 focus:bg-[#3E0703] cursor-pointer">
+            <DropdownMenuItem 
+              onClick={handleDelete} 
+              disabled={isFreeUser}
+              className={`${isFreeUser ? "cursor-not-allowed opacity-50" : "text-red-500 focus:text-red-400 focus:bg-[#3E0703] cursor-pointer"}`}
+              title={isFreeUser ? "Upgrade to Pro to delete jobs" : "Delete Application"}
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Application
+              {isFreeUser && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

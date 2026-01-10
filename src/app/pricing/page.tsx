@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
-import { CheckCircle2, ArrowRight, Star, Tag } from "lucide-react";
+import { CheckCircle2, ArrowRight, Star, Tag, Gift } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
 // Early bird pricing check (same as UrgencyBanner)
 const EARLY_BIRD_END_DATE = new Date();
@@ -54,9 +55,26 @@ export default function PricingPage() {
           </p>
         </section>
 
-        <section className="w-full max-w-5xl mx-auto px-6 mt-16">
-          <div className="grid md:grid-cols-2 gap-8 items-start">
+        <section className="w-full max-w-6xl mx-auto px-6 mt-16">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 items-start">
             
+            {/* FREE PLAN */}
+            <PricingCard
+              plan="Free"
+              price="$0"
+              period="forever"
+              description="Perfect for getting started."
+              features={[
+                `Track up to ${FREE_PLAN_JOB_LIMIT} Applications`,
+                "Basic Kanban Board",
+                "Basic Filters",
+                "View & Track Status",
+              ]}
+              buttonText="Get Started Free"
+              planType="free"
+              isFree
+            />
+
             {/* MONTHLY PLAN */}
             <PricingCard
               plan="Monthly"
@@ -114,6 +132,7 @@ function PricingCard({
   isFeatured = false,
   planType,
   earlyBirdPrice,
+  isFree = false,
 }: {
   plan: string;
   price: string;
@@ -123,8 +142,9 @@ function PricingCard({
   features: string[];
   buttonText: string;
   isFeatured?: boolean;
-  planType: "subscription" | "lifetime";
+  planType: "free" | "subscription" | "lifetime";
   earlyBirdPrice?: string;
+  isFree?: boolean;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -134,6 +154,8 @@ function PricingCard({
       className={`group relative p-8 rounded-2xl transition-all duration-300 ${
         isFeatured 
           ? "border border-[#8C1007] bg-gradient-to-b from-[#3E0703]/90 to-[#1a0201] shadow-[0_0_40px_-10px_rgba(140,16,7,0.4)] md:-translate-y-4 z-10" 
+          : isFree
+          ? "border border-[#FFF0C4]/20 bg-[#2a0401]/60 hover:border-[#FFF0C4]/30 hover:bg-[#3E0703]/20"
           : "border border-[#FFF0C4]/10 bg-[#2a0401]/80 hover:border-[#8C1007]/30 hover:bg-[#3E0703]/30"
       }`}
     >
@@ -141,6 +163,14 @@ function PricingCard({
         <div className="absolute -top-4 right-6">
           <span className="bg-[#8C1007] text-[#FFF0C4] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
             <Star className="w-3 h-3 fill-current" /> Best Value
+          </span>
+        </div>
+      )}
+      
+      {isFree && (
+        <div className="absolute -top-4 right-6">
+          <span className="bg-green-600 text-[#FFF0C4] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg flex items-center gap-1">
+            <Gift className="w-3 h-3 fill-current" /> Free
           </span>
         </div>
       )}
@@ -200,6 +230,8 @@ function PricingCard({
           className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-bold tracking-widest uppercase rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
             isFeatured
               ? "bg-[#FFF0C4] text-[#3E0703] hover:bg-[#e6d5b0] shadow-lg"
+              : isFree
+              ? "bg-green-600 text-white hover:bg-green-700 shadow-lg"
               : "bg-transparent border border-[#FFF0C4]/20 text-[#FFF0C4] hover:bg-[#FFF0C4]/10"
           }`}
         >
