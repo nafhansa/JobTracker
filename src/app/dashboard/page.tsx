@@ -10,7 +10,7 @@ import { Timestamp } from "firebase/firestore";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck } from "lucide-react"; 
-import { checkIsPro } from "@/lib/firebase/subscription";
+import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -23,11 +23,8 @@ export default function DashboardPage() {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Masukkan email admin di sini
-  const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
-
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
-  const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
+  const isAdmin = isAdminUser(user?.email || "");
   const isSubscribed = isAdmin || checkIsPro(subscription);
   
   // Check if user has free plan
@@ -171,7 +168,18 @@ export default function DashboardPage() {
           <>
             {isFreeUser && jobs.length >= FREE_PLAN_JOB_LIMIT && (
               <div className="mb-6">
-                <SubscriptionBanner isLimitReached={true} currentJobCount={jobs.length} />
+                <div className="p-4 bg-yellow-600/10 border border-yellow-600/30 rounded-xl flex items-center justify-between">
+                  <div>
+                    <p className="text-yellow-400 font-semibold mb-1">Job limit reached!</p>
+                    <p className="text-[#FFF0C4]/70 text-sm">You've reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
+                  </div>
+                  <Button
+                    onClick={() => router.push("/upgrade")}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Upgrade to Pro Now
+                  </Button>
+                </div>
               </div>
             )}
             <DashboardClient initialJobs={jobs} userId={user.uid} subscription={subscription} plan={plan} />

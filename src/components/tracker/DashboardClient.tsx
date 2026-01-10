@@ -7,7 +7,8 @@ import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru 
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getPlanLimits } from "@/lib/firebase/subscription";
+import { getPlanLimits, isAdminUser } from "@/lib/firebase/subscription";
+import { useAuth } from "@/lib/firebase/auth-context";
 
 interface DashboardClientProps {
   initialJobs: JobApplication[];
@@ -17,13 +18,16 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ initialJobs, userId, subscription, plan }: DashboardClientProps) {
+  const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const jobs = initialJobs;
   
+  const isAdmin = isAdminUser(user?.email || "");
+  
   // Get plan limits
-  const planLimit = getPlanLimits(plan);
-  const isFreeUser = plan === "free";
+  const planLimit = getPlanLimits(plan, isAdmin);
+  const isFreeUser = plan === "free" && !isAdmin;
   const usageText = isFreeUser ? `${jobs.length}/${planLimit}` : "Unlimited"; 
 
   // --- STATE MODAL & EDIT ---
@@ -169,6 +173,7 @@ export default function DashboardClient({ initialJobs, userId, subscription, pla
               onEdit={handleEditJob} // <--- Oper Fungsi Edit ke Card
               isFreeUser={isFreeUser}
               plan={plan}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
@@ -182,6 +187,7 @@ export default function DashboardClient({ initialJobs, userId, subscription, pla
         jobToEdit={editingJob} // Kirim data kalau lagi ngedit
         plan={plan}
         currentJobCount={jobs.length}
+        isAdmin={isAdmin}
       />
 
     </div>

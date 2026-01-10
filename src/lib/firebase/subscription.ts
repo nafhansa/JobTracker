@@ -103,9 +103,21 @@ export const checkIsPro = (subscription: SubscriptionData | null | undefined): b
 };
 
 /**
- * Get job limit for a subscription plan
+ * Check if user is admin
  */
-export const getPlanLimits = (plan: string | null | undefined): number => {
+export const isAdminUser = (email: string | null | undefined): boolean => {
+  const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
+  return ADMIN_EMAILS.includes(email || "");
+};
+
+/**
+ * Get job limit for a subscription plan
+ * Admin users always have unlimited
+ */
+export const getPlanLimits = (plan: string | null | undefined, isAdmin = false): number => {
+  if (isAdmin) {
+    return Infinity;
+  }
   if (!plan || plan === "free") {
     return FREE_PLAN_JOB_LIMIT;
   }
@@ -115,20 +127,28 @@ export const getPlanLimits = (plan: string | null | undefined): number => {
 
 /**
  * Check if user can add a new job based on their plan and current job count
+ * Admin users can always add jobs
  */
 export const checkCanAddJob = (
   plan: string | null | undefined,
-  currentJobCount: number
+  currentJobCount: number,
+  isAdmin = false
 ): boolean => {
-  const limit = getPlanLimits(plan);
+  if (isAdmin) {
+    return true;
+  }
+  const limit = getPlanLimits(plan, isAdmin);
   return currentJobCount < limit;
 };
 
 /**
  * Check if user can edit/delete jobs based on their plan
- * Free users cannot edit/delete
+ * Free users cannot edit/delete, but admin users always can
  */
-export const canEditDelete = (plan: string | null | undefined): boolean => {
+export const canEditDelete = (plan: string | null | undefined, isAdmin = false): boolean => {
+  if (isAdmin) {
+    return true;
+  }
   if (!plan || plan === "free") {
     return false;
   }

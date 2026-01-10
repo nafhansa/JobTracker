@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle } from "lucide-react";
 import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { checkCanAddJob, canEditDelete } from "@/lib/firebase/subscription";
+import { useAuth } from "@/lib/firebase/auth-context";
 
 interface JobModalProps {
   userId: string;
@@ -24,16 +25,17 @@ interface JobModalProps {
   jobToEdit?: JobApplication | null; // Data job kalau mau edit
   plan?: string;
   currentJobCount?: number;
+  isAdmin?: boolean;
 }
 
-export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, plan, currentJobCount = 0 }: JobModalProps) {
+export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, plan, currentJobCount = 0, isAdmin = false }: JobModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   
-  const isFreeUser = plan === "free";
+  const isFreeUser = plan === "free" && !isAdmin;
   const isEditMode = !!jobToEdit;
-  const canEdit = canEditDelete(plan);
-  const canAdd = checkCanAddJob(plan, currentJobCount);
+  const canEdit = canEditDelete(plan, isAdmin);
+  const canAdd = checkCanAddJob(plan, currentJobCount, isAdmin);
   
   // Block edit mode for free users
   useEffect(() => {
@@ -93,23 +95,13 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
     
     // Block edit for free users
     if (isEditMode && !canEdit) {
-      const upgrade = confirm(
-        "Upgrade to Pro to edit your job applications.\n\nWould you like to upgrade now?"
-      );
-      if (upgrade) {
-        router.push("/pricing");
-      }
+      router.push("/upgrade");
       return;
     }
     
     // Block add if limit reached
     if (!isEditMode && !canAdd) {
-      const upgrade = confirm(
-        `You've reached the limit of ${FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.\n\nUpgrade to Pro for unlimited jobs.\n\nWould you like to upgrade now?`
-      );
-      if (upgrade) {
-        router.push("/pricing");
-      }
+      router.push("/upgrade");
       return;
     }
     
@@ -288,10 +280,10 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           {((isEditMode && !canEdit) || (!isEditMode && !canAdd)) && (
             <Button
               type="button"
-              onClick={() => router.push("/pricing")}
+              onClick={() => router.push("/upgrade")}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mt-2"
             >
-              Upgrade to Pro
+              Upgrade to Pro Now
             </Button>
           )}
         </form>

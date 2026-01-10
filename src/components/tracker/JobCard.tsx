@@ -24,15 +24,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { deleteJob, updateJob } from "@/lib/firebase/firestore";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface JobCardProps {
   job: JobApplication;
   onEdit: (job: JobApplication) => void; // <--- Props baru buat oper data ke parent
   isFreeUser?: boolean;
   plan?: string;
+  isAdmin?: boolean;
 }
 
-export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCardProps) {
+export default function JobCard({ job, onEdit, isFreeUser = false, plan, isAdmin = false }: JobCardProps) {
   const router = useRouter();
   
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...
@@ -60,13 +62,8 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
   }).format(job.potentialSalary || 0);
 
   const handleDelete = async () => {
-    if (isFreeUser) {
-      const upgrade = confirm(
-        "Upgrade to Pro to edit or delete your job applications.\n\nWould you like to upgrade now?"
-      );
-      if (upgrade) {
-        router.push("/pricing");
-      }
+    if (isFreeUser && !isAdmin) {
+      router.push("/upgrade");
       return;
     }
     
@@ -76,17 +73,14 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
   };
 
   const handleEditClick = () => {
-    if (isFreeUser) {
-      const upgrade = confirm(
-        "Upgrade to Pro to edit or delete your job applications.\n\nWould you like to upgrade now?"
-      );
-      if (upgrade) {
-        router.push("/pricing");
-      }
+    if (isFreeUser && !isAdmin) {
+      router.push("/upgrade");
       return;
     }
     onEdit(job);
   };
+  
+  const canEdit = !isFreeUser || isAdmin;
 
   const handleToggleReject = async () => {
       const newStatus = { ...job.status, rejected: !isRejected };
@@ -107,6 +101,7 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
   };
 
   return (
+    <TooltipProvider>
     <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-lg transition-all duration-300
       ${isRejected 
         ? "bg-[#1a0201]/60 border-red-900/30 hover:border-red-500/30" 
@@ -125,10 +120,17 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
             <h3 className={`font-serif font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-[#FFF0C4]/50 line-through decoration-red-500/50" : "text-[#FFF0C4] group-hover:text-white"}`}>
               {job.jobTitle}
             </h3>
-            {isFreeUser && (
-              <div className="flex-shrink-0 pt-0.5" title="Free Plan - Edit/Delete locked">
-                <Lock className="w-4 h-4 text-yellow-500/70" />
-              </div>
+            {isFreeUser && !isAdmin && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-shrink-0 pt-0.5 cursor-help">
+                    <Lock className="w-4 h-4 text-yellow-500/70" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Upgrade to Pro to edit or delete jobs</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
           <div className="flex items-center text-[#FFF0C4]/60 text-xs uppercase tracking-widest mt-1 gap-2 font-medium">
@@ -146,16 +148,26 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
           <DropdownMenuContent align="end" className="bg-[#1a0201] border-[#FFF0C4]/10 text-[#FFF0C4]">
             
             {/* --- MENU EDIT --- */}
-            <DropdownMenuItem 
-              onClick={handleEditClick} 
-              disabled={isFreeUser}
-              className={`${isFreeUser ? "cursor-not-allowed opacity-50" : "cursor-pointer"} hover:bg-[#FFF0C4]/10`}
-              title={isFreeUser ? "Upgrade to Pro to edit jobs" : "Edit Application"}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit Application
-              {isFreeUser && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
-            </DropdownMenuItem>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenuItem 
+                    onClick={handleEditClick} 
+                    disabled={!canEdit}
+                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "cursor-pointer"} hover:bg-[#FFF0C4]/10`}
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Application
+                    {!canEdit && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
+                  </DropdownMenuItem>
+                </div>
+              </TooltipTrigger>
+              {!canEdit && (
+                <TooltipContent side="right">
+                  <p>Upgrade to Pro to edit jobs</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
 
             <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-[#FFF0C4]/10">
               {isRejected ? (
@@ -173,16 +185,26 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
             
             <DropdownMenuSeparator className="bg-[#FFF0C4]/10" />
             
-            <DropdownMenuItem 
-              onClick={handleDelete} 
-              disabled={isFreeUser}
-              className={`${isFreeUser ? "cursor-not-allowed opacity-50" : "text-red-500 focus:text-red-400 focus:bg-[#3E0703] cursor-pointer"}`}
-              title={isFreeUser ? "Upgrade to Pro to delete jobs" : "Delete Application"}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Application
-              {isFreeUser && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
-            </DropdownMenuItem>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenuItem 
+                    onClick={handleDelete} 
+                    disabled={!canEdit}
+                    className={`${!canEdit ? "cursor-not-allowed opacity-50" : "text-red-500 focus:text-red-400 focus:bg-[#3E0703] cursor-pointer"}`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Application
+                    {!canEdit && <Lock className="w-3 h-3 ml-auto text-yellow-500" />}
+                  </DropdownMenuItem>
+                </div>
+              </TooltipTrigger>
+              {!canEdit && (
+                <TooltipContent side="right">
+                  <p>Upgrade to Pro to delete jobs</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -267,5 +289,6 @@ export default function JobCard({ job, onEdit, isFreeUser = false, plan }: JobCa
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
