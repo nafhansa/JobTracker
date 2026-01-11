@@ -84,106 +84,94 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">      
+    <div className="max-w-7xl mx-auto pb-10 px-4">      
       
-      {/* Usage Indicator for Free Users */}
-      {isFreeUser && (
-        <div className="mb-4 p-3 rounded-lg bg-card border border-border flex items-center justify-between shadow-sm">
-          <span className="text-sm text-muted-foreground">
-            Jobs tracked: <span className="font-bold text-foreground">{usageText}</span>
-          </span>
-          {jobs.length >= planLimit && (
-            <span className="text-xs text-yellow-600 font-semibold">Limit reached</span>
-          )}
-        </div>
-      )}
-      
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">        
-        
-        <div className="relative w-full md:w-1/3">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search role or company..." 
-            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary rounded-xl"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+      {/* Wrapper Utama Grid langsung dimulai di sini */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* Mobile Stats Toggle */}
-          <Button 
-            onClick={() => setShowStatsMobile(!showStatsMobile)}
-            variant="outline"
-            className="md:hidden bg-card border-border text-foreground hover:bg-accent"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Stats
-            {showStatsMobile ? (
-              <ChevronUp className="w-4 h-4 ml-2" />
-            ) : (
-              <ChevronDown className="w-4 h-4 ml-2" />
-            )}
-          </Button>
+        {/* --- KOLOM KIRI (Dominan: Search, Filter, Jobs) --- */}
+        <div className="lg:col-span-9 flex flex-col gap-6">
+          
+          {/* A. Bagian Search & Tombol Add (Dipindah ke dalam kolom kiri) */}
+          <div className="flex flex-col md:flex-row justify-between items-end gap-4">        
+            <div className="relative w-full md:w-1/2">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search role or company..." 
+                className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary rounded-xl"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-          {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
-          <Button 
-            onClick={handleAddNew}
-            className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Application
-          </Button>
-        </div>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Mobile Stats Toggle */}
+              <Button 
+                onClick={() => setShowStatsMobile(!showStatsMobile)}
+                variant="outline"
+                className="lg:hidden bg-card border-border text-foreground hover:bg-accent"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Stats
+                {showStatsMobile ? (
+                  <ChevronUp className="w-4 h-4 ml-2" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                )}
+              </Button>
 
-      </div>
-      
-      {/* Mobile Stats (Dropdown) */}
-      <div className="md:hidden mb-6">
-        <div 
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            showStatsMobile ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="pt-0">
-            <JobStats jobs={jobs} />
+              {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
+              <Button 
+                onClick={handleAddNew}
+                className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Application
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      {/* TABS (Tidak berubah) */}
-      <div className="flex flex-wrap gap-2 mb-8 pb-2 overflow-x-auto">
-        {tabs.map((tab) => {
-          const isActive = filterStatus === tab.id;
-          const count = jobs.filter(j => 
-            tab.id === "ALL" ? true : getJobStage(j.status) === tab.id
-          ).length;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setFilterStatus(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border
-                ${isActive 
-                  ? "bg-primary text-white border-primary shadow-md" 
-                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}
-              `}
+          
+          {/* Mobile Stats Dropdown */}
+          <div className="lg:hidden">
+            <div 
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                showStatsMobile ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+              }`}
             >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-              <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-muted"}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      
-      {/* Main Content Grid: Jobs on left, Stats on right (desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Jobs List */}
-        <div className="lg:col-span-9">
+              <JobStats jobs={jobs} />
+            </div>
+          </div>
+          
+          {/* B. Bagian Tabs Filter (Dipindah ke dalam kolom kiri) */}
+          <div className="flex flex-wrap gap-2 pb-2 overflow-x-auto">
+            {tabs.map((tab) => {
+              const isActive = filterStatus === tab.id;
+              const count = jobs.filter(j => 
+                tab.id === "ALL" ? true : getJobStage(j.status) === tab.id
+              ).length;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilterStatus(tab.id)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border
+                    ${isActive 
+                      ? "bg-primary text-white border-primary shadow-md" 
+                      : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}
+                  `}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-muted"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* C. Bagian Job Cards List */}
           {filteredJobs.length === 0 ? (
             <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center">
               <div className="flex justify-center mb-4">
@@ -199,7 +187,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredJobs.map((job) => (
                 <JobCard 
                   key={job.id} 
@@ -213,12 +201,33 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
           )}
         </div>
 
-        {/* Stats Sidebar (Desktop) */}
+        {/* --- KOLOM KANAN (Stats Sidebar) --- */}
+        {/* Posisi: Sticky, sejajar dengan Search bar karena grid dimulai dari atas */}
         <div className="hidden lg:block lg:col-span-3">
-          <div className="sticky top-6">
+          <div className="sticky top-6 space-y-6">
             <JobStats jobs={jobs} />
+            
+            {/* Optional: Limit Indicator kalau mau ditaruh di sidebar juga */}
+            {isFreeUser && (
+              <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-foreground">Free Plan Usage</span>
+                  <span className="text-xs text-muted-foreground">{usageText}</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all" 
+                    style={{ width: `${Math.min((jobs.length / planLimit) * 100, 100)}%` }}
+                  />
+                </div>
+                {jobs.length >= planLimit && (
+                  <p className="text-xs text-yellow-600 font-semibold mt-2">Limit reached</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
       </div>
 
       {/* --- MODAL DIRENDER DI SINI (SATU UNTUK SEMUA) --- */}
@@ -226,7 +235,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
         userId={userId} 
         isOpen={isModalOpen} 
         onOpenChange={setIsModalOpen}
-        jobToEdit={editingJob} // Kirim data kalau lagi ngedit
+        jobToEdit={editingJob}
         plan={plan}
         currentJobCount={jobs.length}
         isAdmin={isAdmin}
