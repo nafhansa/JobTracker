@@ -4,7 +4,8 @@ import { useState } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
 import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru tadi
-import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus } from "lucide-react";
+import JobStats from "@/components/tracker/JobStats";
+import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getPlanLimits, isAdminUser } from "@/lib/firebase/subscription";
@@ -20,6 +21,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showStatsMobile, setShowStatsMobile] = useState(false);
   const jobs = initialJobs;
   
   const isAdmin = isAdminUser(user?.email || "");
@@ -82,7 +84,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   ];
 
   return (
-    <div className="max-w-5xl mx-auto">      
+    <div className="max-w-7xl mx-auto">      
       
       {/* Usage Indicator for Free Users */}
       {isFreeUser && (
@@ -108,15 +110,45 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
           />
         </div>
 
-        {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
-        <Button 
-          onClick={handleAddNew}
-          className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Application
-        </Button>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Mobile Stats Toggle */}
+          <Button 
+            onClick={() => setShowStatsMobile(!showStatsMobile)}
+            variant="outline"
+            className="md:hidden bg-card border-border text-foreground hover:bg-accent"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Stats
+            {showStatsMobile ? (
+              <ChevronUp className="w-4 h-4 ml-2" />
+            ) : (
+              <ChevronDown className="w-4 h-4 ml-2" />
+            )}
+          </Button>
 
+          {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
+          <Button 
+            onClick={handleAddNew}
+            className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Application
+          </Button>
+        </div>
+
+      </div>
+      
+      {/* Mobile Stats (Dropdown) */}
+      <div className="md:hidden mb-6">
+        <div 
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            showStatsMobile ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="pt-0">
+            <JobStats jobs={jobs} />
+          </div>
+        </div>
       </div>
       
       {/* TABS (Tidak berubah) */}
@@ -148,34 +180,46 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
         })}
       </div>
       
-      {/* List Jobs */}
-      {filteredJobs.length === 0 ? (
-        <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-primary/10 rounded-full text-primary">
-              <Sparkles className="w-8 h-8" />
+      {/* Main Content Grid: Jobs on left, Stats on right (desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Jobs List */}
+        <div className="lg:col-span-2">
+          {filteredJobs.length === 0 ? (
+            <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center">
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-primary/10 rounded-full text-primary">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">
+                {searchQuery ? "No matching jobs found" : "No applications in this stage"}
+              </h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                {searchQuery ? "Try adjusting your search terms." : "Keep pushing! Your dream job is waiting."}
+              </p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredJobs.map((job) => (
+                <JobCard 
+                  key={job.id} 
+                  job={job} 
+                  onEdit={handleEditJob}
+                  isFreeUser={isFreeUser}
+                  isAdmin={isAdmin}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Stats Sidebar (Desktop) */}
+        <div className="hidden lg:block">
+          <div className="sticky top-24">
+            <JobStats jobs={jobs} />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">
-            {searchQuery ? "No matching jobs found" : "No applications in this stage"}
-          </h3>
-          <p className="text-muted-foreground max-w-sm mx-auto">
-            {searchQuery ? "Try adjusting your search terms." : "Keep pushing! Your dream job is waiting."}
-          </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredJobs.map((job) => (
-            <JobCard 
-              key={job.id} 
-              job={job} 
-              onEdit={handleEditJob} // <--- Oper Fungsi Edit ke Card
-              isFreeUser={isFreeUser}
-              isAdmin={isAdmin}
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* --- MODAL DIRENDER DI SINI (SATU UNTUK SEMUA) --- */}
       <JobFormModal 

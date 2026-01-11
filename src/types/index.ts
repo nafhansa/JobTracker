@@ -14,6 +14,7 @@ export interface JobApplication {
   industry: string;
   recruiterEmail?: string;
   applicationUrl?: string;
+  jobType?: string; // Part Time, Contract, Remote, Full Time, Freelance, Internship, Hybrid
   potentialSalary?: number;
   currency: string; 
   status: JobStatus;

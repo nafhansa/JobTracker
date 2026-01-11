@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle } from "lucide-react";
+import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle, Clock } from "lucide-react";
 import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { checkCanAddJob, canEditDelete } from "@/lib/firebase/subscription";
 
@@ -55,6 +55,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
     industry: "", // Dianggap sebagai Company Name berdasarkan konteks sebelumnya
     potentialSalary: "",
     applicationUrl: "",
+    jobType: "",
     recruiterEmail: "",
     status: {
       applied: true,
@@ -73,6 +74,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         industry: jobToEdit.industry,
         potentialSalary: jobToEdit.potentialSalary?.toString() || "",
         applicationUrl: jobToEdit.applicationUrl || "",
+        jobType: jobToEdit.jobType || "",
         recruiterEmail: jobToEdit.recruiterEmail || "",
         status: jobToEdit.status,
       });
@@ -83,6 +85,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         industry: "",
         potentialSalary: "",
         applicationUrl: "",
+        jobType: "",
         recruiterEmail: "",
         status: { applied: true, emailed: false, cvResponded: false, interviewEmail: false, contractEmail: false }
       });
@@ -112,6 +115,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         industry: formData.industry,
         potentialSalary: Number(formData.potentialSalary) || 0,
         applicationUrl: formData.applicationUrl,
+        jobType: formData.jobType || undefined,
         recruiterEmail: formData.recruiterEmail,
         currency: "IDR",
         status: formData.status,
@@ -243,18 +247,64 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             </div>
           </div>
 
-          {/* URL */}
+          {/* Job Source */}
           <div className="grid gap-2">
-            <Label htmlFor="url" className="text-foreground font-semibold tracking-wide text-xs uppercase">Job Link</Label>
+            <Label htmlFor="jobSource" className="text-foreground font-semibold tracking-wide text-xs uppercase">Job Source</Label>
             <div className="relative">
-              <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
-              <Input
-                id="url"
-                placeholder="https://..."
-                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
+              <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+              <select
+                id="jobSource"
+                className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
                 value={formData.applicationUrl}
                 onChange={(e) => setFormData({ ...formData, applicationUrl: e.target.value })}
-              />
+              >
+                <option value="">Select job source...</option>
+                <option value="Linkedin">Linkedin</option>
+                <option value="Company Website">Company Website</option>
+                <option value="JobStreets">JobStreets</option>
+                <option value="Indeed">Indeed</option>
+                <option value="Kalibrr">Kalibrr</option>
+                <option value="Upwork">Upwork</option>
+              </select>
+              <svg
+                className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Job Type */}
+          <div className="grid gap-2">
+            <Label htmlFor="jobType" className="text-foreground font-semibold tracking-wide text-xs uppercase">Jenis Kerjaan</Label>
+            <div className="relative">
+              <Clock className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+              <select
+                id="jobType"
+                className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                value={formData.jobType}
+                onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
+              >
+                <option value="">Select jenis kerjaan...</option>
+                <option value="Part Time">Part Time</option>
+                <option value="Contract">Contract</option>
+                <option value="Remote">Remote</option>
+                <option value="Full Time">Full Time</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Internship">Internship</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+              <svg
+                className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
 
