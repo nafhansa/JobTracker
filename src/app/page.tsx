@@ -184,7 +184,7 @@ export default function LandingPage() {
         {/* --- HERO SECTION --- */}
         {/* SECTION PADDING: Adjust top padding - Mobile: pt-X (lebih kecil = lebih ke atas), Desktop: md:pt-20 (tetap) */}
         {/* Mobile options: pt-16, pt-20, pt-24, pt-28, pt-32, pt-36, pt-40 (semakin kecil = semakin ke atas) */}
-        <section className="pt-36 md:pt-20 pb-20 px-6 text-center max-w-5xl mx-auto">
+        <section className="pt-24 md:pt-20 pb-20 px-6 text-center max-w-5xl mx-auto">
           {/* MAIN SPACING: Adjust spacing between all components - space-y-6 (mobile) md:space-y-8 (desktop) */}
           {/* Options: space-y-4 (tight), space-y-6 (default), space-y-8 (comfortable), space-y-10 (spacious) */}
           <div className="flex flex-col items-center space-y-6 md:space-y-4">
