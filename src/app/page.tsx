@@ -110,7 +110,7 @@ export default function LandingPage() {
       case "A":
         return "Get Started Now";
       case "B":
-        return "Try Now";
+        return "Start Tracking Free";
       case "C":
         return "Start Tracking Jobs";
       default:

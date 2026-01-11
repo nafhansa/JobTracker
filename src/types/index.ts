@@ -84,4 +84,4 @@ export interface AnalyticsStats {
 export type SubscriptionPlan = "free" | "monthly" | "lifetime";
 
 // Free Plan Constants
-export const FREE_PLAN_JOB_LIMIT = 3;
+export const FREE_PLAN_JOB_LIMIT = 15;
