@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
-import { JobApplication, JobStatus } from "@/types";
-import { BarChart3, TrendingUp, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X } from "lucide-react";
+import { useMemo, useState, useRef } from "react";
+import { JobApplication } from "@/types";
+import { BarChart3, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X } from "lucide-react";
 
 interface JobStatsProps {
   jobs: JobApplication[];
@@ -200,7 +200,6 @@ export default function JobStats({ jobs }: JobStatsProps) {
                     const angle = (item.percentage / 100) * 360;
                     const startAngle = currentAngle;
                     const endAngle = currentAngle + angle;
-                    const midAngle = (startAngle + endAngle) / 2;
                     currentAngle = endAngle;
 
                     // Calculate path for pie slice

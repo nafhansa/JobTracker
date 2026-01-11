@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, Star, Check, X, Clock, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, Star, Check, X, Clock, Zap } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
@@ -182,63 +182,92 @@ export default function LandingPage() {
       <main className="flex-1 relative z-10 flex flex-col items-center">
         
         {/* --- HERO SECTION --- */}
-        <section className="pt-24 md:pt-40 pb-20 px-6 text-center max-w-5xl mx-auto space-y-8 flex flex-col items-center">
-          
-          <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border border-primary/30 rounded-full text-primary bg-primary/10 backdrop-blur-sm">
-            <Star className="w-3 h-3 text-primary fill-current" /> Premium Career Management
-          </div>
-          
-          <h1 className="mb-6 text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-foreground">
-            Stop Using Spreadsheets <br/>
-            <span className="relative whitespace-nowrap">
-              <span className="absolute -inset-1 bg-primary/10 blur-xl rounded-full"></span>
-              <span className="relative text-primary">
-                For Your Future.
-              </span>
-            </span>
-          </h1>
-          
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-normal leading-relaxed mb-4">
-            Track your job search with confidence. Monitor status, salaries, and follow-ups in one <span className="text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-4">sophisticated dashboard</span>.
-          </p>
+        {/* SECTION PADDING: Adjust top padding - Mobile: pt-X (lebih kecil = lebih ke atas), Desktop: md:pt-20 (tetap) */}
+        {/* Mobile options: pt-16, pt-20, pt-24, pt-28, pt-32, pt-36, pt-40 (semakin kecil = semakin ke atas) */}
+        <section className="pt-36 md:pt-20 pb-20 px-6 text-center max-w-5xl mx-auto">
+          {/* MAIN SPACING: Adjust spacing between all components - space-y-6 (mobile) md:space-y-8 (desktop) */}
+          {/* Options: space-y-4 (tight), space-y-6 (default), space-y-8 (comfortable), space-y-10 (spacious) */}
+          <div className="flex flex-col items-center space-y-6 md:space-y-4">
+            {/* Badge - Jarak dari atas section diatur oleh pt-24 md:pt-40 di section */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border border-primary/30 rounded-full text-primary bg-primary/10 backdrop-blur-sm">
+              <Star className="w-3 h-3 text-primary fill-current" />
+              Premium Career Management
+            </div>
 
-          {/* Value Proposition Benefits */}
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6 mb-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
-              <Clock className="w-4 h-4 text-primary" />
-              <span className="text-sm md:text-base text-foreground font-medium">
-                Save <span className="font-bold text-primary">5 hours/week</span> on job tracking
+            {/* Heading - Jarak dari badge diatur oleh space-y-6 md:space-y-8 di parent div */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-foreground">
+              Stop Using Spreadsheets <br />
+              <span className="relative whitespace-nowrap">
+                <span className="absolute -inset-1 bg-primary/10 blur-xl rounded-full"></span>
+                <span className="relative text-primary">For Your Future.</span>
               </span>
+            </h1>
+          
+        {/* --- PRODUCT SHOWCASE (UPDATED: REAL SCREENSHOT) --- */}
+        {/* Paddle Point #3: Clear display of product features */}
+        {/* UKURAN: Adjust max-width (max-w-4xl/max-w-5xl/max-w-6xl), padding (px-2/px-4/px-6), margin (mt-X mb-X) */}
+        {/* SCALE: Untuk lebih kecil, tambahkan scale-90 md:scale-100 di container atau scale-75 md:scale-100 */}
+        <div className="relative w-full max-w-4xl md:max-w-2xl px-2 md:px-4 mt-1 md:mt-1 mb-2 md:mb-1 perspective-[2000px] group scale-90 md:scale-85">
+          {/* Background Glow - Adjust w-X h-X untuk mengubah ukuran glow (w-1/2 = 50%, w-3/4 = 75%) */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/2 md:w-3/4 h-1/2 md:h-3/4 bg-primary/10 rounded-full blur-[100px]"></div>
+           
+          <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl backdrop-blur-sm transform rotate-x-[0deg] group-hover:rotate-x-[10deg] transition-all duration-700 ease-out">
+            {/* Browser Bar - Adjust h-6/h-8 untuk tinggi browser bar */}
+            <div className="h-6 md:h-8 bg-muted/50 flex items-center px-3 md:px-4 space-x-2 border-b border-border">
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-400"></div>
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-400"></div>
+              <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-400"></div>
+              <div className="ml-2 md:ml-4 px-2 md:px-3 py-0.5 md:py-1 bg-background/50 rounded text-[9px] md:text-[10px] text-muted-foreground font-mono hidden md:block">jobtrackerapp.site/dashboard</div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-sm md:text-base text-foreground font-medium">
-                Never miss a <span className="font-bold text-primary">follow-up</span> again
-              </span>
+            
+            {/* Image Container - aspect-video = 16:9, bisa diganti aspect-square (1:1) atau aspect-[4/3] */}
+            <div className="relative aspect-video w-full bg-background">
+              <Image 
+                src="/dashboard-preview.png" 
+                alt="JobTracker Dashboard Interface" 
+                fill
+                className="object-cover object-top"
+                priority
+              />
             </div>
           </div>
-          
-          <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
-            <Link 
-              href="/login" 
-              onClick={handleCTAClick}
-              className={`group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-white bg-primary hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg uppercase overflow-hidden ${
-                ctaVariant === "B" ? "text-lg px-10 py-5" : ""
-              }`}
-            >
-              <span className="relative z-10 flex items-center">
-                {getCTAText()}
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </div>
+
+            {/* Description - Jarak dari heading: diatur oleh space-y-6 md:space-y-8 di parent div (line 189) */}
+            {/* JARAK KHUSUS: Adjust mt-X (margin-top) dan mb-X (margin-bottom) sesuai kebutuhan - Mobile: lebih kecil, Desktop: lebih besar */}
+            {/* Options: mt-0, mt-2, mt-4, mt-6, mt-8, mt-10, mt-12 | mb-0, mb-2, mb-4, mb-6, mb-8, mb-10, mb-12 */}
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-normal leading-relaxed mt-2 md:mt-0.5 mb-3 md:mb-4">
+              Track your job search with confidence. Monitor status, salaries, and follow-ups in one{" "}
+              <span className="text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-4">
+                sophisticated dashboard
               </span>
-            </Link>
-            
-            <Link 
-              href="/pricing" 
-              onClick={handlePricingClick}
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-300"
-            >
-              View Pricing
-            </Link>
+              .
+            </p>
+
+            {/* CTA Buttons - Jarak dari description: base spacing dari parent - Mobile: lebih kecil, Desktop: lebih besar */}
+            {/* MOBILE: gap-3, padding lebih kecil | DESKTOP: gap-4, padding normal */}
+            <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 w-full sm:w-auto">
+              <Link
+                href="/login"
+                onClick={handleCTAClick}
+                className={`group relative inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold rounded-lg text-white bg-primary hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg uppercase overflow-hidden ${
+                  ctaVariant === "B" ? "md:text-lg md:px-10 md:py-5" : ""
+                }`}
+              >
+                <span className="relative z-10 flex items-center">
+                  {getCTAText()}
+                  <ArrowRight className="ml-2 w-3.5 h-3.5 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Link>
+
+              <Link
+                href="/pricing"
+                onClick={handlePricingClick}
+                className="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+              >
+                View Pricing
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -501,33 +530,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* --- PRODUCT SHOWCASE (UPDATED: REAL SCREENSHOT) --- */}
-        {/* Paddle Point #3: Clear display of product features */}
-        <div className="relative w-full max-w-6xl px-4 mt-8 md:mt-16 mb-24 perspective-[2000px] group">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-primary/10 rounded-full blur-[100px]"></div>
-           
-           <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl backdrop-blur-sm transform rotate-x-[0deg] group-hover:rotate-x-[10deg] transition-all duration-700 ease-out">
-              {/* Browser Bar */}
-              <div className="h-8 bg-muted/50 flex items-center px-4 space-x-2 border-b border-border">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  <div className="ml-4 px-3 py-1 bg-background/50 rounded text-[10px] text-muted-foreground font-mono hidden md:block">jobtrackerapp.site/dashboard</div>
-              </div>
-              
-             
-              <div className="relative aspect-video w-full bg-background">
-                 <Image 
-                  src="/dashboard-preview.png" 
-                  alt="JobTracker Dashboard Interface" 
-                  fill
-                  className="object-cover object-top"
-                  priority
-                 />
-              </div>
-           </div>
-        </div>
 
         {/* --- SOCIAL PROOF SECTION --- */}
         <SocialProof />
