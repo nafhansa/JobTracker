@@ -260,7 +260,7 @@ export default function LandingPage() {
                       Limited Time Offer
                     </h2>
                     <p className="text-base text-foreground mb-4">
-                      Get Lifetime Access for <span className="font-bold text-primary">$9.99</span>
+                      Get Lifetime Access for <span className="font-bold text-primary">$7.99</span>
                     </p>
                     <p className="text-sm text-muted-foreground line-through mb-2">
                       Regular Price: $17.99
@@ -321,7 +321,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                      Limited Time: Lifetime Access Only $9.99
+                      Limited Time: Lifetime Access Only $7.99
                     </h2>
                     <p className="text-lg text-muted-foreground mb-4">
                       <span className="line-through">Was $17.99</span> • Save 44% • Pay Once, Own Forever

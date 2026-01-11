@@ -150,7 +150,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
               </div>
 
               <h3 className="text-xl font-bold text-foreground mb-2">Lifetime Access</h3>
-              <p className="text-sm text-muted-foreground mb-6">$9.99 one-time payment</p>
+              <p className="text-sm text-muted-foreground mb-6">$7.99 one-time payment</p>
               
               <div className="flex-1 space-y-3 mb-6">
                  <div className="flex items-center gap-3 text-foreground text-sm">
@@ -180,7 +180,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
                         return actions.order.create({
                           intent: "CAPTURE",
                           purchase_units: [{
-                            amount: { value: "9.99", currency_code: "USD" },
+                            amount: { value: "7.99", currency_code: "USD" },
                             description: "JobTracker Lifetime Pro Access (Early Bird)",
                             custom_id: user?.uid
                           }]
