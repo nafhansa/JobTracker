@@ -181,9 +181,9 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
       </div>
       
       {/* Main Content Grid: Jobs on left, Stats on right (desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Jobs List */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-9">
           {filteredJobs.length === 0 ? (
             <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center">
               <div className="flex justify-center mb-4">
@@ -214,8 +214,8 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
         </div>
 
         {/* Stats Sidebar (Desktop) */}
-        <div className="hidden lg:block">
-          <div className="sticky top-24">
+        <div className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-6">
             <JobStats jobs={jobs} />
           </div>
         </div>
