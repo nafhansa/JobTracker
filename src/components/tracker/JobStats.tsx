@@ -43,17 +43,9 @@ export default function JobStats({ jobs }: JobStatsProps) {
       .sort((a, b) => b.count - a.count);
 
     // Calculate Stage counts
-    const getJobStage = (status: JobStatus) => {
-      if (status.rejected) return "rejected";
-      if (status.contractEmail) return "offer";
-      if (status.interviewEmail) return "interview";
-      if (status.cvResponded) return "response";
-      if (status.emailed) return "emailed";
-      return "applied";
-    };
-
+    // Applied includes ALL jobs (all jobs that have been added are considered applied)
     const stageCounts: { [key: string]: number } = {
-      applied: 0,
+      applied: totalJobs, // All jobs are applied
       emailed: 0,
       response: 0,
       interview: 0,
@@ -62,8 +54,12 @@ export default function JobStats({ jobs }: JobStatsProps) {
     };
 
     jobs.forEach(job => {
-      const stage = getJobStage(job.status);
-      stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+      // Count each stage independently (not mutually exclusive)
+      if (job.status.emailed) stageCounts.emailed++;
+      if (job.status.cvResponded) stageCounts.response++;
+      if (job.status.interviewEmail) stageCounts.interview++;
+      if (job.status.contractEmail) stageCounts.offer++;
+      if (job.status.rejected) stageCounts.rejected++;
     });
 
     const maxStageCount = Math.max(...Object.values(stageCounts));
