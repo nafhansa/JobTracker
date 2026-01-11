@@ -1,22 +1,60 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { JobApplication, JobStatus } from "@/types";
-import { BarChart3, TrendingUp, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle } from "lucide-react";
+import { BarChart3, TrendingUp, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X } from "lucide-react";
 
 interface JobStatsProps {
   jobs: JobApplication[];
 }
 
+// Function to normalize job source from URL
+const normalizeSource = (url: string | undefined): string => {
+  if (!url) return "Unknown";
+  
+  const urlLower = url.toLowerCase();
+  
+  if (urlLower.includes("hiringcafe")) return "HiringCafe";
+  if (urlLower.includes("paired.com") || urlLower.includes("paired")) return "Paired";
+  if (urlLower.includes("flexjobs")) return "FlexJobs";
+  
+  // Try to extract domain name
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.replace("www.", "");
+    // Return domain without extension for better readability
+    return hostname.split(".")[0].charAt(0).toUpperCase() + hostname.split(".")[0].slice(1);
+  } catch {
+    return url; // Return original if URL parsing fails
+  }
+};
+
+// Pie chart colors
+const pieColors = [
+  "#3b82f6", // blue-500
+  "#8b5cf6", // purple-500
+  "#10b981", // emerald-500
+  "#f59e0b", // amber-500
+  "#ef4444", // red-500
+  "#06b6d4", // cyan-500
+  "#ec4899", // pink-500
+  "#6366f1", // indigo-500
+];
+
 export default function JobStats({ jobs }: JobStatsProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const pieChartRef = useRef<HTMLDivElement>(null);
+
   const stats = useMemo(() => {
     const totalJobs = jobs.length;
     if (totalJobs === 0) return null;
 
-    // Calculate Job Source percentages
+    // Calculate Job Source percentages with normalization
     const jobSourceCounts: { [key: string]: number } = {};
     jobs.forEach(job => {
-      const source = job.applicationUrl || "Unknown";
+      const source = normalizeSource(job.applicationUrl);
       jobSourceCounts[source] = (jobSourceCounts[source] || 0) + 1;
     });
     const jobSourcePercentages = Object.entries(jobSourceCounts)
@@ -26,7 +64,7 @@ export default function JobStats({ jobs }: JobStatsProps) {
         percentage: Math.round((count / totalJobs) * 100)
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5); // Top 5
+      .slice(0, 8); // Top 8 for pie chart
 
     // Calculate Job Type percentages
     const jobTypeCounts: { [key: string]: number } = {};
@@ -95,34 +133,227 @@ export default function JobStats({ jobs }: JobStatsProps) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-6">
+    <div className="bg-card border border-border rounded-xl p-5 sm:p-6 shadow-sm space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-bold text-foreground">Statistics</h3>
       </div>
 
-      {/* Top Job Source */}
-      <div>
+      {/* Top Job Source - Pie Chart */}
+      <div className="relative">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold text-foreground">Top Job Sources</h4>
-          <TrendingUp className="w-4 h-4 text-muted-foreground" />
+          <PieChart className="w-4 h-4 text-muted-foreground" />
         </div>
-        <div className="space-y-3">
-          {stats.jobSourcePercentages.map((item, idx) => (
-            <div key={idx}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-foreground">{item.source}</span>
-                <span className="text-xs font-bold text-primary">{item.percentage}%</span>
+        {stats.jobSourcePercentages.length > 0 ? (
+          <>
+            {/* Hover Tooltip - fixed positioning to be above everything */}
+            {hoveredIndex !== null && !selectedIndex && (
+              <div 
+                className="fixed z-[9999] bg-popover border border-border rounded-lg shadow-xl p-3 w-[180px] pointer-events-none animate-in fade-in-0 zoom-in-95"
+                style={{
+                  top: `${tooltipPosition.top - 10}px`,
+                  left: `${tooltipPosition.left}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: pieColors[hoveredIndex % pieColors.length] }}
+                  />
+                  <span className="font-semibold text-sm text-foreground truncate">
+                    {stats.jobSourcePercentages[hoveredIndex].source}
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-muted-foreground">Percentage:</span>
+                    <span className="font-bold text-primary">
+                      {stats.jobSourcePercentages[hoveredIndex].percentage}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-muted-foreground">Applications:</span>
+                    <span className="font-bold text-foreground">
+                      {stats.jobSourcePercentages[hoveredIndex].count}
+                    </span>
+                  </div>
+                  <div className="pt-1.5 mt-1.5 border-t border-border">
+                    <span className="text-muted-foreground text-[10px]">Click for more details</span>
+                  </div>
+                </div>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-primary rounded-full h-2 transition-all duration-300"
-                  style={{ width: `${item.percentage}%` }}
-                />
+            )}
+            
+            <div className="flex flex-col items-center gap-4 relative">
+              {/* Pie Chart SVG with Interactive Slices */}
+              <div ref={pieChartRef} className="relative w-48 h-48 flex-shrink-0 p-2">
+              <svg 
+                viewBox="0 0 100 100" 
+                className="w-full h-full transform -rotate-90 cursor-pointer overflow-visible"
+                style={{ overflow: 'visible' }}
+              >
+                {(() => {
+                  let currentAngle = 0;
+                  return stats.jobSourcePercentages.map((item, idx) => {
+                    const angle = (item.percentage / 100) * 360;
+                    const startAngle = currentAngle;
+                    const endAngle = currentAngle + angle;
+                    const midAngle = (startAngle + endAngle) / 2;
+                    currentAngle = endAngle;
+
+                    // Calculate path for pie slice
+                    const largeArcFlag = angle > 180 ? 1 : 0;
+                    const startX = 50 + 50 * Math.cos((startAngle * Math.PI) / 180);
+                    const startY = 50 + 50 * Math.sin((startAngle * Math.PI) / 180);
+                    const endX = 50 + 50 * Math.cos((endAngle * Math.PI) / 180);
+                    const endY = 50 + 50 * Math.sin((endAngle * Math.PI) / 180);
+
+                    const pathData = [
+                      `M 50 50`,
+                      `L ${startX} ${startY}`,
+                      `A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                      `Z`,
+                    ].join(" ");
+
+                    const isHovered = hoveredIndex === idx;
+                    const isSelected = selectedIndex === idx;
+
+                    return (
+                      <g key={idx}>
+                        <path
+                          d={pathData}
+                          fill={pieColors[idx % pieColors.length]}
+                          className={`transition-all duration-200 cursor-pointer ${
+                            isHovered || isSelected 
+                              ? "opacity-90 drop-shadow-lg" 
+                              : "opacity-100"
+                          }`}
+                          style={{
+                            transform: isHovered || isSelected 
+                              ? `scale(1.05)` 
+                              : "scale(1)",
+                            transformOrigin: "50px 50px",
+                          }}
+                          onMouseEnter={() => {
+                            setHoveredIndex(idx);
+                            if (pieChartRef.current) {
+                              const rect = pieChartRef.current.getBoundingClientRect();
+                              setTooltipPosition({
+                                top: rect.top,
+                                left: rect.left + rect.width / 2,
+                              });
+                            }
+                          }}
+                          onMouseLeave={() => setHoveredIndex(null)}
+                          onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
+                        />
+                      </g>
+                    );
+                  });
+                })()}
+              </svg>
+              
+              {/* Center Label with Total */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-1.5 px-4 py-3 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg">
+                  <div className="text-3xl font-bold text-foreground tracking-tight">
+                    {stats.totalJobs}
+                  </div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Total Jobs
+                  </div>
+                  {hoveredIndex !== null && (
+                    <div className="mt-1.5 pt-1.5 border-t border-border/50 w-full flex flex-col items-center gap-0.5">
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                        {stats.jobSourcePercentages[hoveredIndex]?.source}
+                      </div>
+                      <div className="text-base font-bold text-primary">
+                        {stats.jobSourcePercentages[hoveredIndex]?.percentage}%
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+
+              {/* Selected Detail Box */}
+              {selectedIndex !== null && (
+              <div className="w-full bg-popover border border-border rounded-xl shadow-lg p-4 animate-in fade-in-0 zoom-in-95 overflow-hidden">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
+                      style={{ backgroundColor: pieColors[selectedIndex % pieColors.length] }}
+                    />
+                    <h5 className="font-bold text-base text-foreground">
+                      {stats.jobSourcePercentages[selectedIndex].source}
+                    </h5>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedIndex(null);
+                    }}
+                    className="p-1.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                    aria-label="Close details"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
+                    <div className="text-xs text-muted-foreground mb-1.5 font-medium">Percentage</div>
+                    <div className="text-xl font-bold text-primary">
+                      {stats.jobSourcePercentages[selectedIndex].percentage}%
+                    </div>
+                  </div>
+                  <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
+                    <div className="text-xs text-muted-foreground mb-1.5 font-medium">Applications</div>
+                    <div className="text-xl font-bold text-foreground">
+                      {stats.jobSourcePercentages[selectedIndex].count}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
+              
+              {/* Legend */}
+              <div className="w-full space-y-2">
+              {stats.jobSourcePercentages.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors cursor-pointer ${
+                    hoveredIndex === idx || selectedIndex === idx
+                      ? "bg-accent"
+                      : "hover:bg-accent/50"
+                  }`}
+                  onMouseEnter={() => setHoveredIndex(idx)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: pieColors[idx % pieColors.length] }}
+                    />
+                    <span className="text-xs font-medium text-foreground truncate">{item.source}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs font-bold text-primary">{item.percentage}%</span>
+                    <span className="text-xs text-muted-foreground">({item.count})</span>
+                  </div>
+                </div>
+              ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-4 text-muted-foreground text-xs">
+            No job sources available
+          </div>
+        )}
       </div>
 
       {/* Job Type Percentages */}

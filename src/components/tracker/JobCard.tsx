@@ -116,7 +116,7 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
       <div className="p-5 flex justify-between items-start relative z-10">
         <div className="flex-1">
           <div className="flex items-start gap-2">
-            <h3 className={`font-bold text-xl line-clamp-1 tracking-wide transition-colors ${isRejected ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
+            <h3 className={`font-bold text-base line-clamp-2 tracking-wide transition-colors ${isRejected ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
               {job.jobTitle}
             </h3>
             {isFreeUser && !isAdmin && (

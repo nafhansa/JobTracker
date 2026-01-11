@@ -84,13 +84,13 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   ];
 
   return (
-    <div className="max-w-7xl mx-auto pb-10 px-4">      
+    <div className="max-w-[90rem] mx-auto pb-10 px-4 sm:px-6">      
       
       {/* Wrapper Utama Grid langsung dimulai di sini */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
 
         {/* --- KOLOM KIRI (Dominan: Search, Filter, Jobs) --- */}
-        <div className="lg:col-span-9 flex flex-col gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-6">
           
           {/* A. Bagian Search & Tombol Add (Dipindah ke dalam kolom kiri) */}
           <div className="flex flex-col md:flex-row justify-between items-end gap-4">        
@@ -203,7 +203,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
 
         {/* --- KOLOM KANAN (Stats Sidebar) --- */}
         {/* Posisi: Sticky, sejajar dengan Search bar karena grid dimulai dari atas */}
-        <div className="hidden lg:block lg:col-span-3">
+        <div className="hidden lg:block lg:col-span-4">
           <div className="sticky top-6 space-y-6">
             <JobStats jobs={jobs} />
             
