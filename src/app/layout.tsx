@@ -1,7 +1,8 @@
 // src/app/layout.tsx
 import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
-import { PayPalProvider } from "@/components/providers/PayPalProvider"; // Import yang baru
+import { PayPalProvider } from "@/components/providers/PayPalProvider";
+import { LanguageProvider } from "@/lib/language/context";
 
 export default function RootLayout({
   children,
@@ -11,11 +12,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <PayPalProvider>
-            {children}
-          </PayPalProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <PayPalProvider>
+              {children}
+            </PayPalProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

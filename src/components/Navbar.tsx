@@ -4,10 +4,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { useLanguage } from "@/lib/language/context";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 export default function Navbar() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function Navbar() {
         {/* Gap diperkecil di mobile (gap-2) */}
         <nav className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
+          <LanguageToggle />
           <Link
             href="/pricing"
             // Di mobile: text-xs dan px-3 biar muat
@@ -51,7 +55,7 @@ export default function Navbar() {
                 : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
-            Pricing
+            {t("nav.pricing")}
           </Link>
           
           {user ? (
@@ -64,7 +68,7 @@ export default function Navbar() {
                   : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               }`}
             >
-              Dashboard
+              {t("nav.dashboard")}
             </Link>
           ) : (
             <Link
@@ -76,7 +80,7 @@ export default function Navbar() {
                   : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               }`}
             >
-              Login
+              {t("nav.login")}
             </Link>
           )}
         </nav>

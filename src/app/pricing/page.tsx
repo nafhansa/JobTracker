@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { useLanguage } from "@/lib/language/context";
 import { CheckCircle2, ArrowRight, Star, Tag, Gift } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useState } from "react";
@@ -20,6 +21,7 @@ function isEarlyBirdActive(): boolean {
 }
 
 export default function PricingPage() {
+  const { t } = useLanguage();
   const [isEarlyBird] = useState(() => isEarlyBirdActive());
 
   return (
@@ -29,10 +31,10 @@ export default function PricingPage() {
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
         <section className="text-center max-w-4xl mx-auto px-6 space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground">
-            Invest in Your Career
+            {t("pricing.title")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Stop losing track of opportunities. Choose the plan that fits your ambition.
+            {t("pricing.subtitle")}
           </p>
         </section>
 
@@ -41,50 +43,50 @@ export default function PricingPage() {
             
             {/* FREE PLAN */}
             <PricingCard
-              plan="Free"
+              plan={t("pricing.free.title")}
               price="$0"
               period="forever"
-              description="Perfect for getting started."
+              description={t("pricing.free.desc")}
               features={[
-                `Track up to ${FREE_PLAN_JOB_LIMIT} Applications`,
-                "Basic Kanban Board",
-                "Basic Filters",
-                "View & Track Status",
+                t("pricing.free.feature1").replace('5', FREE_PLAN_JOB_LIMIT.toString()),
+                t("pricing.free.feature2"),
+                t("pricing.free.feature3"),
+                t("pricing.free.feature4"),
               ]}
-              buttonText="Get Started Free"
+              buttonText={t("pricing.free.cta")}
               isFree
             />
 
             {/* MONTHLY PLAN */}
             <PricingCard
-              plan="Monthly"
+              plan={t("pricing.monthly.title")}
               price="$1.99"
               originalPrice="$2.99"
               period="/month"
-              description="Perfect for active job seekers."
+              description={t("pricing.monthly.desc")}
               features={[
-                "Track Unlimited Applications",
-                "Kanban Board & Smart Filters",
-                "Auto-Deadline Reminders",
-                "Priority Email Support",
+                t("pricing.monthly.feature1"),
+                t("pricing.monthly.feature2"),
+                t("pricing.monthly.feature3"),
+                t("pricing.monthly.feature4"),
               ]}
-              buttonText="Start Monthly"
+              buttonText={t("pricing.monthly.cta")}
             />
 
             {/* LIFETIME PLAN */}
             <PricingCard
-              plan="Lifetime Pro"
+              plan={t("pricing.lifetime.title")}
               price={isEarlyBird ? `$${EARLY_BIRD_LIFETIME_PRICE}` : `$${REGULAR_LIFETIME_PRICE}`}
               originalPrice={isEarlyBird ? `$${REGULAR_LIFETIME_PRICE}` : "$24.99"}
               period="one-time"
-              description={isEarlyBird ? "🎉 Early Bird Special - Limited Time!" : "Pay once, own it forever."}
+              description={isEarlyBird ? t("pricing.lifetime.desc.early") : t("pricing.lifetime.desc")}
               features={[
-                "Everything in Monthly Plan",
-                "Pay Once, Own Forever",
-                "Future AI Features Included",
-                "Supporter Badge on Profile",
+                t("pricing.lifetime.feature1"),
+                t("pricing.lifetime.feature2"),
+                t("pricing.lifetime.feature3"),
+                t("pricing.lifetime.feature4"),
               ]}
-              buttonText="Get Lifetime Access"
+              buttonText={t("pricing.lifetime.cta")}
               isFeatured
             />
           </div>
@@ -92,7 +94,7 @@ export default function PricingPage() {
       </main>
 
       <footer className="py-10 border-t border-border text-center text-sm text-muted-foreground relative z-10">
-        <p>&copy; {new Date().getFullYear()} JobTracker.</p>
+        <p>&copy; {new Date().getFullYear()} JobTracker. {t("footer.rights")}</p>
       </footer>
     </div>
   );
@@ -120,6 +122,7 @@ function PricingCard({
   isFree?: boolean;
 }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   return (
@@ -135,7 +138,7 @@ function PricingCard({
       {isFeatured && (
         <div className="absolute -top-4 right-6">
           <span className="bg-blue-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
-            <Star className="w-3 h-3 fill-current" /> Best Value
+            <Star className="w-3 h-3 fill-current" /> {t("pricing.badge.best")}
           </span>
         </div>
       )}
@@ -143,7 +146,7 @@ function PricingCard({
       {isFree && (
         <div className="absolute -top-4 right-6">
           <span className="bg-emerald-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
-            <Gift className="w-3 h-3 fill-current" /> Free
+            <Gift className="w-3 h-3 fill-current" /> {t("pricing.badge.free")}
           </span>
         </div>
       )}
@@ -164,7 +167,7 @@ function PricingCard({
                 const original = parseFloat(originalPrice.replace('$', ''));
                 const current = parseFloat(price.replace('$', ''));
                 const discount = Math.round(((original - current) / original) * 100);
-                return `Save ${discount}%`;
+                return `${t("pricing.badge.save")} ${discount}%`;
               })()}
             </span>
           </div>
@@ -208,14 +211,14 @@ function PricingCard({
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {user ? "Go to Dashboard" : buttonText}
+          {user ? t("nav.dashboard") : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>
 
       {isFeatured && (
         <p className="text-center text-[10px] text-muted-foreground mt-4">
-          30-day money-back guarantee
+          {t("pricing.guarantee")}
         </p>
       )}
     </div>

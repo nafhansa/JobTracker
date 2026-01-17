@@ -9,8 +9,10 @@ import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
+import { useLanguage } from "@/lib/language/context";
 
 export default function LandingPage() {
+  const { t } = useLanguage();
   const [ctaVariant] = useState<"A" | "B" | "C">(() => {
     const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
     return variants[Math.floor(Math.random() * variants.length)];
@@ -191,15 +193,15 @@ export default function LandingPage() {
             {/* Badge - Jarak dari atas section diatur oleh pt-24 md:pt-40 di section */}
             <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border border-primary/30 rounded-full text-primary bg-primary/10 backdrop-blur-sm">
               <Star className="w-3 h-3 text-primary fill-current" />
-              Premium Career Management
+              {t("hero.badge")}
             </div>
 
             {/* Heading - Jarak dari badge diatur oleh space-y-6 md:space-y-8 di parent div */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-foreground">
-              Stop Using Spreadsheets <br />
+              {t("hero.title.1")} <br />
               <span className="relative whitespace-nowrap">
                 <span className="absolute -inset-1 bg-primary/10 blur-xl rounded-full"></span>
-                <span className="relative text-primary">For Your Future.</span>
+                <span className="relative text-primary">{t("hero.title.2")}</span>
               </span>
             </h1>
           
@@ -237,9 +239,9 @@ export default function LandingPage() {
             {/* JARAK KHUSUS: Adjust mt-X (margin-top) dan mb-X (margin-bottom) sesuai kebutuhan - Mobile: lebih kecil, Desktop: lebih besar */}
             {/* Options: mt-0, mt-2, mt-4, mt-6, mt-8, mt-10, mt-12 | mb-0, mb-2, mb-4, mb-6, mb-8, mb-10, mb-12 */}
             <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-normal leading-relaxed mt-2 md:mt-0.5 mb-3 md:mb-4">
-              Track your job search with confidence. Monitor status, salaries, and follow-ups in one{" "}
+              {t("hero.description")}{" "}
               <span className="text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-4">
-                sophisticated dashboard
+                {t("hero.description.2")}
               </span>
               .
             </p>
@@ -255,7 +257,7 @@ export default function LandingPage() {
                 }`}
               >
                 <span className="relative z-10 flex items-center">
-                  {getCTAText()}
+                  {t("hero.cta.primary")}
                   <ArrowRight className="ml-2 w-3.5 h-3.5 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </Link>
@@ -265,7 +267,7 @@ export default function LandingPage() {
                 onClick={handlePricingClick}
                 className="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-300"
               >
-                View Pricing
+                {t("hero.cta.secondary")}
               </Link>
             </div>
           </div>
@@ -282,17 +284,17 @@ export default function LandingPage() {
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full mb-4">
                       <Zap className="w-4 h-4 text-blue-600" />
                       <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
-                        Early Bird Special
+                        {t("early.badge")}
                       </span>
                     </div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
-                      Limited Time Offer
+                      {t("early.title.mobile")}
                     </h2>
                     <p className="text-base text-foreground mb-4">
-                      Get Lifetime Access for <span className="font-bold text-primary">$7.99</span>
+                      {t("early.price.mobile")} <span className="font-bold text-primary">$7.99</span>
                     </p>
                     <p className="text-sm text-muted-foreground line-through mb-2">
-                      Regular Price: $17.99
+                      {t("early.regular")}
                     </p>
                   </div>
 
@@ -300,32 +302,32 @@ export default function LandingPage() {
                   <div className="bg-slate-50 rounded-xl p-4 border border-border">
                     <div className="text-center mb-3">
                       <Clock className="w-5 h-5 text-primary mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Offer Ends In</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{t("early.timer")}</p>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
                         <p className="text-2xl font-mono font-bold text-foreground">
                           {String(timeLeft.days).padStart(2, "0")}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">Days</p>
+                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.days")}</p>
                       </div>
                       <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
                         <p className="text-2xl font-mono font-bold text-foreground">
                           {String(timeLeft.hours).padStart(2, "0")}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">Hours</p>
+                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.hours")}</p>
                       </div>
                       <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
                         <p className="text-2xl font-mono font-bold text-foreground">
                           {String(timeLeft.minutes).padStart(2, "0")}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">Mins</p>
+                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.minutes")}</p>
                       </div>
                       <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
                         <p className="text-2xl font-mono font-bold text-foreground">
                           {String(timeLeft.seconds).padStart(2, "0")}
                         </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">Secs</p>
+                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.seconds")}</p>
                       </div>
                     </div>
                   </div>
@@ -335,7 +337,7 @@ export default function LandingPage() {
                     onClick={handlePricingClick}
                     className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-lg font-semibold text-base hover:bg-primary/90 transition-all duration-300 shadow-md"
                   >
-                    Claim Early Bird Offer
+                    {t("early.cta")}
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </div>
@@ -346,20 +348,20 @@ export default function LandingPage() {
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full mb-4">
                       <Zap className="w-5 h-5 text-blue-600" />
                       <span className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
-                        Early Bird Special
+                        {t("early.badge")}
                       </span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                      Limited Time: Lifetime Access Only $7.99
+                      {t("early.title")}
                     </h2>
                     <p className="text-lg text-muted-foreground mb-4">
-                      <span className="line-through">Was $17.99</span> • Save 44% • Pay Once, Own Forever
+                      {t("early.subtitle")}
                     </p>
                     
                     {/* Countdown Timer Desktop */}
                     <div className="flex items-center gap-4 mt-6">
                       <Clock className="w-5 h-5 text-primary" />
-                      <span className="text-sm text-muted-foreground font-medium">Offer ends in:</span>
+                      <span className="text-sm text-muted-foreground font-medium">{t("early.timer")}</span>
                       <div className="flex items-center gap-2 font-mono text-lg font-bold text-foreground">
                         <span className="bg-slate-50 border border-border px-3 py-2 rounded-lg">
                           {String(timeLeft.days).padStart(2, "0")}d
@@ -385,7 +387,7 @@ export default function LandingPage() {
                     onClick={handlePricingClick}
                     className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all duration-300 shadow-md hover:scale-105"
                   >
-                    Claim Offer
+                    {t("early.cta")}
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </div>
@@ -398,10 +400,10 @@ export default function LandingPage() {
         <section id="comparison" className="py-20 w-full max-w-6xl px-6 relative z-10 mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              Spreadsheets vs JobTracker
+              {t("comparison.title")}
             </h2>
             <p className="text-muted-foreground text-lg">
-              See why JobTracker is the smarter choice
+              {t("comparison.subtitle")}
             </p>
           </div>
 
@@ -414,16 +416,16 @@ export default function LandingPage() {
                 {/* Header Area - Fixed Height for alignment */}
                 <div className="h-[120px] flex flex-col justify-end pb-8 border-b border-border mb-6">
                   <h3 className="text-xl font-bold text-foreground text-left">
-                    Features
+                    {t("comparison.features")}
                   </h3>
                 </div>
                 {/* Rows */}
                 <div className="flex flex-col space-y-4">
                   {[
-                    "Visual Stage Tracking",
-                    "Salary Recording",
-                    "Structured Job Details",
-                    "Responsive Mobile Experience",
+                    t("comparison.feature.1"),
+                    t("comparison.feature.2"),
+                    t("comparison.feature.3"),
+                    t("comparison.feature.4"),
                   ].map((feature, idx) => (
                     <div key={idx} className="h-12 flex items-center text-base font-medium text-muted-foreground">
                       {feature}
@@ -441,21 +443,21 @@ export default function LandingPage() {
                   {/* Header Area - Fixed Height for alignment */}
                   <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-primary/30 mb-6">
                     <h3 className="text-2xl font-bold text-foreground mb-2">
-                      JobTracker
+                      {t("comparison.jobtracker")}
                     </h3>
                     <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-xs font-semibold text-white shadow-sm">
                       <Star className="w-3 h-3 fill-white" />
-                      Winner
+                      {t("comparison.winner")}
                     </div>
                   </div>
 
                   {/* Rows */}
                   <div className="flex flex-col space-y-4">
-                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value="Organized" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value="Yes" icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value={t("comparison.organized")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
+                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
                   </div>
                 </div>
               </div>
@@ -466,17 +468,17 @@ export default function LandingPage() {
                   {/* Header Area - Fixed Height for alignment */}
                   <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-border mb-6">
                     <h3 className="text-2xl font-bold text-muted-foreground">
-                      Spreadsheets
+                      {t("comparison.spreadsheets")}
                     </h3>
                   </div>
 
                   {/* Rows */}
                   <div className="flex flex-col space-y-4">
-                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value="No" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value="Messy" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value="Painful" icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value={t("comparison.messy")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
+                    <ComparisonItem value={t("comparison.painful")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
                   </div>
                 </div>
               </div>
@@ -486,20 +488,20 @@ export default function LandingPage() {
             <div className="md:hidden space-y-6">
               <div className="text-center mb-6">
                 <h3 className="text-lg font-bold text-foreground mb-2">
-                  Why switch?
+                  {t("comparison.why")}
                 </h3>
                 <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-semibold text-primary">
                   <Star className="w-3 h-3 fill-primary" />
-                  Recommended
+                  {t("comparison.recommended")}
                 </div>
               </div>
 
               {[
-                { feature: "Auto-Follow Up Reminders", jobtracker: "Yes", spreadsheet: "No" },
-                { feature: "Kanban Visualization", jobtracker: "Yes", spreadsheet: "No" },
-                { feature: "Salary Analytics", jobtracker: "Yes", spreadsheet: "No" },
-                { feature: "Document Storage", jobtracker: "Organized", spreadsheet: "Messy" },
-                { feature: "Mobile Friendly", jobtracker: "Yes", spreadsheet: "Painful" },
+                { feature: t("comparison.feature.5"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
+                { feature: t("comparison.feature.1"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
+                { feature: t("comparison.feature.2"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
+                { feature: t("comparison.feature.3"), jobtracker: t("comparison.organized"), spreadsheet: t("comparison.messy") },
+                { feature: t("comparison.feature.4"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.painful") },
               ].map((item, idx) => (
                 <div key={idx} className="bg-card border border-border rounded-lg p-5 shadow-sm">
                   <div className="text-sm font-semibold text-foreground mb-4 text-center tracking-wide uppercase">
@@ -510,7 +512,7 @@ export default function LandingPage() {
                     <div className="relative group">
                       <div className="absolute -inset-0.5 bg-primary/10 rounded-lg blur-sm"></div>
                       <div className="relative bg-card border border-primary rounded-lg p-3 text-center h-full flex flex-col justify-center items-center">
-                        <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">JobTracker</div>
+                        <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">{t("comparison.jobtracker")}</div>
                         <div className="flex items-center gap-2 text-foreground font-medium">
                           <Check className="w-4 h-4 text-primary" /> {item.jobtracker}
                         </div>
@@ -519,7 +521,7 @@ export default function LandingPage() {
                     
                     {/* Spreadsheet Side */}
                     <div className="bg-muted/30 border border-border rounded-lg p-3 text-center h-full flex flex-col justify-center items-center">
-                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Excel</div>
+                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{t("comparison.spreadsheets")}</div>
                        <div className="flex items-center gap-2 text-muted-foreground">
                           <X className="w-4 h-4" /> {item.spreadsheet}
                        </div>
@@ -545,14 +547,14 @@ export default function LandingPage() {
            
            <div className="text-center md:text-left">
               <p className="text-foreground font-bold tracking-widest uppercase mb-2">JobTracker</p>
-              <p className="text-muted-foreground">&copy; {new Date().getFullYear()} All rights reserved.</p>
+              <p className="text-muted-foreground">&copy; {new Date().getFullYear()} {t("footer.rights")}</p>
            </div>
 
            <div className="flex flex-wrap justify-center gap-6 md:gap-8 text-muted-foreground">
-              <Link href="/terms-policy#terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-              <Link href="/terms-policy#privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-              <Link href="/terms-policy#refund" className="hover:text-primary transition-colors">Refund Policy</Link>
-              <Link href="/terms-policy#contact" className="hover:text-primary transition-colors">Contact Support</Link>
+              <Link href="/terms-policy#terms" className="hover:text-primary transition-colors">{t("footer.terms")}</Link>
+              <Link href="/terms-policy#privacy" className="hover:text-primary transition-colors">{t("footer.privacy")}</Link>
+              <Link href="/terms-policy#refund" className="hover:text-primary transition-colors">{t("footer.refund")}</Link>
+              <Link href="/terms-policy#contact" className="hover:text-primary transition-colors">{t("footer.contact")}</Link>
            </div>
 
            <div className="text-muted-foreground text-xs">

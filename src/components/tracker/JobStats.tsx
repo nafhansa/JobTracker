@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef } from "react";
 import { JobApplication } from "@/types";
 import { BarChart3, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X } from "lucide-react";
+import { useLanguage } from "@/lib/language/context";
 
 interface JobStatsProps {
   jobs: JobApplication[];
@@ -42,6 +43,7 @@ const pieColors = [
 ];
 
 export default function JobStats({ jobs }: JobStatsProps) {
+  const { t } = useLanguage();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -116,33 +118,33 @@ export default function JobStats({ jobs }: JobStatsProps) {
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
         <div className="text-center py-8">
           <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-          <p className="text-muted-foreground text-sm">No statistics available yet</p>
-          <p className="text-muted-foreground text-xs mt-1">Add some jobs to see your stats</p>
+          <p className="text-muted-foreground text-sm">{t("stats.noStats")}</p>
+          <p className="text-muted-foreground text-xs mt-1">{t("stats.addJobs")}</p>
         </div>
       </div>
     );
   }
 
   const stageLabels = {
-    applied: { label: "Applied", icon: Send, color: "bg-blue-500" },
-    emailed: { label: "Emailed", icon: MessageSquare, color: "bg-purple-500" },
-    response: { label: "Responded", icon: MessageSquare, color: "bg-indigo-500" },
-    interview: { label: "Interview", icon: UserCheck, color: "bg-yellow-500" },
-    offer: { label: "Offers", icon: ScrollText, color: "bg-green-500" },
-    rejected: { label: "Rejected", icon: XCircle, color: "bg-red-500" },
+    applied: { label: t("filter.applied"), icon: Send, color: "bg-blue-500" },
+    emailed: { label: t("filter.emailed"), icon: MessageSquare, color: "bg-purple-500" },
+    response: { label: t("filter.response"), icon: MessageSquare, color: "bg-indigo-500" },
+    interview: { label: t("filter.interview"), icon: UserCheck, color: "bg-yellow-500" },
+    offer: { label: t("filter.offer"), icon: ScrollText, color: "bg-green-500" },
+    rejected: { label: t("filter.rejected"), icon: XCircle, color: "bg-red-500" },
   };
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 sm:p-6 shadow-sm space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-primary" />
-        <h3 className="text-lg font-bold text-foreground">Statistics</h3>
+        <h3 className="text-lg font-bold text-foreground">{t("stats.title")}</h3>
       </div>
 
       {/* Top Job Source - Pie Chart */}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-foreground">Top Job Sources</h4>
+          <h4 className="text-sm font-semibold text-foreground">{t("stats.topSources")}</h4>
           <PieChart className="w-4 h-4 text-muted-foreground" />
         </div>
         {stats.jobSourcePercentages.length > 0 ? (
@@ -168,19 +170,19 @@ export default function JobStats({ jobs }: JobStatsProps) {
                 </div>
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-muted-foreground">Percentage:</span>
+                    <span className="text-muted-foreground">{t("stats.percentage")}</span>
                     <span className="font-bold text-primary">
                       {stats.jobSourcePercentages[hoveredIndex].percentage}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-muted-foreground">Applications:</span>
+                    <span className="text-muted-foreground">{t("stats.applications")}</span>
                     <span className="font-bold text-foreground">
                       {stats.jobSourcePercentages[hoveredIndex].count}
                     </span>
                   </div>
                   <div className="pt-1.5 mt-1.5 border-t border-border">
-                    <span className="text-muted-foreground text-[10px]">Click for more details</span>
+                    <span className="text-muted-foreground text-[10px]">{t("stats.clickDetails")}</span>
                   </div>
                 </div>
               </div>

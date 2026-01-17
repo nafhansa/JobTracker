@@ -1,40 +1,21 @@
 'use client'; // Tambahkan ini kalau pakai Next.js App Router
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
-const faqs = [
-  {
-    question: "Why should I use JobTracker instead of Google Sheets?",
-    answer: "• Visual Kanban board (drag & drop)\n• Smart filters & mobile-friendly\n• No more scrolling sideways\n• Built for job seekers, not accountants"
-  },
-  {
-    question: "Is my application data safe and private?",
-    answer: "Yes. Your data is encrypted and secure. We do NOT sell your information to recruiters or third parties. Your job search stays completely private."
-  },
-  {
-    question: "What makes the Lifetime plan worth it?",
-    answer: "Pay $17.99 once, own it forever. Get all future AI features included. That's like 6 months of monthly, but you get lifetime access instead."
-  },
-  {
-    question: "Can I use this on my phone?",
-    answer: "Absolutely! Fully responsive and works great on mobile. Update status after interviews, check reminders, or add jobs on the go."
-  },
-  {
-    question: "What if I want to go back to spreadsheets?",
-    answer: "No problem! Export all your data to CSV anytime with one click. Your data belongs to you, always."
-  },
-  {
-    question: "What happens when I finally land my dream job?",
-    answer: "🎉 Congrats! Archive your board or keep it active. Cancel subscription anytime with one click no questions asked. Your data stays safe."
-  },
-  {
-    question: "Do you offer refunds?",
-    answer: "Yes! 15-days money-back guarantee on Lifetime plan. If it's not working for you, we'll refund no questions asked."
-  }
-];
+import { useLanguage } from '@/lib/language/context';
 
 const FAQSection = () => {
+  const { t } = useLanguage();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqs = [
+    { question: t("faq.q1"), answer: t("faq.a1") },
+    { question: t("faq.q2"), answer: t("faq.a2") },
+    { question: t("faq.q3"), answer: t("faq.a3") },
+    { question: t("faq.q4"), answer: t("faq.a4") },
+    { question: t("faq.q5"), answer: t("faq.a5") },
+    { question: t("faq.q6"), answer: t("faq.a6") },
+    { question: t("faq.q7"), answer: t("faq.a7") },
+  ];
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -44,7 +25,7 @@ const FAQSection = () => {
     <section id="faq" className="py-20 w-full max-w-2xl px-6 mx-auto">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold text-foreground mb-4">
-          Frequently Asked Questions
+          {t("faq.title")}
         </h2>
       </div>
 

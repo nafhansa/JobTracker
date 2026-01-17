@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Quote, Star } from 'lucide-react';
+import { useLanguage } from '@/lib/language/context';
 
 // 1. Data Dummy yang Diperluas & Ditambah Rating
 const testimonialsData = [
@@ -65,15 +66,17 @@ const StarRating = ({ rating }: { rating: number }) => (
 );
 
 const SocialProof = () => {
+  const { t } = useLanguage();
+  
   return (
     <section className="py-16 w-full bg-background border-y border-border overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 mb-10">
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Trusted by Job Seekers
+            {t("social.title")}
           </h2>
           <p className="text-muted-foreground text-base">
-            See why they switched from spreadsheets.
+            {t("social.subtitle")}
           </p>
         </div>
       </div>

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
-import JobFormModal from "@/components/forms/AddJobModal"; // Import versi baru tadi
+import JobFormModal from "@/components/forms/AddJobModal";
 import JobStats from "@/components/tracker/JobStats";
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getPlanLimits, isAdminUser } from "@/lib/firebase/subscription";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { useLanguage } from "@/lib/language/context";
 
 interface DashboardClientProps {
   initialJobs: JobApplication[];
@@ -19,6 +20,7 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ initialJobs, userId, plan }: DashboardClientProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [showStatsMobile, setShowStatsMobile] = useState(false);
@@ -29,7 +31,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   // Get plan limits
   const planLimit = getPlanLimits(plan, isAdmin);
   const isFreeUser = plan === "free" && !isAdmin;
-  const usageText = isFreeUser ? `${jobs.length}/${planLimit}` : "Unlimited"; 
+  const usageText = isFreeUser ? `${jobs.length}/${planLimit}` : t("common.unlimited"); 
 
   // --- STATE MODAL & EDIT ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,12 +77,12 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   });
   
   const tabs = [
-    { id: "ALL", label: "All Jobs", icon: Briefcase },
-    { id: "applied", label: "Applied", icon: Send },
-    { id: "response", label: "Responded", icon: MessageSquare }, 
-    { id: "interview", label: "Interview", icon: UserCheck },
-    { id: "offer", label: "Offers", icon: ScrollText },
-    { id: "rejected", label: "Rejected", icon: XCircle },
+    { id: "ALL", label: t("filter.all"), icon: Briefcase },
+    { id: "applied", label: t("filter.applied"), icon: Send },
+    { id: "response", label: t("filter.response"), icon: MessageSquare }, 
+    { id: "interview", label: t("filter.interview"), icon: UserCheck },
+    { id: "offer", label: t("filter.offer"), icon: ScrollText },
+    { id: "rejected", label: t("filter.rejected"), icon: XCircle },
   ];
 
   return (
@@ -97,7 +99,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
             <div className="relative w-full md:w-1/2">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search role or company..." 
+                placeholder={t("search.placeholder")} 
                 className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary rounded-xl"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -112,7 +114,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                 className="lg:hidden bg-card border-border text-foreground hover:bg-accent"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Stats
+                {t("stats.button")}
                 {showStatsMobile ? (
                   <ChevronUp className="w-4 h-4 ml-2" />
                 ) : (
@@ -126,7 +128,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                 className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Application
+                {t("add.button")}
               </Button>
             </div>
           </div>
@@ -180,10 +182,10 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                 </div>
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">
-                {searchQuery ? "No matching jobs found" : "No applications in this stage"}
+                {searchQuery ? t("empty.noMatch") : t("empty.noJobs")}
               </h3>
               <p className="text-muted-foreground max-w-sm mx-auto">
-                {searchQuery ? "Try adjusting your search terms." : "Keep pushing! Your dream job is waiting."}
+                {searchQuery ? t("empty.adjustSearch") : t("empty.keepPushing")}
               </p>
             </div>
           ) : (
@@ -211,7 +213,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
             {isFreeUser && (
               <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Free Plan Usage</span>
+                  <span className="text-sm font-medium text-foreground">{t("form.freeUsage")}</span>
                   <span className="text-xs text-muted-foreground">{usageText}</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
@@ -221,7 +223,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                   />
                 </div>
                 {jobs.length >= planLimit && (
-                  <p className="text-xs text-yellow-600 font-semibold mt-2">Limit reached</p>
+                  <p className="text-xs text-yellow-600 font-semibold mt-2">{t("form.limitReachedShort")}</p>
                 )}
               </div>
             )}

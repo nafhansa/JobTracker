@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { useLanguage } from "@/lib/language/context";
 import { logout } from "@/lib/firebase/auth";
 import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck } from "lucide-react"; 
 import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
@@ -21,6 +23,7 @@ import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, subscription } = useAuth();
+  const { t } = useLanguage();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -90,7 +93,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground animate-pulse">Loading experience...</p>
+          <p className="text-muted-foreground animate-pulse">{t("dashboard.loading")}</p>
       </div>
     );
   }
@@ -109,6 +112,7 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-4">
           <ThemeToggle />
+          <LanguageToggle />
           {isAdmin && (
             <Button
               variant="ghost"
@@ -117,7 +121,7 @@ export default function DashboardPage() {
               className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors"
             >
               <ShieldCheck className="w-4 h-4 mr-2" />
-              Admin
+              {t("dashboard.admin")}
             </Button>
           )}
           <span className="hidden md:inline text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors">
@@ -130,7 +134,7 @@ export default function DashboardPage() {
             className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            {t("dashboard.logout")}
           </Button>
         </div>
       </nav>
@@ -140,10 +144,10 @@ export default function DashboardPage() {
         
         <div className="mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-              Your Applications
+              {t("dashboard.title")}
             </h2>
             <p className="text-muted-foreground text-lg">
-              Manage your journey. Filter by status to stay focused.
+              {t("dashboard.subtitle")}
             </p>
         </div>
 
