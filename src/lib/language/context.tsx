@@ -13,15 +13,22 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Only run on client-side
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem("language") as Language;
+      if (stored === "en" || stored === "id") {
+        return stored;
+      }
+    }
+    return "en";
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // This pattern is safe for client-only rendering flags
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    const stored = localStorage.getItem("language") as Language;
-    if (stored === "en" || stored === "id") {
-      setLanguageState(stored);
-    }
   }, []);
 
   const setLanguage = (lang: Language) => {

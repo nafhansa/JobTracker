@@ -106,20 +106,6 @@ export default function LandingPage() {
     trackMicroConversion("pricing_click");
   };
 
-  // Get CTA text based on variant
-  const getCTAText = () => {
-    switch (ctaVariant) {
-      case "A":
-        return "Get Started Now";
-      case "B":
-        return "Start Tracking Free";
-      case "C":
-        return "Start Tracking Jobs";
-      default:
-        return "Get Started Now";
-    }
-  };
-
   // Early bird countdown logic
   const EARLY_BIRD_END_DATE = new Date();
   EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
