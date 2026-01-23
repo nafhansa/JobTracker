@@ -58,6 +58,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
     potentialSalary: "",
     applicationUrl: "",
     jobType: "",
+    location: "",
     recruiterEmail: "",
     status: {
       applied: true,
@@ -77,6 +78,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         potentialSalary: jobToEdit.potentialSalary?.toString() || "",
         applicationUrl: jobToEdit.applicationUrl || "",
         jobType: jobToEdit.jobType || "",
+        location: jobToEdit.location || "",
         recruiterEmail: jobToEdit.recruiterEmail || "",
         status: jobToEdit.status,
       });
@@ -88,6 +90,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         potentialSalary: "",
         applicationUrl: "",
         jobType: "",
+        location: "",
         recruiterEmail: "",
         status: { applied: true, emailed: false, cvResponded: false, interviewEmail: false, contractEmail: false }
       });
@@ -118,6 +121,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         potentialSalary: Number(formData.potentialSalary) || 0,
         applicationUrl: formData.applicationUrl,
         jobType: formData.jobType || undefined,
+        location: formData.location || undefined,
         recruiterEmail: formData.recruiterEmail,
         currency: "IDR",
         status: formData.status,
@@ -264,6 +268,9 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
                 <option value="Linkedin">Linkedin</option>
                 <option value="Company Website">Company Website</option>
                 <option value="JobStreets">JobStreets</option>
+                <option value="Glassdoor">Glassdoor</option>
+                <option value="Braintrust">Braintrust</option>
+                <option value="Glints">Glints</option>
                 <option value="Indeed">Indeed</option>
                 <option value="Kalibrr">Kalibrr</option>
                 <option value="Upwork">Upwork</option>
@@ -279,34 +286,59 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             </div>
           </div>
 
-          {/* Job Type */}
-          <div className="grid gap-2">
-            <Label htmlFor="jobType" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.jobType")}</Label>
-            <div className="relative">
-              <Clock className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
-              <select
-                id="jobType"
-                className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
-                value={formData.jobType}
-                onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
-              >
-                <option value="">{t("form.jobType.placeholder")}</option>
-                <option value="Part Time">Part Time</option>
-                <option value="Contract">Contract</option>
-                <option value="Remote">Remote</option>
-                <option value="Full Time">Full Time</option>
-                <option value="Freelance">Freelance</option>
-                <option value="Internship">Internship</option>
-                <option value="Hybrid">Hybrid</option>
-              </select>
-              <svg
-                className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          {/* Job Type + Location */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="jobType" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.jobType")}</Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+                <select
+                  id="jobType"
+                  className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                  value={formData.jobType}
+                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
+                >
+                  <option value="">{t("form.jobType.placeholder")}</option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Part Time">Part Time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                </select>
+                <svg
+                  className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="location" className="text-foreground font-semibold tracking-wide text-xs uppercase">Location</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+                <select
+                  id="location"
+                  className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                >
+                  <option value="">Select location...</option>
+                  <option value="Remote/WFH">Remote/WFH</option>
+                  <option value="On-site/WFO">On-site/WFO</option>
+                  <option value="Hybrid">Hybrid</option>
+                </select>
+                <svg
+                  className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
