@@ -68,12 +68,37 @@ export default function JobStats({ jobs }: JobStatsProps) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8); // Top 8 for pie chart
 
-    // Calculate Job Type percentages
+    // Normalize and calculate Job Type percentages
     const jobTypeCounts: { [key: string]: number } = {};
+
+    // Location-like values that might be stored in jobType historically
+    const locationAliasMap: Record<string, string> = {
+      "remote": "Remote/WFH",
+      "remote/wfh": "Remote/WFH",
+      "onsite": "On-site/WFO",
+      "on-site": "On-site/WFO",
+      "on-site/wfo": "On-site/WFO",
+      "on-site/wfo": "On-site/WFO",
+      "on-site/wfo": "On-site/WFO",
+      "hybrid": "Hybrid",
+    };
+
+    // Helper to check if a jobType string actually represents a location
+    const isLocationValue = (val?: string) => {
+      if (!val) return false;
+      const k = val.trim().toLowerCase();
+      return Object.prototype.hasOwnProperty.call(locationAliasMap, k);
+    };
+
     jobs.forEach(job => {
-      const type = job.jobType || "Unknown";
-      jobTypeCounts[type] = (jobTypeCounts[type] || 0) + 1;
+      const rawType = job.jobType?.toString().trim() || "";
+      if (rawType && !isLocationValue(rawType)) {
+        jobTypeCounts[rawType] = (jobTypeCounts[rawType] || 0) + 1;
+      } else {
+        jobTypeCounts["Unknown"] = (jobTypeCounts["Unknown"] || 0) + 1;
+      }
     });
+
     const jobTypePercentages = Object.entries(jobTypeCounts)
       .map(([type, count]) => ({
         type,
@@ -82,11 +107,19 @@ export default function JobStats({ jobs }: JobStatsProps) {
       }))
       .sort((a, b) => b.count - a.count);
 
-    // Calculate Location percentages
+    // Calculate Location percentages (prefer explicit `job.location`, fallback to location-like `job.jobType`)
     const locationCounts: { [key: string]: number } = {};
     jobs.forEach(job => {
-      const loc = job.location || "Unknown";
-      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+      let loc = job.location?.toString().trim();
+      if (!loc || loc === "") {
+        const jt = job.jobType?.toString().trim();
+        if (jt) {
+          const key = jt.toLowerCase();
+          if (locationAliasMap[key]) loc = locationAliasMap[key];
+        }
+      }
+      const finalLoc = loc && loc !== "" ? loc : "Unknown";
+      locationCounts[finalLoc] = (locationCounts[finalLoc] || 0) + 1;
     });
     const locationPercentages = Object.entries(locationCounts)
       .map(([location, count]) => ({
