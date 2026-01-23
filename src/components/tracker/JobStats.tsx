@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef } from "react";
 import { JobApplication } from "@/types";
-import { BarChart3, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X } from "lucide-react";
+import { BarChart3, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, PieChart, X, Building } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 
 interface JobStatsProps {
@@ -82,6 +82,20 @@ export default function JobStats({ jobs }: JobStatsProps) {
       }))
       .sort((a, b) => b.count - a.count);
 
+    // Calculate Location percentages
+    const locationCounts: { [key: string]: number } = {};
+    jobs.forEach(job => {
+      const loc = job.location || "Unknown";
+      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+    });
+    const locationPercentages = Object.entries(locationCounts)
+      .map(([location, count]) => ({
+        location,
+        count,
+        percentage: Math.round((count / totalJobs) * 100)
+      }))
+      .sort((a, b) => b.count - a.count);
+
     // Calculate Stage counts
     // Applied includes ALL jobs (all jobs that have been added are considered applied)
     const stageCounts: { [key: string]: number } = {
@@ -107,6 +121,7 @@ export default function JobStats({ jobs }: JobStatsProps) {
     return {
       jobSourcePercentages,
       jobTypePercentages,
+      locationPercentages,
       stageCounts,
       maxStageCount,
       totalJobs,
@@ -368,6 +383,30 @@ export default function JobStats({ jobs }: JobStatsProps) {
             <div key={idx}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-medium text-foreground">{item.type}</span>
+                <span className="text-xs font-bold text-primary">{item.percentage}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-primary rounded-full h-2 transition-all duration-300"
+                  style={{ width: `${item.percentage}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Location Percentages */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-foreground">Locations</h4>
+          <Building className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="space-y-3">
+          {stats.locationPercentages.map((item, idx) => (
+            <div key={idx}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-foreground">{item.location}</span>
                 <span className="text-xs font-bold text-primary">{item.percentage}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
