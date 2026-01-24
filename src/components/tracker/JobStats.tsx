@@ -78,8 +78,6 @@ export default function JobStats({ jobs }: JobStatsProps) {
       "onsite": "On-site/WFO",
       "on-site": "On-site/WFO",
       "on-site/wfo": "On-site/WFO",
-      "on-site/wfo": "On-site/WFO",
-      "on-site/wfo": "On-site/WFO",
       "hybrid": "Hybrid",
     };
 
