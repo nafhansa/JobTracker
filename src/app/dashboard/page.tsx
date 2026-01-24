@@ -68,6 +68,69 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
+  // Ad injection + first-interaction redirect
+  // - Always inject script + container so ad provider can render banner
+  // - Only attach redirect-on-first-interaction if user hasn't been redirected yet
+  useEffect(() => {
+    try {
+      const AD_URL = "https://pl28558225.effectivegatecpm.com/";
+      const AD_SCRIPT_SRC = "https://pl28558225.effectivegatecpm.com/f09c83632c9c95e1a27c6c2f64d45b38/invoke.js";
+
+      if (typeof window === "undefined") return;
+
+      // Inject ad container if not present
+      const containerId = "container-f09c83632c9c95e1a27c6c2f64d45b38";
+      if (!document.getElementById(containerId)) {
+        const container = document.createElement("div");
+        container.id = containerId;
+        // Insert near the top of main content if available, otherwise body
+        const mainEl = document.querySelector("main") || document.body;
+        mainEl.appendChild(container);
+      }
+
+      // Append script if not present
+      if (!document.querySelector(`script[src="${AD_SCRIPT_SRC}"]`)) {
+        const s = document.createElement("script");
+        s.src = AD_SCRIPT_SRC;
+        s.async = true;
+        s.setAttribute("data-cfasync", "false");
+        document.body.appendChild(s);
+      }
+
+      // Redirect logic: only if not already redirected
+      const alreadyRedirected = window.localStorage.getItem("jobtrack_ad_redirected");
+      if (alreadyRedirected) return;
+
+      const seen = window.localStorage.getItem("jobtrack_dashboard_seen");
+      if (!seen) {
+        window.localStorage.setItem("jobtrack_dashboard_seen", "1");
+
+        const onFirstInteract = () => {
+          try {
+            window.localStorage.setItem("jobtrack_ad_redirected", "1");
+            setTimeout(() => {
+              window.location.href = AD_URL;
+            }, 50);
+          } catch (e) {
+            console.error("Redirect failed:", e);
+          }
+        };
+
+        window.addEventListener("click", onFirstInteract, { once: true });
+        window.addEventListener("scroll", onFirstInteract, { once: true });
+        window.addEventListener("touchstart", onFirstInteract, { once: true });
+
+        return () => {
+          window.removeEventListener("click", onFirstInteract);
+          window.removeEventListener("scroll", onFirstInteract);
+          window.removeEventListener("touchstart", onFirstInteract);
+        };
+      }
+    } catch (err) {
+      console.error("Ad redirect setup error:", err);
+    }
+  }, []);
+
   useEffect(() => {
     // Load jobs for all authenticated users (including free users)
     if (user) {
