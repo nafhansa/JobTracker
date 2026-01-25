@@ -73,7 +73,7 @@ export default function DashboardPage() {
   // - Only attach redirect-on-first-interaction if user hasn't been redirected yet
   useEffect(() => {
     try {
-      const AD_URL = "https://www.effectivegatecpm.com/usgt979ef?key=263fbb76e423f185c055941c07fa0700";
+      const AD_URL = "https://nookentangledirectness.com/usgt979ef?key=263fbb76e423f185c055941c07fa0700";
       const AD_SCRIPT_SRC = "https://pl28558225.effectivegatecpm.com/f09c83632c9c95e1a27c6c2f64d45b38/invoke.js";
       const REDIRECT_KEY = "jobtrack_last_redirect_ts"; // stores epoch ms of last redirect
       const SESSION_SEEN_KEY = "jobtrack_dashboard_seen"; // session flag to avoid multiple listener installs
