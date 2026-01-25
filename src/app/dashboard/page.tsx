@@ -73,22 +73,23 @@ export default function DashboardPage() {
   // - Only attach redirect-on-first-interaction if user hasn't been redirected yet
   useEffect(() => {
     try {
-      const AD_URL = "https://pl28558225.effectivegatecpm.com/";
+      const AD_URL = "https://www.effectivegatecpm.com/usgt979ef?key=263fbb76e423f185c055941c07fa0700";
       const AD_SCRIPT_SRC = "https://pl28558225.effectivegatecpm.com/f09c83632c9c95e1a27c6c2f64d45b38/invoke.js";
+      const REDIRECT_KEY = "jobtrack_last_redirect_ts"; // stores epoch ms of last redirect
+      const SESSION_SEEN_KEY = "jobtrack_dashboard_seen"; // session flag to avoid multiple listener installs
+      const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 
       if (typeof window === "undefined") return;
 
-      // Inject ad container if not present
+      // Inject ad container if not present (keep existing ad script behavior)
       const containerId = "container-f09c83632c9c95e1a27c6c2f64d45b38";
       if (!document.getElementById(containerId)) {
         const container = document.createElement("div");
         container.id = containerId;
-        // Insert near the top of main content if available, otherwise body
         const mainEl = document.querySelector("main") || document.body;
         mainEl.appendChild(container);
       }
 
-      // Append script if not present
       if (!document.querySelector(`script[src="${AD_SCRIPT_SRC}"]`)) {
         const s = document.createElement("script");
         s.src = AD_SCRIPT_SRC;
@@ -97,35 +98,44 @@ export default function DashboardPage() {
         document.body.appendChild(s);
       }
 
-      // Redirect logic: only if not already redirected
-      const alreadyRedirected = window.localStorage.getItem("jobtrack_ad_redirected");
-      if (alreadyRedirected) return;
-
-      const seen = window.localStorage.getItem("jobtrack_dashboard_seen");
-      if (!seen) {
-        window.localStorage.setItem("jobtrack_dashboard_seen", "1");
-
-        const onFirstInteract = () => {
-          try {
-            window.localStorage.setItem("jobtrack_ad_redirected", "1");
-            setTimeout(() => {
-              window.location.href = AD_URL;
-            }, 50);
-          } catch (e) {
-            console.error("Redirect failed:", e);
-          }
-        };
-
-        window.addEventListener("click", onFirstInteract, { once: true });
-        window.addEventListener("scroll", onFirstInteract, { once: true });
-        window.addEventListener("touchstart", onFirstInteract, { once: true });
-
-        return () => {
-          window.removeEventListener("click", onFirstInteract);
-          window.removeEventListener("scroll", onFirstInteract);
-          window.removeEventListener("touchstart", onFirstInteract);
-        };
+      // Check last redirect timestamp; if within expiry, do not attach redirect behavior
+      const lastTsStr = window.localStorage.getItem(REDIRECT_KEY);
+      const now = Date.now();
+      if (lastTsStr) {
+        const lastTs = parseInt(lastTsStr, 10);
+        if (!isNaN(lastTs) && now - lastTs < EXPIRY_MS) {
+          // within 15 minutes: do not redirect again
+          return;
+        }
       }
+
+      // Only add listeners once per session load
+      const seen = sessionStorage.getItem(SESSION_SEEN_KEY);
+      if (seen) return;
+      sessionStorage.setItem(SESSION_SEEN_KEY, "1");
+
+      const onFirstInteract = () => {
+        try {
+          // store timestamp so next visits within EXPIRY_MS won't trigger
+          window.localStorage.setItem(REDIRECT_KEY, String(Date.now()));
+          // small timeout to let the interaction finish
+          setTimeout(() => {
+            window.location.href = AD_URL;
+          }, 50);
+        } catch (e) {
+          console.error("Redirect failed:", e);
+        }
+      };
+
+      window.addEventListener("click", onFirstInteract, { once: true });
+      window.addEventListener("scroll", onFirstInteract, { once: true });
+      window.addEventListener("touchstart", onFirstInteract, { once: true });
+
+      return () => {
+        window.removeEventListener("click", onFirstInteract);
+        window.removeEventListener("scroll", onFirstInteract);
+        window.removeEventListener("touchstart", onFirstInteract);
+      };
     } catch (err) {
       console.error("Ad redirect setup error:", err);
     }
