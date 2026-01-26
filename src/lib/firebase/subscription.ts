@@ -149,9 +149,7 @@ export const canEditDelete = (plan: string | null | undefined, isAdmin = false):
   if (isAdmin) {
     return true;
   }
-  if (!plan || plan === "free") {
-    return false;
-  }
+  // Free plan users are allowed to edit/delete as well.
   return true;
 };
 
