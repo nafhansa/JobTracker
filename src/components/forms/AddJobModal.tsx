@@ -132,7 +132,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         await updateJob(jobToEdit.id, payload);
       } else {
         // --- MODE ADD ---
-        await addJob(payload);
+        await addJob(payload as JobApplication);
       }
       
       onOpenChange(false); // Tutup Modal
