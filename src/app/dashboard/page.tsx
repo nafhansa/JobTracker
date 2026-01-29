@@ -10,7 +10,7 @@ import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck } from "lucide-react"; 
+import { LogOut, ShieldCheck } from "lucide-react";
 import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -18,7 +18,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import DashboardClient from "@/components/tracker/DashboardClient";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { SubscriptionInfo } from "@/components/SubscriptionInfo";
-import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics"; 
+import GmailConnect from "@/components/GmailConnect";
+import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,11 +27,11 @@ export default function DashboardPage() {
   const { t } = useLanguage();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
   const isAdmin = isAdminUser(user?.email || "");
   const isSubscribed = isAdmin || checkIsPro(subscription);
-  
+
   // Check if user has free plan
   const plan = subscription?.plan || "free";
   const isFreeUser = plan === "free" && !isAdmin && !isSubscribed;
@@ -48,12 +49,12 @@ export default function DashboardPage() {
         try {
           const sessionId = getOrCreateSessionId();
           const deviceInfo = getDeviceInfo();
-          
+
           await fetch("/api/analytics/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              type: "dashboard", 
+            body: JSON.stringify({
+              type: "dashboard",
               userId: user.uid,
               userEmail: user.email || undefined,
               sessionId,
@@ -164,13 +165,13 @@ export default function DashboardPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
-          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground animate-pulse">{t("dashboard.loading")}</p>
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-muted-foreground animate-pulse">{t("dashboard.loading")}</p>
       </div>
     );
   }
 
-  if (!user) return null; 
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
@@ -183,7 +184,7 @@ export default function DashboardPage() {
               Job<span className="text-primary">Tracker</span>.
             </h1>
           </div>
-          
+
           {/* Right Side - Responsive layout */}
           <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
             <div className="scale-90 md:scale-100">
@@ -192,7 +193,7 @@ export default function DashboardPage() {
             <div className="scale-90 md:scale-100">
               <LanguageToggle />
             </div>
-            
+
             {/* Admin Button - Hide text on mobile */}
             {isAdmin && (
               <Button
@@ -205,16 +206,16 @@ export default function DashboardPage() {
                 <span className="hidden md:inline text-xs">{t("dashboard.admin")}</span>
               </Button>
             )}
-            
+
             {/* Email - Hidden on mobile and tablet */}
             <span className="hidden lg:inline text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors truncate max-w-[150px]">
               {user.email}
             </span>
-            
+
             {/* Logout Button - Icon only on mobile */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleLogout}
               className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-2 md:px-4 h-8 md:h-9"
             >
@@ -227,14 +228,14 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 md:py-10">
-        
+
         <div className="mb-6 md:mb-8">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
-              {t("dashboard.title")}
-            </h2>
-            <p className="text-muted-foreground text-base md:text-lg">
-              {t("dashboard.subtitle")}
-            </p>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
+            {t("dashboard.title")}
+          </h2>
+          <p className="text-muted-foreground text-base md:text-lg">
+            {t("dashboard.subtitle")}
+          </p>
         </div>
 
         {/* Info Langganan */}
@@ -243,6 +244,11 @@ export default function DashboardPage() {
             <SubscriptionInfo />
           </div>
         )}
+
+        {/* Gmail Connect */}
+        <div className="mb-6 md:mb-8">
+          <GmailConnect />
+        </div>
 
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">

@@ -8,19 +8,20 @@ export interface JobStatus {
 }
 
 export interface JobApplication {
-  id?: string; 
-  userId: string; 
+  id?: string;
+  userId: string;
   jobTitle: string;
+  company: string;
   industry: string;
   recruiterEmail?: string;
   applicationUrl?: string;
   jobType?: string; // Full Time, Part Time, Contract, Internship, Freelance, etc.
   location?: string; // Remote/WFH, On-site/WFO, Hybrid
   potentialSalary?: number;
-  currency: string; 
+  currency: string;
   status: JobStatus;
-  createdAt: number; 
-  updatedAt: number; 
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type AnalyticsEventType = "visit" | "login" | "dashboard";
