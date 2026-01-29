@@ -5,9 +5,9 @@ import { Sparkles, CheckCircle2, Zap, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter } from "next/navigation";
 import { PADDLE_PRICES, PADDLE_ENV } from "@/lib/paddle-config";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
-import { initializePaddle, Paddle } from "@paddle/paddle-js";
+import { usePaddle } from "@/components/providers/PaddleProvider";
 
 type PlanType = "monthly" | "lifetime" | null;
 
@@ -21,21 +21,9 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [paddle, setPaddle] = useState<Paddle | null>(null);
-
+  const { paddle } = usePaddle();
   const isFreeUser = subscription?.plan === "free";
   const showLimitMessage = isFreeUser && isLimitReached;
-
-  useEffect(() => {
-    if (PADDLE_ENV.clientToken) {
-      initializePaddle({
-        environment: PADDLE_ENV.environment,
-        token: PADDLE_ENV.clientToken,
-      }).then((instance) => {
-        if (instance) setPaddle(instance);
-      });
-    }
-  }, []);
 
   const handleSuccess = (msg: string) => {
     setStatusMsg({ type: 'success', text: msg });
@@ -94,8 +82,8 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
           {/* === MONTHLY PLAN === */}
           <div
             className={`flex flex-col rounded-xl border transition-all duration-300 shadow-sm ${selectedPlan === 'monthly'
-                ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-500/20"
-                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700"
+              ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-500/20"
+              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700"
               } p-6 text-left`}
           >
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Monthly Plan</h3>
@@ -140,8 +128,8 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
           {/* === LIFETIME PLAN === */}
           <div
             className={`relative flex flex-col rounded-xl border transition-all duration-300 shadow-md ${selectedPlan === 'lifetime'
-                ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-500/20"
-                : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 hover:border-blue-400 dark:hover:border-blue-600"
+              ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-500/20"
+              : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 hover:border-blue-400 dark:hover:border-blue-600"
               } p-6 text-left transform md:scale-105`}
           >
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-semibold px-3 py-1 rounded-full uppercase shadow-md">
@@ -183,8 +171,8 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
         {statusMsg && (
           <div className="mt-6 w-full max-w-2xl animate-in slide-in-from-bottom-2">
             <div className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold shadow-md border ${statusMsg.type === 'success'
-                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+              ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+              : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
               }`}>
               <span>{statusMsg.text}</span>
               <button
