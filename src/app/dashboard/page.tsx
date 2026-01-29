@@ -10,7 +10,7 @@ import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck, Sparkles, X, AlertCircle } from "lucide-react";
+import { LogOut, ShieldCheck, Sparkles } from "lucide-react";
 import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";

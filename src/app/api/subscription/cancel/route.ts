@@ -1,7 +1,6 @@
 // src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase/admin";
-import { PAYPAL_API_URL, PAYPAL_CREDENTIALS } from "@/lib/paypal-config";
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     // Determine provider if not provided
-    const effectiveProvider = provider || (subscriptionId.startsWith("sub_") ? "paddle" : "paypal");
+    const effectiveProvider = provider || "paddle";
 
     const userIdField = effectiveProvider === "paddle"
       ? "subscription.paddleSubscriptionId"
@@ -92,48 +91,8 @@ export async function POST(req: Request) {
       console.log("✅ Subscription cancelled in Paddle, ends at:", endDate);
 
     } else {
-      // PAYPAL CANCELLATION
-      const { clientId, clientSecret } = PAYPAL_CREDENTIALS;
-      if (!clientId || !clientSecret) {
-        console.error("❌ PayPal credentials missing");
-        return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-      }
-
-      const authResponse = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-        },
-        body: "grant_type=client_credentials",
-      });
-
-      if (!authResponse.ok) throw new Error("Failed to get PayPal access token");
-      const { access_token } = await authResponse.json();
-
-      const cancelRes = await fetch(`${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
-        body: JSON.stringify({ reason: "Customer requested cancellation" }),
-      });
-
-      if (!cancelRes.ok && cancelRes.status !== 204) {
-        const errorData = await cancelRes.json().catch(() => ({}));
-        console.error("❌ PayPal cancel error:", errorData);
-        throw new Error("Failed to cancel subscription in PayPal");
-      }
-
-      // Get end date from details
-      const detailsRes = await fetch(`${PAYPAL_API_URL}/v1/billing/subscriptions/${subscriptionId}`, {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-      if (detailsRes.ok) {
-        const subDetails = await detailsRes.json();
-        endDate = subDetails.billing_info?.next_billing_time || null;
-      }
+      // Legacy PayPal support or other providers - disabled for now
+      throw new Error("Provider not supported");
     }
 
     // Fallback end date
@@ -162,10 +121,11 @@ export async function POST(req: Request) {
       message: "Subscription cancelled successfully",
       endsAt: endDate,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
     console.error("❌ Cancel API Error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

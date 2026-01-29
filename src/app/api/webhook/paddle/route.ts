@@ -63,7 +63,7 @@ export async function POST(req: Request) {
             console.log(`✅ Paddle: Subscription ${status} for user ${userId}`);
         } else if (eventType === "transaction.paid") {
             // Check if it's a one-time payment (lifetime)
-            const isLifetime = data.items.some((item: any) => item.price?.id === process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME);
+            const isLifetime = data.items.some((item: { price?: { id: string } }) => item.price?.id === process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME);
 
             if (isLifetime) {
                 await userRef.set({

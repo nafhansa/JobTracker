@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { deleteJob, updateJob } from "@/lib/firebase/firestore";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface JobCardProps {
   job: JobApplication;
@@ -33,7 +33,7 @@ interface JobCardProps {
   isAdmin?: boolean;
 }
 
-export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = false }: JobCardProps) {
+export default function JobCard({ job, onEdit }: JobCardProps) {
   const router = useRouter();
 
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...
@@ -69,7 +69,6 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
     onEdit(job);
   };
 
-  const canEdit = true;
 
   const handleToggleReject = async () => {
     const newStatus = { ...job.status, rejected: !isRejected };
@@ -210,8 +209,8 @@ export default function JobCard({ job, onEdit, isFreeUser = false, isAdmin = fal
               <div className="flex items-center gap-2">
                 {isRejected && <XCircle className="w-4 h-4 text-red-500" />}
                 <span className={`text-sm font-semibold tracking-wide ${isRejected
-                    ? "text-red-500"
-                    : completedCount === 5 ? "text-blue-600 dark:text-blue-400" : "text-foreground"
+                  ? "text-red-500"
+                  : completedCount === 5 ? "text-blue-600 dark:text-blue-400" : "text-foreground"
                   }`}>
                   {currentStatusText}
                 </span>
