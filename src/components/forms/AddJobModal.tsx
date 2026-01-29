@@ -364,7 +364,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             <Button
               type="button"
               onClick={() => router.push("/upgrade")}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 mt-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-2 shadow-lg shadow-blue-500/20"
             >
               {t("dashboard.upgrade")}
             </Button>

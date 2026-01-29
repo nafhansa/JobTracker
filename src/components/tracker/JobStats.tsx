@@ -12,13 +12,13 @@ interface JobStatsProps {
 // Function to normalize job source from URL
 const normalizeSource = (url: string | undefined): string => {
   if (!url) return "Unknown";
-  
+
   const urlLower = url.toLowerCase();
-  
+
   if (urlLower.includes("hiringcafe")) return "HiringCafe";
   if (urlLower.includes("paired.com") || urlLower.includes("paired")) return "Paired";
   if (urlLower.includes("flexjobs")) return "FlexJobs";
-  
+
   // Try to extract domain name
   try {
     const urlObj = new URL(url);
@@ -33,13 +33,13 @@ const normalizeSource = (url: string | undefined): string => {
 // Pie chart colors
 const pieColors = [
   "#3b82f6", // blue-500
-  "#8b5cf6", // purple-500
-  "#10b981", // emerald-500
-  "#f59e0b", // amber-500
-  "#ef4444", // red-500
-  "#06b6d4", // cyan-500
-  "#ec4899", // pink-500
+  "#0ea5e9", // sky-500
   "#6366f1", // indigo-500
+  "#8b5cf6", // purple-500
+  "#d946ef", // pink-500
+  "#06b6d4", // cyan-500
+  "#475569", // slate-600
+  "#1e293b", // slate-800
 ];
 
 export default function JobStats({ jobs }: JobStatsProps) {
@@ -176,8 +176,8 @@ export default function JobStats({ jobs }: JobStatsProps) {
     emailed: { label: t("filter.emailed"), icon: MessageSquare, color: "bg-purple-500" },
     response: { label: t("filter.response"), icon: MessageSquare, color: "bg-indigo-500" },
     interview: { label: t("filter.interview"), icon: UserCheck, color: "bg-yellow-500" },
-    offer: { label: t("filter.offer"), icon: ScrollText, color: "bg-green-500" },
-    rejected: { label: t("filter.rejected"), icon: XCircle, color: "bg-red-500" },
+    offer: { label: t("filter.offer"), icon: ScrollText, color: "bg-blue-600" },
+    rejected: { label: t("filter.rejected"), icon: XCircle, color: "bg-slate-400" },
   };
 
   return (
@@ -197,7 +197,7 @@ export default function JobStats({ jobs }: JobStatsProps) {
           <>
             {/* Hover Tooltip - fixed positioning to be above everything */}
             {hoveredIndex !== null && !selectedIndex && (
-              <div 
+              <div
                 className="fixed z-[9999] bg-popover border border-border rounded-lg shadow-xl p-3 w-[180px] pointer-events-none animate-in fade-in-0 zoom-in-95"
                 style={{
                   top: `${tooltipPosition.top - 10}px`,
@@ -233,166 +233,164 @@ export default function JobStats({ jobs }: JobStatsProps) {
                 </div>
               </div>
             )}
-            
+
             <div className="flex flex-col items-center gap-4 relative">
               {/* Pie Chart SVG with Interactive Slices */}
               <div ref={pieChartRef} className="relative w-48 h-48 flex-shrink-0 p-2">
-              <svg 
-                viewBox="0 0 100 100" 
-                className="w-full h-full transform -rotate-90 cursor-pointer overflow-visible"
-                style={{ overflow: 'visible' }}
-              >
-                {(() => {
-                  let currentAngle = 0;
-                  return stats.jobSourcePercentages.map((item, idx) => {
-                    const angle = (item.percentage / 100) * 360;
-                    const startAngle = currentAngle;
-                    const endAngle = currentAngle + angle;
-                    currentAngle = endAngle;
+                <svg
+                  viewBox="0 0 100 100"
+                  className="w-full h-full transform -rotate-90 cursor-pointer overflow-visible"
+                  style={{ overflow: 'visible' }}
+                >
+                  {(() => {
+                    let currentAngle = 0;
+                    return stats.jobSourcePercentages.map((item, idx) => {
+                      const angle = (item.percentage / 100) * 360;
+                      const startAngle = currentAngle;
+                      const endAngle = currentAngle + angle;
+                      currentAngle = endAngle;
 
-                    // Calculate path for pie slice
-                    const largeArcFlag = angle > 180 ? 1 : 0;
-                    const startX = 50 + 50 * Math.cos((startAngle * Math.PI) / 180);
-                    const startY = 50 + 50 * Math.sin((startAngle * Math.PI) / 180);
-                    const endX = 50 + 50 * Math.cos((endAngle * Math.PI) / 180);
-                    const endY = 50 + 50 * Math.sin((endAngle * Math.PI) / 180);
+                      // Calculate path for pie slice
+                      const largeArcFlag = angle > 180 ? 1 : 0;
+                      const startX = 50 + 50 * Math.cos((startAngle * Math.PI) / 180);
+                      const startY = 50 + 50 * Math.sin((startAngle * Math.PI) / 180);
+                      const endX = 50 + 50 * Math.cos((endAngle * Math.PI) / 180);
+                      const endY = 50 + 50 * Math.sin((endAngle * Math.PI) / 180);
 
-                    const pathData = [
-                      `M 50 50`,
-                      `L ${startX} ${startY}`,
-                      `A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-                      `Z`,
-                    ].join(" ");
+                      const pathData = [
+                        `M 50 50`,
+                        `L ${startX} ${startY}`,
+                        `A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                        `Z`,
+                      ].join(" ");
 
-                    const isHovered = hoveredIndex === idx;
-                    const isSelected = selectedIndex === idx;
+                      const isHovered = hoveredIndex === idx;
+                      const isSelected = selectedIndex === idx;
 
-                    return (
-                      <g key={idx}>
-                        <path
-                          d={pathData}
-                          fill={pieColors[idx % pieColors.length]}
-                          className={`transition-all duration-200 cursor-pointer ${
-                            isHovered || isSelected 
-                              ? "opacity-90 drop-shadow-lg" 
-                              : "opacity-100"
-                          }`}
-                          style={{
-                            transform: isHovered || isSelected 
-                              ? `scale(1.05)` 
-                              : "scale(1)",
-                            transformOrigin: "50px 50px",
-                          }}
-                          onMouseEnter={() => {
-                            setHoveredIndex(idx);
-                            if (pieChartRef.current) {
-                              const rect = pieChartRef.current.getBoundingClientRect();
-                              setTooltipPosition({
-                                top: rect.top,
-                                left: rect.left + rect.width / 2,
-                              });
-                            }
-                          }}
-                          onMouseLeave={() => setHoveredIndex(null)}
-                          onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
-                        />
-                      </g>
-                    );
-                  });
-                })()}
-              </svg>
-              
-              {/* Center Label with Total */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <div className="flex flex-col items-center gap-1.5 px-4 py-3 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg">
-                  <div className="text-3xl font-bold text-foreground tracking-tight">
-                    {stats.totalJobs}
-                  </div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Total Jobs
-                  </div>
-                  {hoveredIndex !== null && (
-                    <div className="mt-1.5 pt-1.5 border-t border-border/50 w-full flex flex-col items-center gap-0.5">
-                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                        {stats.jobSourcePercentages[hoveredIndex]?.source}
-                      </div>
-                      <div className="text-base font-bold text-primary">
-                        {stats.jobSourcePercentages[hoveredIndex]?.percentage}%
-                      </div>
+                      return (
+                        <g key={idx}>
+                          <path
+                            d={pathData}
+                            fill={pieColors[idx % pieColors.length]}
+                            className={`transition-all duration-200 cursor-pointer ${isHovered || isSelected
+                                ? "opacity-90 drop-shadow-lg"
+                                : "opacity-100"
+                              }`}
+                            style={{
+                              transform: isHovered || isSelected
+                                ? `scale(1.05)`
+                                : "scale(1)",
+                              transformOrigin: "50px 50px",
+                            }}
+                            onMouseEnter={() => {
+                              setHoveredIndex(idx);
+                              if (pieChartRef.current) {
+                                const rect = pieChartRef.current.getBoundingClientRect();
+                                setTooltipPosition({
+                                  top: rect.top,
+                                  left: rect.left + rect.width / 2,
+                                });
+                              }
+                            }}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
+                          />
+                        </g>
+                      );
+                    });
+                  })()}
+                </svg>
+
+                {/* Center Label with Total */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="flex flex-col items-center gap-1.5 px-4 py-3 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg">
+                    <div className="text-3xl font-bold text-foreground tracking-tight">
+                      {stats.totalJobs}
                     </div>
-                  )}
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Total Jobs
+                    </div>
+                    {hoveredIndex !== null && (
+                      <div className="mt-1.5 pt-1.5 border-t border-border/50 w-full flex flex-col items-center gap-0.5">
+                        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                          {stats.jobSourcePercentages[hoveredIndex]?.source}
+                        </div>
+                        <div className="text-base font-bold text-primary">
+                          {stats.jobSourcePercentages[hoveredIndex]?.percentage}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
               {/* Selected Detail Box */}
               {selectedIndex !== null && (
-              <div className="w-full bg-popover border border-border rounded-xl shadow-lg p-4 animate-in fade-in-0 zoom-in-95 overflow-hidden">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: pieColors[selectedIndex % pieColors.length] }}
-                    />
-                    <h5 className="font-bold text-base text-foreground">
-                      {stats.jobSourcePercentages[selectedIndex].source}
-                    </h5>
+                <div className="w-full bg-popover border border-border rounded-xl shadow-lg p-4 animate-in fade-in-0 zoom-in-95 overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
+                        style={{ backgroundColor: pieColors[selectedIndex % pieColors.length] }}
+                      />
+                      <h5 className="font-bold text-base text-foreground">
+                        {stats.jobSourcePercentages[selectedIndex].source}
+                      </h5>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIndex(null);
+                      }}
+                      className="p-1.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                      aria-label="Close details"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedIndex(null);
-                    }}
-                    className="p-1.5 hover:bg-accent rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                    aria-label="Close details"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
-                    <div className="text-xs text-muted-foreground mb-1.5 font-medium">Percentage</div>
-                    <div className="text-xl font-bold text-primary">
-                      {stats.jobSourcePercentages[selectedIndex].percentage}%
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
+                      <div className="text-xs text-muted-foreground mb-1.5 font-medium">Percentage</div>
+                      <div className="text-xl font-bold text-primary">
+                        {stats.jobSourcePercentages[selectedIndex].percentage}%
+                      </div>
+                    </div>
+                    <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
+                      <div className="text-xs text-muted-foreground mb-1.5 font-medium">Applications</div>
+                      <div className="text-xl font-bold text-foreground">
+                        {stats.jobSourcePercentages[selectedIndex].count}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-card rounded-lg p-3 border border-border shadow-sm">
-                    <div className="text-xs text-muted-foreground mb-1.5 font-medium">Applications</div>
-                    <div className="text-xl font-bold text-foreground">
-                      {stats.jobSourcePercentages[selectedIndex].count}
-                    </div>
-                  </div>
                 </div>
-              </div>
               )}
-              
+
               {/* Legend */}
               <div className="w-full space-y-2">
-              {stats.jobSourcePercentages.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors cursor-pointer ${
-                    hoveredIndex === idx || selectedIndex === idx
-                      ? "bg-accent"
-                      : "hover:bg-accent/50"
-                  }`}
-                  onMouseEnter={() => setHoveredIndex(idx)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: pieColors[idx % pieColors.length] }}
-                    />
-                    <span className="text-xs font-medium text-foreground truncate">{item.source}</span>
+                {stats.jobSourcePercentages.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors cursor-pointer ${hoveredIndex === idx || selectedIndex === idx
+                        ? "bg-accent"
+                        : "hover:bg-accent/50"
+                      }`}
+                    onMouseEnter={() => setHoveredIndex(idx)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    onClick={() => setSelectedIndex(selectedIndex === idx ? null : idx)}
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: pieColors[idx % pieColors.length] }}
+                      />
+                      <span className="text-xs font-medium text-foreground truncate">{item.source}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">{item.percentage}%</span>
+                      <span className="text-xs text-muted-foreground">({item.count})</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">{item.percentage}%</span>
-                    <span className="text-xs text-muted-foreground">({item.count})</span>
-                  </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           </>
@@ -460,10 +458,10 @@ export default function JobStats({ jobs }: JobStatsProps) {
         <div className="space-y-3">
           {Object.entries(stageLabels).map(([key, { label, icon: Icon, color }]) => {
             const count = stats.stageCounts[key] || 0;
-            const percentage = stats.maxStageCount > 0 
-              ? Math.round((count / stats.maxStageCount) * 100) 
+            const percentage = stats.maxStageCount > 0
+              ? Math.round((count / stats.maxStageCount) * 100)
               : 0;
-            
+
             return (
               <div key={key}>
                 <div className="flex items-center justify-between mb-1.5">

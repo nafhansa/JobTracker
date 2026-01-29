@@ -10,7 +10,7 @@ import { subscribeToJobs } from "@/lib/firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck } from "lucide-react";
+import { LogOut, ShieldCheck, Sparkles, X, AlertCircle } from "lucide-react";
 import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -194,6 +194,19 @@ export default function DashboardPage() {
               <LanguageToggle />
             </div>
 
+            {/* Upgrade Button for Free Users */}
+            {isFreeUser && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/upgrade")}
+                className="bg-blue-600 text-white hover:bg-blue-700 border-none transition-all px-4 md:px-6 h-8 md:h-9 font-bold shadow-lg shadow-blue-500/20 active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2 fill-current" />
+                <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Upgrade</span>
+              </Button>
+            )}
+
             {/* Admin Button - Hide text on mobile */}
             {isAdmin && (
               <Button
@@ -250,6 +263,29 @@ export default function DashboardPage() {
           <GmailConnect />
         </div>
 
+        {/* Small Upgrade Banner for Free Users (Before limit reached) */}
+        {isFreeUser && jobs.length < FREE_PLAN_JOB_LIMIT && (
+          <div className="mb-6 md:mb-8">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-400">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">Upgrade ke Pro</p>
+                  <p className="text-muted-foreground text-sm">Dapatkan akses tak terbatas dan fitur premium (Smart Filters & Reminders).</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => router.push("/upgrade")}
+                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              >
+                Lihat Paket
+              </Button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
             {[1, 2, 3].map((i) => (
@@ -260,14 +296,14 @@ export default function DashboardPage() {
           <>
             {isFreeUser && jobs.length >= FREE_PLAN_JOB_LIMIT && (
               <div className="mb-6">
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
                   <div>
-                    <p className="text-yellow-700 dark:text-yellow-300 font-semibold mb-1">Job limit reached!</p>
+                    <p className="text-blue-700 dark:text-blue-400 font-bold mb-1">Job limit reached!</p>
                     <p className="text-muted-foreground text-sm">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
                   </div>
                   <Button
                     onClick={() => router.push("/upgrade")}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white w-full md:w-auto whitespace-nowrap"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto font-bold shadow-md"
                   >
                     Upgrade to Pro Now
                   </Button>

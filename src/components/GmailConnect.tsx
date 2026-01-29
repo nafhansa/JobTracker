@@ -249,7 +249,7 @@ export default function GmailConnect() {
                                                     </span>
                                                 )}
                                                 {email.isApplication && (
-                                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                                                    <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
                                                         <CheckCircle2 className="w-3 h-3" /> Valid App
                                                     </span>
                                                 )}

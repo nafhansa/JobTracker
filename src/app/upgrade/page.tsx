@@ -20,9 +20,9 @@ export default function UpgradePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#1a0201] text-[#FFF0C4] flex items-center justify-center flex-col gap-4">
-        <div className="w-8 h-8 border-4 border-[#8C1007] border-t-[#FFF0C4] rounded-full animate-spin"></div>
-        <p className="text-[#FFF0C4]/60 animate-pulse">Loading...</p>
+      <div className="min-h-screen bg-[#0F172A] text-[#F8FAFC] flex items-center justify-center flex-col gap-4">
+        <div className="w-8 h-8 border-4 border-[#1E293B] border-t-[#3B82F6] rounded-full animate-spin"></div>
+        <p className="text-[#F8FAFC]/60 animate-pulse">Loading...</p>
       </div>
     );
   }
@@ -30,12 +30,12 @@ export default function UpgradePage() {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#1a0201] text-[#FFF0C4] font-sans selection:bg-[#8C1007] selection:text-[#FFF0C4] overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#F8FAFC] font-sans selection:bg-[#3B82F6]/30 selection:text-current overflow-x-hidden">
       <Navbar />
-      
+
       {/* Background Effect */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#500905] via-[#3E0703] to-[#150201]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-white dark:from-blue-900/20 dark:via-[#0F172A] dark:to-[#0F172A]"></div>
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
       </div>
 
@@ -45,7 +45,7 @@ export default function UpgradePage() {
           <Button
             variant="ghost"
             onClick={() => router.push("/dashboard")}
-            className="text-[#FFF0C4] hover:text-black hover:bg-[#FFF0C4]"
+            className="text-[#1E293B] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
