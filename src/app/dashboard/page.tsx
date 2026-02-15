@@ -242,13 +242,60 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 md:py-10">
 
-        <div className="mb-6 md:mb-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
-            {t("dashboard.title")}
-          </h2>
-          <p className="text-muted-foreground text-base md:text-lg">
-            {t("dashboard.subtitle")}
-          </p>
+        <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-center md:items-center gap-4">
+          <div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
+              {t("dashboard.title")}
+            </h2>
+            <p className="text-muted-foreground text-base md:text-lg">
+              {t("dashboard.subtitle")}
+            </p>
+          </div>
+          
+          {/* Conversion Metrics Badges */}
+          {jobs.length > 0 && (
+            <div className="flex gap-3 md:gap-4">
+              {/* Interview Conversion Badge */}
+              {(() => {
+                const totalJobs = jobs.length;
+                const interviewCount = jobs.filter(j => j.status.interviewEmail).length;
+                const interviewConversion = totalJobs > 0 ? (interviewCount / totalJobs) * 100 : 0;
+                return (
+                  <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm min-w-[100px] md:min-w-[120px] text-center">
+                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
+                      {interviewConversion.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
+                      Interview
+                    </div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {interviewCount} dari {totalJobs}
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              {/* Offer Conversion Badge */}
+              {(() => {
+                const totalJobs = jobs.length;
+                const offerCount = jobs.filter(j => j.status.contractEmail).length;
+                const offerConversion = totalJobs > 0 ? (offerCount / totalJobs) * 100 : 0;
+                return (
+                  <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm min-w-[100px] md:min-w-[120px] text-center">
+                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
+                      {offerConversion.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
+                      Offer
+                    </div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {offerCount} dari {totalJobs}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Info Langganan */}
