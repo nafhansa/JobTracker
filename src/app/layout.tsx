@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
-import { PayPalProvider } from "@/components/providers/PayPalProvider";
+import { PaddleProvider } from "@/components/providers/PaddleProvider";
 import { LanguageProvider } from "@/lib/language/context";
 
 export default function RootLayout({
@@ -14,9 +14,9 @@ export default function RootLayout({
       <body>
         <LanguageProvider>
           <AuthProvider>
-            <PayPalProvider>
+            <PaddleProvider>
               {children}
-            </PayPalProvider>
+            </PaddleProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

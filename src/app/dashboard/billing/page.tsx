@@ -17,9 +17,9 @@ export default function BillingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [jobCount, setJobCount] = useState<number | null>(null);
-  
+
   const isFreePlan = subscription?.plan === "free";
-  
+
   useEffect(() => {
     if (isFreePlan && user) {
       getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
@@ -33,7 +33,11 @@ export default function BillingPage() {
   }, [user, authLoading, router]);
 
   const handleCancelSubscription = async () => {
-    if (!subscription?.paypalSubscriptionId) {
+    const paddleSubId = subscription?.paddleSubscriptionId as string | undefined;
+    const paypalSubId = subscription?.paypalSubscriptionId as string | undefined;
+    const subscriptionId = paddleSubId || paypalSubId;
+
+    if (!subscriptionId) {
       alert("No subscription found to cancel");
       return;
     }
@@ -46,12 +50,13 @@ export default function BillingPage() {
       const token = await user.getIdToken();
       const response = await fetch("/api/subscription/cancel", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
-          subscriptionId: subscription.paypalSubscriptionId 
+        body: JSON.stringify({
+          subscriptionId,
+          provider: paddleSubId ? "paddle" : "paypal"
         })
       });
 
@@ -82,7 +87,7 @@ export default function BillingPage() {
   const isLifetime = subscription?.plan === "lifetime";
   const isActive = subscription?.status === "active";
   const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
-  
+
   const rawRenewsAt = subscription?.renewsAt;
   const rawEndsAt = subscription?.endsAt;
 
@@ -134,11 +139,11 @@ export default function BillingPage() {
                   Your subscription details
                 </CardDescription>
               </div>
-              <Badge 
+              <Badge
                 variant={isActive ? "default" : "outline"}
                 className={
-                  isActive 
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : "bg-yellow-50 text-yellow-700 border-yellow-200"
                 }
               >
@@ -155,7 +160,7 @@ export default function BillingPage() {
                   <span className="font-semibold text-foreground flex items-center gap-2">
                     {isFreePlan ? (
                       <>
-                        <Gift className="w-4 h-4 text-emerald-500" />
+                        <Gift className="w-4 h-4 text-blue-500" />
                         Free Plan
                       </>
                     ) : isLifetime ? (
@@ -173,7 +178,7 @@ export default function BillingPage() {
                     {isFreePlan ? "Free" : isLifetime ? "$17.99 (One-time)" : "$2.99/month"}
                   </span>
                 </div>
-                
+
                 {/* Usage for Free Plan */}
                 {isFreePlan && jobCount !== null && (
                   <div className="flex justify-between items-center py-3 border-b border-border">
@@ -192,7 +197,7 @@ export default function BillingPage() {
                       {isCancelled ? "Access Ends" : "Next Billing"}
                     </span>
                     <span className="font-semibold text-foreground">
-                     {isCancelled
+                      {isCancelled
                         ? formatDate(rawEndsAt)
                         : formatDate(rawRenewsAt)}
                     </span>
@@ -200,13 +205,15 @@ export default function BillingPage() {
                 )}
 
                 {/* Subscription ID */}
-                {subscription.paypalSubscriptionId && (
+                {(subscription.paddleSubscriptionId || subscription.paypalSubscriptionId) && (
                   <div className="flex justify-between items-center py-3">
                     <span className="text-muted-foreground">Subscription ID</span>
                     <span className="font-mono text-xs text-muted-foreground">
-                      {typeof subscription.paypalSubscriptionId === "string" 
-                        ? `${subscription.paypalSubscriptionId.slice(0, 20)}...`
-                        : "N/A"}
+                      {subscription.paddleSubscriptionId
+                        ? `${(subscription.paddleSubscriptionId as string).slice(0, 20)}...`
+                        : subscription.paypalSubscriptionId
+                          ? `${(subscription.paypalSubscriptionId as string).slice(0, 20)}...`
+                          : "N/A"}
                     </span>
                   </div>
                 )}
@@ -220,7 +227,7 @@ export default function BillingPage() {
                         Subscription Cancelled
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        You&apos;ll continue to have access until {endsAt}. 
+                        You&apos;ll continue to have access until {endsAt}.
                         After that, your account will revert to the free plan.
                       </p>
                     </div>
@@ -229,13 +236,13 @@ export default function BillingPage() {
 
                 {/* Upgrade CTA for Free Plan */}
                 {isFreePlan && (
-                  <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg shadow-sm">
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
                     <p className="text-sm text-muted-foreground mb-4">
                       Upgrade to Pro for unlimited job tracking and advanced features!
                     </p>
                     <Button
-                      onClick={() => router.push("/pricing")}
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                      onClick={() => router.push("/upgrade")}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <ArrowUpRight className="w-4 h-4 mr-2" />
                       Upgrade to Pro
@@ -247,7 +254,7 @@ export default function BillingPage() {
                 {!isLifetime && !isFreePlan && isActive && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
+                      <Button
                         variant="destructive"
                         className="w-full mt-4"
                         disabled={cancelling}
@@ -268,7 +275,7 @@ export default function BillingPage() {
                           Are you sure?
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                          Your subscription will be cancelled, but you&apos;ll keep access until the end of 
+                          Your subscription will be cancelled, but you&apos;ll keep access until the end of
                           your current billing period ({formatDate(rawRenewsAt)}). You can resubscribe anytime.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -313,10 +320,10 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              If you have any questions about your subscription or need assistance, 
+              If you have any questions about your subscription or need assistance,
               we&apos;re here to help.
             </p>
-            <a 
+            <a
               href="mailto:official.jobtrackerapp@gmail.com"
               className="inline-flex items-center text-primary hover:text-primary/80 transition-colors"
             >
@@ -331,10 +338,10 @@ export default function BillingPage() {
 
 function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
-  
+
   // Jika sudah berupa Date object
   if (dateValue instanceof Date) return dateValue;
-  
+
   // Jika berupa Firebase Timestamp object { seconds, nanoseconds }
   if (typeof dateValue === "object" && dateValue !== null) {
     interface FirestoreTimestampLike {
@@ -357,15 +364,15 @@ function parseFirebaseDate(dateValue: unknown): Date | null {
       /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
     );
     if (!match) {
-        // Fallback untuk string ISO standar
-        const d = new Date(dateValue);
-        return isNaN(d.getTime()) ? null : d;
+      // Fallback untuk string ISO standar
+      const d = new Date(dateValue);
+      return isNaN(d.getTime()) ? null : d;
     }
 
     const [, datePart, timePart, ampm, tz] = match;
     let formatted = `${datePart} ${timePart}`;
     if (ampm) formatted += ` ${ampm}`;
-    formatted += " GMT"; 
+    formatted += " GMT";
     if (tz) formatted += tz;
 
     const d = new Date(formatted);
@@ -378,10 +385,10 @@ function parseFirebaseDate(dateValue: unknown): Date | null {
 function formatDate(dateValue: unknown) {
   const parsedDate = parseFirebaseDate(dateValue);
   return parsedDate
-    ? parsedDate.toLocaleDateString("id-ID", { 
-        day: "numeric", 
-        month: "long", 
-        year: "numeric" 
-      })
+    ? parsedDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    })
     : "N/A";
 }

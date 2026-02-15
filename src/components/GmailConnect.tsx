@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuthUrl, exchangeCodeForToken, fetchLatestLinkedInEmails, getGmailStatus, disconnectGmail, createJobFromEmail } from '@/actions/gmail';
 import { Button } from '@/components/ui/button';
@@ -32,37 +32,18 @@ export default function GmailConnect() {
     const code = searchParams ? searchParams.get('code') : null;
     const processingRef = useRef(false);
 
-    // Initial check for connection
-    useEffect(() => {
-        if (user) {
-            checkStatus(user.uid);
-        }
-    }, [user]);
+    const addLog = useCallback((msg: string) => setLogs(prev => [...prev, msg]), []);
 
-    // Handle OAuth redirection
-    useEffect(() => {
-        if (code && user && !processingRef.current) {
-            processingRef.current = true;
-            handleAuthCode(code, user.uid);
-        }
-    }, [code, user]);
-
-    const addLog = (msg: string) => setLogs(prev => [...prev, msg]);
-
-    const checkStatus = async (uid: string) => {
+    const checkStatus = useCallback(async (uid: string) => {
         try {
             const status = await getGmailStatus(uid);
             setIsConnected(status.isConnected);
-            if (status.isConnected) {
-                // optional: auto fetch if connected?
-                // await fetchEmails(uid);
-            }
         } catch (error) {
             console.error(error);
         }
-    };
+    }, []);
 
-    const handleConnect = async () => {
+    const handleConnect = useCallback(async () => {
         setIsLoading(true);
         try {
             const url = await getAuthUrl();
@@ -72,9 +53,9 @@ export default function GmailConnect() {
             addLog('Failed to get auth URL');
             setIsLoading(false);
         }
-    };
+    }, [addLog]);
 
-    const handleDisconnect = async () => {
+    const handleDisconnect = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
         try {
@@ -88,30 +69,9 @@ export default function GmailConnect() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user, addLog]);
 
-    const handleAuthCode = async (authCode: string, uid: string) => {
-        setIsLoading(true);
-        addLog('Exchanging code...');
-        try {
-            await exchangeCodeForToken(authCode, uid);
-            setIsConnected(true);
-            addLog('Connected successfully!');
-
-            // Clean URL
-            router.replace('/dashboard');
-
-            // Fetch immediately
-            await fetchEmails(uid);
-        } catch (error) {
-            console.error(error);
-            addLog('Error connecting.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const fetchEmails = async (uid: string) => {
+    const fetchEmails = useCallback(async (uid: string) => {
         setIsLoading(true);
         try {
             const fetchedEmails = await fetchLatestLinkedInEmails(uid);
@@ -131,7 +91,43 @@ export default function GmailConnect() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [addLog]);
+
+    const handleAuthCode = useCallback(async (authCode: string, uid: string) => {
+        setIsLoading(true);
+        addLog('Exchanging code...');
+        try {
+            await exchangeCodeForToken(authCode, uid);
+            setIsConnected(true);
+            addLog('Connected successfully!');
+
+            // Clean URL
+            router.replace('/dashboard');
+
+            // Fetch immediately
+            await fetchEmails(uid);
+        } catch (error) {
+            console.error(error);
+            addLog('Error connecting.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [router, fetchEmails, addLog]);
+
+    // Initial check for connection
+    useEffect(() => {
+        if (user) {
+            checkStatus(user.uid);
+        }
+    }, [user, checkStatus]);
+
+    // Handle OAuth redirection
+    useEffect(() => {
+        if (code && user && !processingRef.current) {
+            processingRef.current = true;
+            handleAuthCode(code, user.uid);
+        }
+    }, [code, user, handleAuthCode]);
 
     const handleCreateCard = async (email: EmailData) => {
         if (!user) return;
@@ -160,11 +156,11 @@ export default function GmailConnect() {
         }
     };
 
-    const handleRefresh = () => {
+    const handleRefresh = useCallback(() => {
         if (user) {
             fetchEmails(user.uid);
         }
-    };
+    }, [user, fetchEmails]);
 
     return (
         <div className="p-5 border rounded-xl shadow-sm bg-white dark:bg-zinc-900 space-y-5 transition-all">
@@ -233,7 +229,7 @@ export default function GmailConnect() {
                         </div>
                     ) : (
                         <div className="grid gap-3">
-                            {emails.map((email: any) => {
+                            {emails.map((email: EmailData) => {
                                 const isCreating = creatingIds.has(email.id);
                                 const isCreated = createdIds.has(email.id);
                                 return (
@@ -249,7 +245,7 @@ export default function GmailConnect() {
                                                     </span>
                                                 )}
                                                 {email.isApplication && (
-                                                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                                                    <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 shadow-sm">
                                                         <CheckCircle2 className="w-3 h-3" /> Valid App
                                                     </span>
                                                 )}

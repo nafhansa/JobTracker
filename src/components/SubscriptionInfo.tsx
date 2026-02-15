@@ -108,8 +108,8 @@ export function SubscriptionInfo() {
         <div className="flex items-start gap-4">
           <div className={`p-3 rounded-lg border ${
             isFreePlan 
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
-              : "bg-primary/10 border-primary/20 text-primary"
+              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400" 
+              : "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
           }`}>
             {isFreePlan ? <Gift className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
           </div>
@@ -118,10 +118,10 @@ export function SubscriptionInfo() {
                 <h3 className="text-lg font-semibold text-foreground">
                 Plan: {isFreePlan ? "Free Plan" : isLifetime ? "Lifetime Access" : "Monthly Pro"}
                 </h3>
-                <span className={`text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full border ${
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
                     subscription.status === 'active' 
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                    : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800" 
+                    : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
                 }`}>
                     {subscription.status}
                 </span>
@@ -149,7 +149,7 @@ export function SubscriptionInfo() {
         {isFreePlan ? (
           <Button 
             onClick={() => router.push("/upgrade")}
-            className="bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 transition-all font-semibold shadow-md"
+            className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 transition-all font-bold shadow-lg shadow-blue-500/20"
           >
             <ArrowUpRight className="w-4 h-4 mr-2" />
             Upgrade to Pro

@@ -51,11 +51,14 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   // --------------------------
 
   const getJobStage = (status: JobStatus) => {
-    if (status.rejected) return "rejected";
+    // Prioritize actual stage over rejected status
+    // If job reached interview or response stage, keep it in that category even if rejected
     if (status.contractEmail) return "offer";
     if (status.interviewEmail) return "interview";
     if (status.cvResponded) return "response";
     if (status.emailed) return "emailed";
+    // Only return "rejected" if job hasn't reached response or interview stage
+    if (status.rejected) return "rejected";
     return "applied";
   };
 
