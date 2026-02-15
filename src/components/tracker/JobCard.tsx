@@ -50,9 +50,10 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     interviewEmail: "Interview Invite",
     contractEmail: "Contract Offer 🚀",
   };
-  const currentStatusText = isRejected
-    ? "Application Rejected"
-    : (lastActiveIndex >= 0 ? statusLabels[statusKeys[lastActiveIndex]] : "Not Started");
+  // Show current stage even if rejected (for jobs that reached response/interview)
+  const currentStatusText = lastActiveIndex >= 0 ? statusLabels[statusKeys[lastActiveIndex]] : "Not Started";
+  // Check if job reached response or interview stage (should stay in those categories even if rejected)
+  const hasReachedResponseOrInterview = job.status.cvResponded || job.status.interviewEmail;
   const completedCount = statusKeys.filter((k) => job.status[k]).length;
   const formattedSalary = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -76,7 +77,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
   };
 
   const handleToggleStatus = async (clickedKey: keyof JobStatus) => {
-    if (isRejected) return;
+    // Allow status changes even if rejected (user can update progress)
     const clickedIndex = statusKeys.indexOf(clickedKey);
     const isCurrentlyOn = job.status[clickedKey];
     const newStatus = { ...job.status };
@@ -91,21 +92,23 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
   return (
     <TooltipProvider>
       <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-md transition-all duration-300
-      ${isRejected
+      ${isRejected && !hasReachedResponseOrInterview
           ? "bg-card border-red-200 hover:border-red-300"
+          : isRejected && hasReachedResponseOrInterview
+          ? "bg-card border-border border-l-4 border-l-red-400 hover:border-l-red-500"
           : "bg-card border-border hover:shadow-lg hover:border-primary/50"
         }
     `}>
 
         <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none bg-gradient-to-br 
-        ${isRejected ? "from-red-50/50 to-transparent" : "from-primary/5 to-transparent"}`}
+        ${isRejected && !hasReachedResponseOrInterview ? "from-red-50/50 to-transparent" : isRejected && hasReachedResponseOrInterview ? "from-red-50/30 to-transparent" : "from-primary/5 to-transparent"}`}
         />
 
         {/* Header */}
         <div className="p-5 flex justify-between items-start relative z-10">
           <div className="flex-1">
             <div className="flex items-start gap-2">
-              <h3 className={`font-bold text-base line-clamp-2 tracking-wide transition-colors ${isRejected ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
+              <h3 className={`font-bold text-base line-clamp-2 tracking-wide transition-colors ${isRejected && !hasReachedResponseOrInterview ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
                 {job.jobTitle}
               </h3>
               {/* free users now allowed to edit/delete; no lock */}
@@ -164,8 +167,10 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
         <div className="px-5 pb-4 space-y-4 flex-1 relative z-10">
           {job.potentialSalary ? (
             <div className={`inline-flex items-center text-xs font-semibold tracking-wide px-3 py-1.5 rounded-full shadow-sm
-            ${isRejected
+            ${isRejected && !hasReachedResponseOrInterview
                 ? "text-slate-500 bg-slate-50 border border-slate-200 grayscale"
+                : isRejected && hasReachedResponseOrInterview
+                ? "text-blue-600 bg-blue-50 border border-blue-200 opacity-75"
                 : "text-blue-700 bg-blue-50 border border-blue-200"
               }`}>
               <Banknote className="w-3.5 h-3.5 mr-2" />
@@ -196,28 +201,31 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
           </div>
         </div>
 
-        {/* Footer / Status Bar (SAMA PERSIS) */}
+        {/* Footer / Status Bar */}
         <div className={`relative z-10 border-t p-4 rounded-b-xl backdrop-blur-sm transition-colors duration-300
-         ${isRejected ? "bg-red-50 border-red-200" : "bg-muted/30 border-border"}
+         ${isRejected && !hasReachedResponseOrInterview ? "bg-red-50 border-red-200" : isRejected && hasReachedResponseOrInterview ? "bg-muted/30 border-border border-t-red-200" : "bg-muted/30 border-border"}
       `}>
-          {/* ... render progress bar (sama kayak kode lamamu) ... */}
           <div className="flex justify-between items-end mb-3">
-            <div className="flex flex-col">
-              <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
-                {isRejected ? "Final Status" : "Current Stage"}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
+                Current Stage
               </span>
-              <div className="flex items-center gap-2">
-                {isRejected && <XCircle className="w-4 h-4 text-red-500" />}
-                <span className={`text-sm font-semibold tracking-wide ${isRejected
-                  ? "text-red-500"
-                  : completedCount === 5 ? "text-blue-600 dark:text-blue-400" : "text-foreground"
-                  }`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`text-sm font-semibold tracking-wide ${
+                  completedCount === 5 ? "text-blue-600 dark:text-blue-400" : "text-foreground"
+                }`}>
                   {currentStatusText}
                 </span>
+                {isRejected && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[10px] font-semibold uppercase tracking-wide">
+                    <XCircle className="w-3 h-3" />
+                    Rejected
+                  </span>
+                )}
               </div>
             </div>
             <span className="text-[10px] font-mono text-muted-foreground">
-              {isRejected ? "CLOSED" : `${completedCount}/5`}
+              {isRejected && !hasReachedResponseOrInterview ? "CLOSED" : `${completedCount}/5`}
             </span>
           </div>
 
@@ -228,10 +236,12 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
                 onClick={() => handleToggleStatus(key)}
                 title={statusLabels[key]}
                 className={`flex-1 rounded-sm transition-all duration-300 
-                ${isRejected
+                ${isRejected && !hasReachedResponseOrInterview
                     ? "bg-red-200 cursor-not-allowed"
                     : job.status[key]
-                      ? "bg-blue-600 shadow-sm scale-y-110 cursor-pointer"
+                      ? isRejected && hasReachedResponseOrInterview
+                        ? "bg-blue-600 shadow-sm scale-y-110 cursor-pointer opacity-75"
+                        : "bg-blue-600 shadow-sm scale-y-110 cursor-pointer"
                       : "bg-muted hover:bg-blue-500/20 cursor-pointer"
                   }`}
               />
