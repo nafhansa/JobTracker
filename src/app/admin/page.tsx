@@ -1,6 +1,8 @@
 // /home/nafhan/Documents/projek/job/src/app/admin/page.tsx
 "use client"; // ✅ Wajib ada karena pakai useEffect
 
+export const dynamic = 'force-dynamic'; // Prevent static generation
+
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";

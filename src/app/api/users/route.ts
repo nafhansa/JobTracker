@@ -31,7 +31,7 @@ export async function GET() {
     const usersRef = adminDb.collection("users");
     const snapshot = await usersRef.get();
 
-    const users = snapshot.docs.map((doc) => {
+    const users = snapshot.docs.map((doc: any) => {
       const data = doc.data();
       
       // Konversi Timestamp ke String biar gak error pas dikirim ke frontend

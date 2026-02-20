@@ -121,25 +121,16 @@ export async function GET(req: Request) {
     }
 
     const visits = visitsSnapshot.docs.map((doc: any) => ({
-  ------- SEARCH
-    const logins = loginsSnapshot.docs.map(doc => ({
-    const logins = loginsSnapshot.docs.map((doc: any) => ({
-  ------- SEARCH
-    const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
-    const dashboardVisits = dashboardVisitsSnapshot.docs.map((doc: any) => ({
-  ------- SEARCH
-    const microConversions = microConversionsSnapshot.docs.map(doc => ({
-    const microConversions = microConversionsSnapshot.docs.map((doc: any) => ({
       ...doc.data(),
       id: doc.id,
     })) as VisitData[];
 
-    const logins = loginsSnapshot.docs.map(doc => ({
+    const logins = loginsSnapshot.docs.map((doc: any) => ({
       ...doc.data(),
       id: doc.id,
     })) as LoginData[];
 
-    const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
+    const dashboardVisits = dashboardVisitsSnapshot.docs.map((doc: any) => ({
       ...doc.data(),
       id: doc.id,
     })) as LoginData[];
@@ -314,7 +305,7 @@ export async function GET(req: Request) {
       [key: string]: unknown;
     }
 
-    const microConversions = microConversionsSnapshot.docs.map(doc => ({
+    const microConversions = microConversionsSnapshot.docs.map((doc: any) => ({
       ...doc.data(),
       id: doc.id,
     })) as MicroConversionData[];
