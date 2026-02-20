@@ -16,7 +16,7 @@ if (privateKey) {
   privateKey = privateKey.replace(/\\\\n/g, '\n');
   privateKey = privateKey.replace(/\\\\\\n/g, '\n');
   
-  // Step 3: Remove the trailing \n from JSON format if present
+  // Step 3: Remove trailing \n from JSON format if present
   if (privateKey.endsWith('\\n')) {
     privateKey = privateKey.slice(0, -2);
   }
@@ -36,7 +36,7 @@ if (privateKey) {
     throw new Error('Private key missing END marker');
   }
   
-  // Step 5: Extract the actual key content (between markers)
+  // Step 5: Extract actual key content (between markers)
   const beginMarker = '-----BEGIN PRIVATE KEY-----';
   const endMarker = '-----END PRIVATE KEY-----';
   const beginIndex = privateKey.indexOf(beginMarker);
@@ -51,31 +51,28 @@ if (privateKey) {
   // Remove any remaining escaped newlines in content
   const cleanKeyContent = keyContent.replace(/\\n/g, '\n').replace(/\s+/g, '\n');
   
-  // Reconstruct the full key with proper newlines
+  // Reconstruct to full key with proper newlines
   privateKey = `${beginMarker}\n${cleanKeyContent}\n${endMarker}`;
 }
 
+let adminDb: any = null;
+let adminAuth: any = null;
+
+// Only initialize Firebase Admin if all credentials are present
 if (!projectId || !clientEmail || !privateKey) {
-  console.error("❌ Firebase Admin: Missing required environment variables");
-  console.error("Required:", {
+  console.warn("⚠️ Firebase Admin: Missing required environment variables, Firebase features will be disabled");
+  console.warn("Required:", {
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: !!projectId,
     FIREBASE_CLIENT_EMAIL: !!clientEmail,
     FIREBASE_PRIVATE_KEY: !!privateKey,
   });
-}
-
-const serviceAccount = {
-  projectId,
-  clientEmail,
-  privateKey,
-};
-
-if (!admin.apps.length) {
+} else if (!admin.apps.length) {
   try {
-    // Validate service account before initialization
-    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-      throw new Error("Missing required service account fields");
-    }
+    const serviceAccount = {
+      projectId,
+      clientEmail,
+      privateKey,
+    };
 
     // Validate private key format more thoroughly
     const key = serviceAccount.privateKey;
@@ -103,7 +100,7 @@ if (!admin.apps.length) {
       throw new Error(`Private key content is incomplete (content length: ${keyContent.length})`);
     }
     
-    // Log key info (without exposing the actual key)
+    // Log key info (without exposing actual key)
     console.log("Private key validation:", {
       hasBeginMarker: key.includes("BEGIN PRIVATE KEY"),
       hasEndMarker: key.includes("END PRIVATE KEY"),
@@ -113,35 +110,33 @@ if (!admin.apps.length) {
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-      projectId: serviceAccount.projectId, // Explicitly set projectId
+      projectId: serviceAccount.projectId,
     });
     console.log("✅ Firebase Admin initialized successfully");
     console.log("Project ID:", serviceAccount.projectId);
     console.log("Client Email:", serviceAccount.clientEmail);
+    adminDb = admin.firestore();
+    adminAuth = admin.auth();
   } catch (error) {
     const err = error as { message?: string };
     console.error("❌ Firebase Admin initialization failed:", err.message);
-    console.error("Service Account Check:", {
-      hasProjectId: !!serviceAccount.projectId,
-      hasClientEmail: !!serviceAccount.clientEmail,
-      hasPrivateKey: !!serviceAccount.privateKey,
-      privateKeyLength: serviceAccount.privateKey?.length || 0,
-    });
-    throw new Error(`Firebase Admin initialization failed: ${err.message || "Unknown error"}`);
+    console.warn("⚠️ Continuing without Firebase Admin - some features may be limited");
   }
 }
-
-const adminDb = admin.firestore();
-const adminAuth = admin.auth();
 
 const USER_COLLECTION = "users";
 
 export const getAllUsers = async () => {
+  if (!adminDb) {
+    console.warn("Firebase Admin not initialized, skipping getAllUsers");
+    return [];
+  }
+  
   try {
     const usersCollectionRef = adminDb.collection(USER_COLLECTION);
     const querySnapshot = await usersCollectionRef.get(); 
     
-    const users = querySnapshot.docs.map(doc => {
+    const users = querySnapshot.docs.map((doc: any) => {
       const data = doc.data();
       let createdAt = new Date().toISOString();
       if (data.createdAt && typeof data.createdAt.toDate === 'function') {
@@ -158,7 +153,7 @@ export const getAllUsers = async () => {
     return users;
   } catch (error) {
     console.error("Error fetching all users:", error);
-    throw error;
+    return [];
   }
 };
 

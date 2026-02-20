@@ -1,9 +1,33 @@
 // src/app/api/users/route.ts
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin"; // ✅ Aman di sini (Server Side)
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
+    // Try Supabase first
+    try {
+      const { data: supabaseUsers, error } = await supabaseAdmin
+        .from('users')
+        .select('*');
+
+      if (!error && supabaseUsers) {
+        const users = (supabaseUsers as any[]).map((user) => ({
+          uid: user.id,
+          email: user.email,
+          createdAt: user.created_at,
+          subscription: {
+            plan: user.subscription_plan,
+            status: user.subscription_status,
+          },
+        }));
+        return NextResponse.json(users);
+      }
+    } catch (supabaseError) {
+      console.error("Supabase fetch error, falling back to Firebase:", supabaseError);
+    }
+
+    // Fallback to Firebase
     const usersRef = adminDb.collection("users");
     const snapshot = await usersRef.get();
 

@@ -20,6 +20,9 @@ import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { SubscriptionInfo } from "@/components/SubscriptionInfo";
 import GmailConnect from "@/components/GmailConnect";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
+import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
+import { subscribeToJobs as firebaseSubscribeToJobs } from "@/lib/firebase/firestore";
+import { shouldReadFromSupabase } from "@/lib/migration/feature-flags";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -144,16 +147,33 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      const unsubscribeDocs = subscribeToJobs(user.uid, (data) => {
-        const sanitizedData = data.map((job) => ({
-          ...job,
-          createdAt: job.createdAt ? (job.createdAt as unknown as Timestamp).toMillis() : Date.now(),
-          updatedAt: job.updatedAt ? (job.updatedAt as unknown as Timestamp).toMillis() : Date.now(),
-        }));
-        setJobs(sanitizedData as unknown as JobApplication[]);
-        setLoading(false);
-      });
-      return () => unsubscribeDocs();
+      let unsubscribe: (() => void) | undefined;
+
+      if (shouldReadFromSupabase()) {
+        // Use Supabase
+        const channel = supabaseSubscribeToJobs(user.uid, (data) => {
+          setJobs(data);
+          setLoading(false);
+        });
+        unsubscribe = () => {
+          channel.unsubscribe();
+        };
+      } else {
+        // Use Firebase (fallback)
+        unsubscribe = firebaseSubscribeToJobs(user.uid, (data) => {
+          const sanitizedData = data.map((job) => ({
+            ...job,
+            createdAt: job.createdAt ? (job.createdAt as unknown as Timestamp).toMillis() : Date.now(),
+            updatedAt: job.updatedAt ? (job.updatedAt as unknown as Timestamp).toMillis() : Date.now(),
+          }));
+          setJobs(sanitizedData as unknown as JobApplication[]);
+          setLoading(false);
+        });
+      }
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [user]);
 
