@@ -47,7 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await syncFirebaseUserToSupabase(user);
         
         // Ensure free plan is assigned if user doesn't have subscription (Firebase)
-        await ensureFreePlan(user.uid);
+        // Note: This might fail due to Firestore permissions, but Supabase sync already handled it
+        try {
+          await ensureFreePlan(user.uid);
+        } catch (error) {
+          console.warn("Firebase ensureFreePlan failed (non-critical, Supabase sync succeeded):", error);
+        }
         
         const sub = await getSubscription(user.uid);
         setSubscription(sub?.subscription || null);
