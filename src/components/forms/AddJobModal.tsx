@@ -74,7 +74,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
     if (jobToEdit) {
       setFormData({
         jobTitle: jobToEdit.jobTitle,
-        industry: jobToEdit.industry,
+        industry: jobToEdit.company || jobToEdit.industry, // Use company if available, fallback to industry
         potentialSalary: jobToEdit.potentialSalary?.toString() || "",
         applicationUrl: jobToEdit.applicationUrl || "",
         jobType: jobToEdit.jobType || "",
@@ -117,7 +117,8 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
       const payload = {
         userId,
         jobTitle: formData.jobTitle,
-        industry: formData.industry,
+        company: formData.industry, // industry field is actually company name
+        industry: formData.industry, // Keep for backward compatibility
         potentialSalary: Number(formData.potentialSalary) || 0,
         applicationUrl: formData.applicationUrl,
         jobType: formData.jobType || undefined,

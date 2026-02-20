@@ -9,11 +9,29 @@ import { JobApplication } from "@/types";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log("Received job data:", body); // Debug log
+    
     const { userId, jobTitle, company, industry, recruiterEmail, applicationUrl, jobType, location, potentialSalary, currency, status } = body;
 
+    // Debug: Check what we received
     if (!userId || !jobTitle || !company) {
+      console.error("Missing fields:", { 
+        hasUserId: !!userId, 
+        hasJobTitle: !!jobTitle, 
+        hasCompany: !!company, 
+        bodyKeys: Object.keys(body),
+        body 
+      });
       return NextResponse.json(
-        { error: "Missing required fields: userId, jobTitle, company" },
+        { 
+          error: "Missing required fields: userId, jobTitle, company", 
+          received: body,
+          missing: {
+            userId: !userId,
+            jobTitle: !jobTitle,
+            company: !company
+          }
+        },
         { status: 400 }
       );
     }
