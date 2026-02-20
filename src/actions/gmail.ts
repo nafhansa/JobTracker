@@ -3,10 +3,10 @@
 import { getOAuth2Client } from '@/lib/google';
 import { google } from 'googleapis';
 import { adminDb } from '@/lib/firebase/admin';
-import { addJob } from '@/lib/supabase/jobs';
 import { checkIsPro } from '@/lib/supabase/subscriptions';
 import { getSubscription } from '@/lib/supabase/subscriptions';
 import { headers } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 
@@ -195,23 +195,41 @@ export async function createJobFromEmail(userId: string, jobData: { title: strin
     if (!userId) throw new Error("User ID required");
 
     try {
-        // Save to Supabase
-        await addJob({
-            userId,
-            jobTitle: jobData.title || "Unknown Role",
-            company: jobData.company || "Unknown Company",
-            industry: jobData.company || "Unknown Company", // Fallback for legacy
-            applicationUrl: jobData.source || "Linkedin",
-            status: {
-                applied: true,
-                emailed: false,
-                cvResponded: false,
-                interviewEmail: false,
-                contractEmail: false,
-                rejected: false
-            },
-            currency: 'IDR'
-        });
+        // Generate Firebase-like ID
+        const generateId = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 20; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
+
+        const jobId = generateId();
+
+        // Save to Supabase using service role (bypasses RLS)
+        const { error } = await (supabaseAdmin
+            .from('jobs') as any)
+            .insert({
+                id: jobId,
+                user_id: userId,
+                job_title: jobData.title || "Unknown Role",
+                company: jobData.company || "Unknown Company",
+                industry: jobData.company || "Unknown Company",
+                application_url: jobData.source || "Linkedin",
+                status_applied: true,
+                status_emailed: false,
+                status_cv_responded: false,
+                status_interview_email: false,
+                status_contract_email: false,
+                status_rejected: false,
+                currency: 'IDR'
+            });
+
+        if (error) {
+            console.error("Error creating job from email:", error);
+            throw new Error("Failed to create job card");
+        }
 
         return { success: true };
     } catch (error) {
