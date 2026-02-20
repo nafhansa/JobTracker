@@ -16,7 +16,7 @@ const nextConfig = {
               font-src 'self' https://fonts.gstatic.com https://vercel.live;
               img-src 'self' data: https://cdn.paddle.com https://sandbox-cdn.paddle.com https://*.googleusercontent.com https://grainy-gradients.vercel.app https://vercel.live https://fizzyacerbitymellow.com;
               connect-src 'self' https://buy.paddle.com https://sandbox-buy.paddle.com https://checkout-service.paddle.com https://sandbox-checkout-service.paddle.com https://*.googleapis.com https://*.firebaseio.com https://*.firebase.com https://vercel.live https://*.effectivegatecpm.com https://tallthirsty.com https://fizzyacerbitymellow.com https://accounts.google.com https://www.googleapis.com;
-              frame-src 'self' https://buy.paddle.com https://sandbox-buy.paddle.com https://vercel.live https://*.effectivegatecpm.com https://tallthirsty.com https://accounts.google.com;
+              frame-src 'self' https://buy.paddle.com https://sandbox-buy.paddle.com https://vercel.live https://*.effectivegatecpm.com https://tallthirsty.com https://accounts.google.com https://*.firebaseapp.com;
               object-src 'none';
               base-uri 'self';
               form-action 'self';
