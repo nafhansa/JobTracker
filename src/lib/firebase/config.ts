@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,8 +11,29 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+
+try {
+  // Only initialize if we have required config
+  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } else {
+    // Create dummy instances for build time when env vars are not set
+    // This prevents build errors but won't work at runtime
+    app = {} as FirebaseApp;
+    auth = {} as Auth;
+    db = {} as Firestore;
+  }
+} catch (error) {
+  // Fallback for build time errors (e.g., invalid API key)
+  console.warn("Firebase initialization failed (this is OK during build if env vars are missing):", error);
+  app = {} as FirebaseApp;
+  auth = {} as Auth;
+  db = {} as Firestore;
+}
 
 export { app, auth, db };

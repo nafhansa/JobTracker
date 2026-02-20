@@ -3,7 +3,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addJob, updateJob } from "@/lib/firebase/firestore";
+import { addJob as firebaseAddJob, updateJob as firebaseUpdateJob } from "@/lib/firebase/firestore";
+import { addJob as supabaseAddJob, updateJob as supabaseUpdateJob } from "@/lib/supabase/jobs";
+import { dualWriteAddJob, dualWriteUpdateJob } from "@/lib/migration/dual-write";
+import { shouldWriteToSupabase } from "@/lib/migration/feature-flags";
 import { useLanguage } from "@/lib/language/context";
 import { 
   Dialog, 
@@ -129,10 +132,18 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
       if (jobToEdit && jobToEdit.id) {
         // --- MODE EDIT ---
-        await updateJob(jobToEdit.id, payload);
+        if (shouldWriteToSupabase()) {
+          await dualWriteUpdateJob(jobToEdit.id, payload);
+        } else {
+          await firebaseUpdateJob(jobToEdit.id, payload);
+        }
       } else {
         // --- MODE ADD ---
-        await addJob(payload as JobApplication);
+        if (shouldWriteToSupabase()) {
+          await dualWriteAddJob(payload as Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>);
+        } else {
+          await firebaseAddJob(payload as Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>);
+        }
       }
       
       onOpenChange(false); // Tutup Modal
