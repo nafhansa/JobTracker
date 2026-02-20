@@ -1,34 +1,13 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
-import { getAnalyticsStats } from "@/lib/supabase/analytics";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const timeFilter = searchParams.get("timeFilter") || "all"; // "5m", "15m", "30m", "1h", "24h", "all"
   const pageFilter = searchParams.get("pageFilter") || "all"; // "all", "home", "login", "dashboard"
   try {
-    // Try Supabase first
-    try {
-      const supabaseStats = await getAnalyticsStats();
-      // Return Supabase stats (basic stats, time filtering can be added later)
-      return NextResponse.json({
-        ...supabaseStats,
-        visitorLogs: [],
-        loginLogs: [],
-        microConversions: {
-          pricingClicks: 0,
-          avgScrollDepth: 0,
-          avgTimeOnPage: 0,
-          ctaClicks: 0,
-          pricingClickRate: 0,
-          scrollDepthDistribution: [],
-        },
-      });
-    } catch (supabaseError) {
-      console.error("Supabase stats error, falling back to Firebase:", supabaseError);
-      // Fall through to Firebase
-    }
+    // Read directly from Firebase (analytics needs to be fast)
     // Helper function to get timestamp for time filter
     const getTimeFilterTimestamp = (filter: string): Timestamp | null => {
       const now = Date.now();

@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import { logout } from "@/lib/firebase/auth";
-import { subscribeToJobs } from "@/lib/firebase/firestore";
-import { Timestamp } from "firebase/firestore";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
 import { LogOut, ShieldCheck, Sparkles } from "lucide-react";
@@ -21,8 +19,6 @@ import { SubscriptionInfo } from "@/components/SubscriptionInfo";
 import GmailConnect from "@/components/GmailConnect";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
-import { subscribeToJobs as firebaseSubscribeToJobs } from "@/lib/firebase/firestore";
-import { shouldReadFromSupabase } from "@/lib/migration/feature-flags";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -149,27 +145,14 @@ export default function DashboardPage() {
     if (user) {
       let unsubscribe: (() => void) | undefined;
 
-      if (shouldReadFromSupabase()) {
-        // Use Supabase
-        const channel = supabaseSubscribeToJobs(user.uid, (data) => {
-          setJobs(data);
-          setLoading(false);
-        });
-        unsubscribe = () => {
-          channel.unsubscribe();
-        };
-      } else {
-        // Use Firebase (fallback)
-        unsubscribe = firebaseSubscribeToJobs(user.uid, (data) => {
-          const sanitizedData = data.map((job) => ({
-            ...job,
-            createdAt: job.createdAt ? (job.createdAt as unknown as Timestamp).toMillis() : Date.now(),
-            updatedAt: job.updatedAt ? (job.updatedAt as unknown as Timestamp).toMillis() : Date.now(),
-          }));
-          setJobs(sanitizedData as unknown as JobApplication[]);
-          setLoading(false);
-        });
-      }
+      // Always use Supabase for jobs
+      const channel = supabaseSubscribeToJobs(user.uid, (data) => {
+        setJobs(data);
+        setLoading(false);
+      });
+      unsubscribe = () => {
+        channel.unsubscribe();
+      };
 
       return () => {
         if (unsubscribe) unsubscribe();

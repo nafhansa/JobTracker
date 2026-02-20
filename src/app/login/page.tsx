@@ -6,9 +6,23 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
+import { useEffect } from "react";
+import { auth } from "@/lib/firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function LoginPage() {
   const router = useRouter(); 
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/dashboard");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const handleLogin = async () => {
     try {
       const sessionId = getOrCreateSessionId();

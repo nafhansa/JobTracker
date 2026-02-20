@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Calendar, CreditCard, Gift, ArrowUpRight } from "lucide-react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { useEffect, useState } from "react";
-import { getJobCount as firebaseGetJobCount } from "@/lib/firebase/firestore";
-import { getJobCount as supabaseGetJobCount } from "@/lib/supabase/jobs";
-import { shouldReadFromSupabase } from "@/lib/migration/feature-flags";
+import { getJobCount } from "@/lib/supabase/jobs";
 
 function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
@@ -52,8 +50,7 @@ export function SubscriptionInfo() {
   // Fetch job count for free users - MUST be before early return
   useEffect(() => {
     if (isFreePlan && user) {
-      const jobCountFn = shouldReadFromSupabase() ? supabaseGetJobCount : firebaseGetJobCount;
-      jobCountFn(user.uid).then(setJobCount).catch(() => setJobCount(0));
+      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
     }
   }, [isFreePlan, user]);
 

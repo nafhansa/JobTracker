@@ -23,10 +23,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { deleteJob as firebaseDeleteJob, updateJob as firebaseUpdateJob } from "@/lib/firebase/firestore";
 import { deleteJob as supabaseDeleteJob, updateJob as supabaseUpdateJob } from "@/lib/supabase/jobs";
-import { dualWriteDeleteJob, dualWriteUpdateJob } from "@/lib/migration/dual-write";
-import { shouldWriteToSupabase } from "@/lib/migration/feature-flags";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface JobCardProps {
@@ -66,11 +63,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
 
   const handleDelete = async () => {
     if (!confirm("Delete this application permanently?")) return;
-    if (shouldWriteToSupabase()) {
-      await dualWriteDeleteJob(job.id!);
-    } else {
-      await firebaseDeleteJob(job.id!);
-    }
+    await supabaseDeleteJob(job.id!);
   };
 
   const handleEditClick = () => {
@@ -80,11 +73,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
 
   const handleToggleReject = async () => {
     const newStatus = { ...job.status, rejected: !isRejected };
-    if (shouldWriteToSupabase()) {
-      await dualWriteUpdateJob(job.id!, { status: newStatus });
-    } else {
-      await firebaseUpdateJob(job.id!, { status: newStatus });
-    }
+    await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
   const handleToggleStatus = async (clickedKey: keyof JobStatus) => {
@@ -97,11 +86,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     } else {
       for (let i = clickedIndex; i < statusKeys.length; i++) newStatus[statusKeys[i]] = false;
     }
-    if (shouldWriteToSupabase()) {
-      await dualWriteUpdateJob(job.id!, { status: newStatus });
-    } else {
-      await firebaseUpdateJob(job.id!, { status: newStatus });
-    }
+    await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
   return (

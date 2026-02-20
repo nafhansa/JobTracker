@@ -3,7 +3,9 @@
 import { getOAuth2Client } from '@/lib/google';
 import { google } from 'googleapis';
 import { adminDb } from '@/lib/firebase/admin';
-import { checkIsPro } from '@/lib/firebase/subscription';
+import { addJob } from '@/lib/supabase/jobs';
+import { checkIsPro } from '@/lib/supabase/subscriptions';
+import { getSubscription } from '@/lib/supabase/subscriptions';
 import { headers } from 'next/headers';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
@@ -193,7 +195,8 @@ export async function createJobFromEmail(userId: string, jobData: { title: strin
     if (!userId) throw new Error("User ID required");
 
     try {
-        await adminDb.collection('jobs').add({
+        // Save to Supabase
+        await addJob({
             userId,
             jobTitle: jobData.title || "Unknown Role",
             company: jobData.company || "Unknown Company",
@@ -204,10 +207,10 @@ export async function createJobFromEmail(userId: string, jobData: { title: strin
                 emailed: false,
                 cvResponded: false,
                 interviewEmail: false,
-                contractEmail: false
+                contractEmail: false,
+                rejected: false
             },
-            createdAt: new Date(),
-            updatedAt: new Date()
+            currency: 'IDR'
         });
 
         return { success: true };

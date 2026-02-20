@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./config";
 import { getSubscription, checkIsPro, ensureFreePlan } from "./subscription"; // 👈 Import helper tadi
+import { syncFirebaseUserToSupabase } from "./sync-to-supabase";
 
 interface SubscriptionData {
   plan?: string;
@@ -42,7 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        // Ensure free plan is assigned if user doesn't have subscription
+        // Sync Firebase user to Supabase (dual storage)
+        await syncFirebaseUserToSupabase(user);
+        
+        // Ensure free plan is assigned if user doesn't have subscription (Firebase)
         await ensureFreePlan(user.uid);
         
         const sub = await getSubscription(user.uid);
