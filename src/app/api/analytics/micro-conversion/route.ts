@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -32,24 +31,13 @@ export async function POST(req: Request) {
     if (sessionId) eventData.sessionId = sessionId;
     if (value !== undefined) eventData.value = value;
 
-    // Write to Supabase (primary)
-    try {
-      await supabaseAdmin.from('analytics_micro_conversions').insert({
-        type,
-        value: value || null,
-        session_id: sessionId || null,
-        page: page || "home",
-      } as any);
-    } catch (supabaseError) {
-      console.error("Supabase micro-conversion error (non-fatal):", supabaseError);
-    }
-
-    // Fallback: Also write to Firebase (dual-write during migration)
+    // Write directly to Firebase (analytics needs to be fast)
     try {
       const eventsRef = adminDb.collection("analytics_micro_conversions");
       await eventsRef.add(eventData);
     } catch (firebaseError) {
-      console.error("Firebase micro-conversion error (non-fatal):", firebaseError);
+      console.error("Firebase micro-conversion error:", firebaseError);
+      throw firebaseError;
     }
 
     return NextResponse.json({ success: true });

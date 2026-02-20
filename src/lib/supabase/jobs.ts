@@ -4,48 +4,37 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 
 /**
  * Add a new job application
+ * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
  */
 export const addJob = async (jobData: Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
-    // Generate Firebase-like ID if not provided (for new jobs)
-    // Firebase uses 20-character alphanumeric IDs
-    const generateId = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < 20; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
-    
-    const jobId = (jobData as any).id || generateId();
-    
-    const { data, error } = await (supabase
-      .from('jobs') as any)
-      .insert({
-        id: jobId,
-        user_id: jobData.userId,
-        job_title: jobData.jobTitle,
+    const response = await fetch('/api/jobs/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: jobData.userId,
+        jobTitle: jobData.jobTitle,
         company: jobData.company,
         industry: jobData.industry,
-        recruiter_email: jobData.recruiterEmail || null,
-        application_url: jobData.applicationUrl || null,
-        job_type: jobData.jobType || null,
-        location: jobData.location || null,
-        potential_salary: jobData.potentialSalary || null,
+        recruiterEmail: jobData.recruiterEmail,
+        applicationUrl: jobData.applicationUrl,
+        jobType: jobData.jobType,
+        location: jobData.location,
+        potentialSalary: jobData.potentialSalary,
         currency: jobData.currency || 'IDR',
-        status_applied: jobData.status.applied || false,
-        status_emailed: jobData.status.emailed || false,
-        status_cv_responded: jobData.status.cvResponded || false,
-        status_interview_email: jobData.status.interviewEmail || false,
-        status_contract_email: jobData.status.contractEmail || false,
-        status_rejected: jobData.status.rejected || false,
-      })
-      .select()
-      .single();
+        status: jobData.status,
+      }),
+    });
 
-    if (error) throw error;
-    return data;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to add job');
+    }
+
+    const result = await response.json();
+    return result.data;
   } catch (error) {
     console.error('Error adding job:', error);
     throw error;
@@ -54,40 +43,27 @@ export const addJob = async (jobData: Omit<JobApplication, 'id' | 'createdAt' | 
 
 /**
  * Update a job application
+ * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
  */
 export const updateJob = async (jobId: string, data: Partial<JobApplication>) => {
   try {
-    const updateData: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
+    const response = await fetch('/api/jobs/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jobId,
+        data,
+      }),
+    });
 
-    // Map fields if provided
-    if (data.jobTitle) updateData.job_title = data.jobTitle;
-    if (data.company) updateData.company = data.company;
-    if (data.industry) updateData.industry = data.industry;
-    if (data.recruiterEmail !== undefined) updateData.recruiter_email = data.recruiterEmail || null;
-    if (data.applicationUrl !== undefined) updateData.application_url = data.applicationUrl || null;
-    if (data.jobType !== undefined) updateData.job_type = data.jobType || null;
-    if (data.location !== undefined) updateData.location = data.location || null;
-    if (data.potentialSalary !== undefined) updateData.potential_salary = data.potentialSalary || null;
-    if (data.currency) updateData.currency = data.currency;
-
-    // Map status object
-    if (data.status) {
-      if (data.status.applied !== undefined) updateData.status_applied = data.status.applied;
-      if (data.status.emailed !== undefined) updateData.status_emailed = data.status.emailed;
-      if (data.status.cvResponded !== undefined) updateData.status_cv_responded = data.status.cvResponded;
-      if (data.status.interviewEmail !== undefined) updateData.status_interview_email = data.status.interviewEmail;
-      if (data.status.contractEmail !== undefined) updateData.status_contract_email = data.status.contractEmail;
-      if (data.status.rejected !== undefined) updateData.status_rejected = data.status.rejected;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update job');
     }
 
-    const { error } = await (supabase
-      .from('jobs') as any)
-      .update(updateData)
-      .eq('id', jobId);
-
-    if (error) throw error;
+    return await response.json();
   } catch (error) {
     console.error('Error updating job:', error);
     throw error;
@@ -96,15 +72,26 @@ export const updateJob = async (jobId: string, data: Partial<JobApplication>) =>
 
 /**
  * Delete a job application
+ * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
  */
 export const deleteJob = async (jobId: string) => {
   try {
-    const { error } = await (supabase
-      .from('jobs') as any)
-      .delete()
-      .eq('id', jobId);
+    const response = await fetch('/api/jobs/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jobId,
+      }),
+    });
 
-    if (error) throw error;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete job');
+    }
+
+    return await response.json();
   } catch (error) {
     console.error('Error deleting job:', error);
     throw error;

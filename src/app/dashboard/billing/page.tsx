@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CreditCard, Calendar, AlertCircle, Loader2, CheckCircle, Gift, ArrowUpRight } from "lucide-react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
-import { getJobCount } from "@/lib/firebase/firestore";
+import { getJobCount } from "@/lib/supabase/jobs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function BillingPage() {

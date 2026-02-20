@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { supabaseAdmin } from "@/lib/supabase/server";
-import { trackPageVisit, trackLoginAttempt, trackDashboardVisit } from "@/lib/supabase/analytics";
 
 // Helper function to get IP address from request
 function getClientIP(req: Request): string {
@@ -101,31 +99,7 @@ export async function POST(req: Request) {
     if (geoInfo.country) eventData.country = geoInfo.country;
     if (geoInfo.countryCode) eventData.countryCode = geoInfo.countryCode;
 
-    // Write to Supabase (primary)
-    try {
-      switch (type) {
-        case "visit":
-          await trackPageVisit(page || "home", sessionId, deviceInfo);
-          break;
-        case "login":
-          await trackLoginAttempt(userId, userEmail, sessionId, deviceInfo);
-          break;
-        case "dashboard":
-          if (!userId) {
-            return NextResponse.json(
-              { error: "userId required for dashboard events" },
-              { status: 400 }
-            );
-          }
-          await trackDashboardVisit(userId, userEmail, sessionId, deviceInfo);
-          break;
-      }
-    } catch (supabaseError) {
-      console.error("Supabase tracking error (non-fatal):", supabaseError);
-      // Continue to Firebase fallback
-    }
-
-    // Fallback: Also write to Firebase (dual-write during migration)
+    // Write directly to Firebase (analytics needs to be fast)
     switch (type) {
       case "visit":
         collectionPath = "analytics_visits";
@@ -169,13 +143,13 @@ export async function POST(req: Request) {
         break;
     }
 
-    // Add event to collection (Firebase fallback)
+    // Add event to Firebase collection
     try {
       const eventsRef = adminDb.collection(collectionPath);
       await eventsRef.add(eventData);
     } catch (firebaseError) {
-      console.error("Firebase tracking error (non-fatal):", firebaseError);
-      // Supabase write succeeded, so we continue
+      console.error("Firebase tracking error:", firebaseError);
+      throw firebaseError;
     }
 
     return NextResponse.json({ success: true });
