@@ -2,15 +2,14 @@
  * Sync Firebase user to Supabase
  * 
  * After Firebase login, sync user data to Supabase for dual storage
- * Uses Firebase UID as the ID in Supabase (since users table uses TEXT for id)
+ * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
  */
 
-import { supabase } from '@/lib/supabase/client';
 import { User } from 'firebase/auth';
 
 /**
  * Sync Firebase user to Supabase
- * Uses Firebase UID as the primary key (users table uses TEXT for id)
+ * Uses API route with service role to bypass RLS
  */
 export const syncFirebaseUserToSupabase = async (firebaseUser: User): Promise<void> => {
   try {
@@ -19,44 +18,24 @@ export const syncFirebaseUserToSupabase = async (firebaseUser: User): Promise<vo
       return;
     }
 
-    // Check if user exists in Supabase by ID (Firebase UID)
-    const { data: existingUser } = await (supabase
-      .from('users') as any)
-      .select('*')
-      .eq('id', firebaseUser.uid)
-      .maybeSingle();
+    // Use API route to sync user (bypasses RLS using service role)
+    const response = await fetch('/api/users/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: firebaseUser.uid,
+        email: firebaseUser.email,
+      }),
+    });
 
-    const userData: any = {
-      email: firebaseUser.email,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Preserve existing subscription data if user exists
-    if (existingUser) {
-      userData.subscription_plan = existingUser.subscription_plan || 'free';
-      userData.subscription_status = existingUser.subscription_status || 'active';
-      userData.is_pro = existingUser.is_pro || false;
-      
-      // Update existing user
-      await (supabase
-        .from('users') as any)
-        .update(userData)
-        .eq('id', firebaseUser.uid);
-    } else {
-      // Create new user with free plan
-      await (supabase
-        .from('users') as any)
-        .insert({
-          id: firebaseUser.uid, // Use Firebase UID as Supabase ID
-          email: firebaseUser.email,
-          subscription_plan: 'free',
-          subscription_status: 'active',
-          is_pro: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to sync user');
     }
 
+    const result = await response.json();
     console.log('✅ Firebase user synced to Supabase:', firebaseUser.email, 'UID:', firebaseUser.uid);
   } catch (error) {
     console.error('❌ Error syncing Firebase user to Supabase:', error);
