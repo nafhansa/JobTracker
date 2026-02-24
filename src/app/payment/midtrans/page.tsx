@@ -27,11 +27,23 @@ function PaymentPage() {
       }
 
       try {
+        const token = localStorage.getItem('midtransToken');
+        const storedOrderId = localStorage.getItem('midtransOrderId');
+
+        if (!token || storedOrderId !== orderId) {
+          setError("Payment session expired. Please go back and try again.");
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch(`/api/payment/midtrans/charge?orderId=${orderId}`);
         const data = await response.json();
-        
+
         if (data.success) {
-          setPaymentData(data);
+          setPaymentData({
+            ...data,
+            token: token,
+          });
           setIsLoading(false);
         } else {
           setError(data.error || "Failed to fetch payment data");

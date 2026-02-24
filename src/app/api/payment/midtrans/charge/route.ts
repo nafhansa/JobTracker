@@ -2,6 +2,56 @@ import { NextResponse } from "next/server";
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG, MIDTRANS_PRICES } from "@/lib/midtrans-config";
 
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get("orderId");
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: "Missing orderId" },
+        { status: 400 }
+      );
+    }
+
+    const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
+
+    const response = await fetch(`${MIDTRANS_CONFIG.apiUrl}/v2/${orderId}/status`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (result.status_code === '404') {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      orderId: result.order_id,
+      amount: parseInt(result.gross_amount),
+      status: result.transaction_status,
+      paymentType: result.payment_type,
+      transactionTime: result.transaction_time,
+    });
+  } catch (error) {
+    console.error('Midtrans GET transaction error:', error);
+    const err = error as { message?: string; code?: string };
+    return NextResponse.json(
+      { error: err.message || 'Failed to fetch transaction' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -59,7 +109,7 @@ export async function POST(req: Request) {
 
     const result = await response.json();
 
-    if (!result.status_code || result.status_code !== 201) {
+    if (!result.status_code || result.status_code !== '201') {
       console.error('Midtrans Snap error:', result);
       return NextResponse.json(
         { error: result.status_message || 'Failed to create transaction' },

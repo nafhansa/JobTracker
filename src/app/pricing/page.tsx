@@ -22,7 +22,7 @@ export default function PricingPage() {
   const router = useRouter();
   const { user } = useAuth();
   
-  const [isIndonesia, setIsIndonesia] = useState(false);
+  const [isIndonesia, setIsIndonesia] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [lifetimeAvailability, setLifetimeAvailability] = useState<LifetimeAvailability | null>(null);
   const [loadingLifetime, setLoadingLifetime] = useState(true);
@@ -50,7 +50,7 @@ export default function PricingPage() {
   const pricing = isIndonesia ? PRICING_IDR : PRICING_USD;
   const isLoading = loadingLocation || loadingLifetime;
   const showLifetime = !loadingLifetime && lifetimeAvailability?.isAvailable;
-  const showIndonesiaBadge = isIndonesia && !isLoading;
+  const showMidtransBadge = isIndonesia && !isLoading;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
@@ -65,7 +65,7 @@ export default function PricingPage() {
             {t("pricing.subtitle")}
           </p>
           
-          {showIndonesiaBadge && (
+          {showMidtransBadge && (
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
               <span>🇮🇩</span>
               <span>Pembayaran via Midtrans (BCA, Mandiri, BNI, dll)</span>
@@ -101,71 +101,79 @@ export default function PricingPage() {
         )}
 
         <section className="w-full max-w-6xl mx-auto px-6 mt-16">
-          <div className={`grid gap-6 lg:gap-8 items-start ${showLifetime ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-            
-            <PricingCard
-              plan={t("pricing.free.title")}
-              price={pricing.free.price}
-              period="forever"
-              description={t("pricing.free.desc")}
-              features={[
-                t("pricing.free.feature1").replace('5', FREE_PLAN_JOB_LIMIT.toString()),
-                t("pricing.free.feature2"),
-                t("pricing.free.feature3"),
-                t("pricing.free.feature4"),
-              ]}
-              buttonText={t("pricing.free.cta")}
-              isFree
-            />
-
-            <PricingCard
-              plan={t("pricing.monthly.title")}
-              price={pricing.monthly.price}
-              originalPrice={pricing.monthly.originalPrice}
-              period={isIndonesia ? "/bulan" : "/month"}
-              description={t("pricing.monthly.desc")}
-              features={[
-                t("pricing.monthly.feature1"),
-                t("pricing.monthly.feature2"),
-                t("pricing.monthly.feature3"),
-                t("pricing.monthly.feature4"),
-              ]}
-              buttonText={t("pricing.monthly.cta")}
-              isIndonesia={isIndonesia}
-            />
-
-            {showLifetime ? (
-              <PricingCard
-                plan={t("pricing.lifetime.title")}
-                price={pricing.lifetime.price}
-                originalPrice={pricing.lifetime.originalPrice}
-                period="one-time"
-                description={t("pricing.lifetime.desc")}
-                features={[
-                  t("pricing.lifetime.feature1"),
-                  t("pricing.lifetime.feature2"),
-                  t("pricing.lifetime.feature3"),
-                  t("pricing.lifetime.feature4"),
-                ]}
-                buttonText={t("pricing.lifetime.cta")}
-                isFeatured
-                isIndonesia={isIndonesia}
-                showSlotCounter={true}
-                remainingSlots={lifetimeAvailability?.remaining || 0}
-              />
-            ) : loadingLifetime ? (
+          {isLoading ? (
+            <div className="grid gap-6 lg:gap-8 items-start md:grid-cols-3">
+              <PricingCardSkeleton />
+              <PricingCardSkeleton />
               <PricingCardSkeleton isFeatured={true} />
-            ) : null}
-          </div>
-
-          {!loadingLifetime && !showLifetime && (
-            <div className="mt-12 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center">
-              <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
-              <p className="text-yellow-900 dark:text-yellow-100 font-medium mb-1">Lifetime Access Habis</p>
-              <p className="text-yellow-700 dark:text-yellow-200 text-sm">
-                Semua {LIFETIME_ACCESS_LIMIT} slot lifetime access sudah terisi. Tapi jangan khawatir, paket bulanan tetap tersedia!
-              </p>
             </div>
+          ) : (
+            <>
+              <div className="grid gap-6 lg:gap-8 items-start md:grid-cols-3">
+                
+                <PricingCard
+                  plan={t("pricing.free.title")}
+                  price={pricing.free.price}
+                  period="forever"
+                  description={t("pricing.free.desc")}
+                  features={[
+                    t("pricing.free.feature1").replace('5', FREE_PLAN_JOB_LIMIT.toString()),
+                    t("pricing.free.feature2"),
+                    t("pricing.free.feature3"),
+                    t("pricing.free.feature4"),
+                  ]}
+                  buttonText={t("pricing.free.cta")}
+                  isFree
+                />
+
+                <PricingCard
+                  plan={t("pricing.monthly.title")}
+                  price={pricing.monthly.price}
+                  originalPrice={pricing.monthly.originalPrice}
+                  period={isIndonesia ? "/bulan" : "/month"}
+                  description={t("pricing.monthly.desc")}
+                  features={[
+                    t("pricing.monthly.feature1"),
+                    t("pricing.monthly.feature2"),
+                    t("pricing.monthly.feature3"),
+                    t("pricing.monthly.feature4"),
+                  ]}
+                  buttonText={t("pricing.monthly.cta")}
+                  isIndonesia={isIndonesia}
+                />
+
+                {showLifetime ? (
+                  <PricingCard
+                    plan={t("pricing.lifetime.title")}
+                    price={pricing.lifetime.price}
+                    originalPrice={pricing.lifetime.originalPrice}
+                    period="one-time"
+                    description={t("pricing.lifetime.desc")}
+                    features={[
+                      t("pricing.lifetime.feature1"),
+                      t("pricing.lifetime.feature2"),
+                      t("pricing.lifetime.feature3"),
+                      t("pricing.lifetime.feature4"),
+                    ]}
+                    buttonText={t("pricing.lifetime.cta")}
+                    isFeatured
+                    isIndonesia={isIndonesia}
+                    showSlotCounter={true}
+                    remainingSlots={lifetimeAvailability?.remaining || 0}
+                  />
+                ) : null}
+              </div>
+
+              {!loadingLifetime && !showLifetime && (
+                <div className="mt-12 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center">
+                  <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+                  <p className="text-yellow-900 dark:text-yellow-100 font-medium mb-1">Lifetime Access Habis</p>
+                  <p className="text-yellow-700 dark:text-yellow-200 text-sm">
+                    Semua {LIFETIME_ACCESS_LIMIT} slot lifetime access sudah terisi. Tapi jangan khawatir, paket bulanan tetap tersedia!
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
@@ -212,12 +220,38 @@ function PricingCard({
     const { user } = useAuth();
     
     if (isIndonesia && user) {
-      const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
-      const amount = planType === 'lifetime' ? 50000 : 30000;
-      const orderId = `JT-${user.uid}-${Date.now()}`;
-      
-      // Redirect to Midtrans payment page
-      router.push(`/payment/midtrans?orderId=${orderId}`);
+      try {
+        const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
+        
+        const response = await fetch('/api/payment/midtrans/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            plan: planType,
+            customerDetails: {
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+              email: user.email || '',
+              phone: user.phoneNumber || '',
+            },
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('midtransToken', data.token);
+          localStorage.setItem('midtransOrderId', data.orderId);
+          router.push(`/payment/midtrans?orderId=${data.orderId}`);
+        } else {
+          console.error('Failed to create transaction:', data.error);
+          alert('Failed to create payment. Please try again.');
+        }
+      } catch (error) {
+        console.error('Payment error:', error);
+        alert('Failed to create payment. Please try again.');
+      }
     } else if (user) {
       router.push("/dashboard");
     } else {
@@ -332,20 +366,49 @@ function PricingCardSkeleton({ isFeatured = false }: { isFeatured?: boolean }) {
           : "border-border"
       }`}
     >
-      <div className="space-y-4">
-        <div className="h-7 bg-muted rounded w-24"></div>
-        <div className="h-4 bg-muted rounded w-full"></div>
-        <div className="h-10 bg-muted rounded w-32 mt-4"></div>
-        <div className="space-y-3 mt-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-start gap-3">
-              <div className="w-5 h-5 bg-muted rounded-full"></div>
-              <div className="h-4 bg-muted rounded w-full"></div>
-            </div>
-          ))}
+      {isFeatured && (
+        <div className="absolute -top-4 right-6">
+          <div className="bg-blue-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1 h-7 w-24"></div>
         </div>
-        <div className="h-12 bg-muted rounded w-full mt-8"></div>
+      )}
+
+      <div className="space-y-4">
+        <div className="h-7 bg-muted rounded w-32"></div>
+        <div className="h-4 bg-muted rounded w-48"></div>
+        
+        {isFeatured && (
+          <>
+            <div className="flex items-center gap-2 mb-1 mt-6">
+              <div className="h-5 bg-muted rounded w-24"></div>
+              <div className="h-5 bg-muted rounded w-16"></div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-2">
+              <div className="h-4 bg-muted rounded w-4"></div>
+              <div className="h-4 bg-muted rounded w-20"></div>
+            </div>
+          </>
+        )}
+
+        <div className="flex items-baseline gap-1 mt-6">
+          <div className="h-12 bg-muted rounded w-40"></div>
+          <div className="h-6 bg-muted rounded w-20"></div>
+        </div>
       </div>
+
+      <div className="space-y-4 mt-8">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex items-start gap-3">
+            <div className="w-5 h-5 bg-muted rounded-full"></div>
+            <div className="h-4 bg-muted rounded flex-1"></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-12 bg-muted rounded w-full mt-8"></div>
+      {isFeatured && (
+        <div className="h-3 bg-muted rounded w-32 mx-auto mt-4"></div>
+      )}
     </div>
   );
 }
