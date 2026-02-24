@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Home, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
-export default function PaymentFinishPage() {
+function PaymentFinishContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -67,5 +67,17 @@ export default function PaymentFinishPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentFinishPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+      </div>
+    }>
+      <PaymentFinishContent />
+    </Suspense>
   );
 }
