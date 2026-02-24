@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./config";
-import { getSubscription, checkIsPro, ensureFreePlan } from "./subscription"; // 👈 Import helper tadi
+import { checkIsPro } from "./subscription";
 import { syncFirebaseUserToSupabase } from "./sync-to-supabase";
 
 interface SubscriptionData {
@@ -46,17 +46,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Sync Firebase user to Supabase (dual storage)
         await syncFirebaseUserToSupabase(user);
         
-        // Ensure free plan is assigned if user doesn't have subscription (Firebase)
-        // Note: This might fail due to Firestore permissions, but Supabase sync already handled it
+        // Get subscription from Supabase instead of Firestore (bypass permission issues)
         try {
-          await ensureFreePlan(user.uid);
+          const { supabase } = await import("@/lib/supabase/client");
+          const { data, error } = await supabase
+            .from('users')
+            .select('subscription, updated_at, created_at')
+            .eq('id', user.uid)
+            .single();
+
+          if (data && !error) {
+            setSubscription((data as any)?.subscription || { plan: "free", status: "active" });
+            setUpdatedAt((data as any)?.updated_at || null);
+          } else {
+            setSubscription({ plan: "free", status: "active" });
+            setUpdatedAt(null);
+          }
         } catch (error) {
-          console.warn("Firebase ensureFreePlan failed (non-critical, Supabase sync succeeded):", error);
+          console.error("Supabase subscription fetch failed:", error);
+          setSubscription({ plan: "free", status: "active" });
+          setUpdatedAt(null);
         }
-        
-        const sub = await getSubscription(user.uid);
-        setSubscription(sub?.subscription || null);
-        setUpdatedAt(sub?.updatedAt || null);
       } else {
         setSubscription(null);
         setUpdatedAt(null);

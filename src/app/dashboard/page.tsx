@@ -1,4 +1,3 @@
-// FIXED VERSION - src/app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,15 +7,17 @@ import { useLanguage } from "@/lib/language/context";
 import { logout } from "@/lib/firebase/auth";
 import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldCheck, Sparkles } from "lucide-react";
-import { checkIsPro, isAdminUser } from "@/lib/firebase/subscription";
+import { Menu, Sparkles, ShieldCheck, LogOut } from "lucide-react";
+import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 
-import DashboardClient from "@/components/tracker/DashboardClient";
+import DashboardLayout from "@/components/DashboardLayout";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { SubscriptionInfo } from "@/components/SubscriptionInfo";
 import GmailConnect from "@/components/GmailConnect";
+import SettingsDrawer from "@/components/SettingsDrawer";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
 
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const { t } = useLanguage();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
   const isAdmin = isAdminUser(user?.email || "");
@@ -68,79 +70,6 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
-  // Debug: print user uid to console so developer can verify in browser
-  useEffect(() => {
-    console.log('🔑 MY UID:', user?.uid);
-  }, [user]);
-
-  // Ad injection + first-interaction redirect
-  useEffect(() => {
-    try {
-      const AD_URL = "https://tallthirsty.com/usgt979ef?key=263fbb76e423f185c055941c07fa0700";
-      const AD_SCRIPT_SRC = "https://pl28558225.effectivegatecpm.com/f09c83632c9c95e1a27c6c2f64d45b38/invoke.js";
-      const REDIRECT_KEY = "jobtrack_last_redirect_ts";
-      const SESSION_SEEN_KEY = "jobtrack_dashboard_seen";
-      const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
-
-      if (typeof window === "undefined") return;
-
-      // Inject ad container if not present
-      const containerId = "container-f09c83632c9c95e1a27c6c2f64d45b38";
-      if (!document.getElementById(containerId)) {
-        const container = document.createElement("div");
-        container.id = containerId;
-        const mainEl = document.querySelector("main") || document.body;
-        mainEl.appendChild(container);
-      }
-
-      if (!document.querySelector(`script[src="${AD_SCRIPT_SRC}"]`)) {
-        const s = document.createElement("script");
-        s.src = AD_SCRIPT_SRC;
-        s.async = true;
-        s.setAttribute("data-cfasync", "false");
-        document.body.appendChild(s);
-      }
-
-      // Check last redirect timestamp
-      const lastTsStr = window.localStorage.getItem(REDIRECT_KEY);
-      const now = Date.now();
-      if (lastTsStr) {
-        const lastTs = parseInt(lastTsStr, 10);
-        if (!isNaN(lastTs) && now - lastTs < EXPIRY_MS) {
-          return;
-        }
-      }
-
-      // Only add listeners once per session load
-      const seen = sessionStorage.getItem(SESSION_SEEN_KEY);
-      if (seen) return;
-      sessionStorage.setItem(SESSION_SEEN_KEY, "1");
-
-      const onFirstInteract = () => {
-        try {
-          window.localStorage.setItem(REDIRECT_KEY, String(Date.now()));
-          setTimeout(() => {
-            window.location.href = AD_URL;
-          }, 50);
-        } catch (e) {
-          console.error("Redirect failed:", e);
-        }
-      };
-
-      window.addEventListener("click", onFirstInteract, { once: true });
-      window.addEventListener("scroll", onFirstInteract, { once: true });
-      window.addEventListener("touchstart", onFirstInteract, { once: true });
-
-      return () => {
-        window.removeEventListener("click", onFirstInteract);
-        window.removeEventListener("scroll", onFirstInteract);
-        window.removeEventListener("touchstart", onFirstInteract);
-      };
-    } catch (err) {
-      console.error("Ad redirect setup error:", err);
-    }
-  }, []);
-
   useEffect(() => {
     if (user) {
       let unsubscribe: (() => void) | undefined;
@@ -161,6 +90,7 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleLogout = async () => {
+    setIsSettingsOpen(false);
     await logout();
     router.push("/login");
   };
@@ -178,194 +108,108 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
-      {/* FIXED NAVBAR - Responsive untuk mobile */}
-      <nav className="relative z-30 border-b border-border bg-background/80 dark:bg-card/80 backdrop-blur-xl sticky top-0 px-3 md:px-6 py-3 md:py-4 shadow-md">
-        <div className="flex items-center justify-between gap-2 max-w-full">
-          {/* Logo - Lebih kecil di mobile */}
+      {/* NAVBAR - Simplified for mobile */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 dark:bg-card/95 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 shadow-md">
+        <div className="flex items-center justify-between gap-4 max-w-full">
+          {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <h1 className="font-bold text-base md:text-xl tracking-wider md:tracking-widest text-foreground transition-colors">
+            <h1 className="font-bold text-lg md:text-xl tracking-wider md:tracking-widest text-foreground transition-colors">
               Job<span className="text-primary">Tracker</span>.
             </h1>
           </div>
 
-          {/* Right Side - Responsive layout */}
-          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
-            <div className="scale-90 md:scale-100">
+          {/* Right Side - Mobile shows Theme+Lang+Menu, Desktop shows all */}
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+            {/* Mobile - Theme and Language Always Visible */}
+            <div className="flex items-center gap-2 md:hidden">
               <ThemeToggle />
-            </div>
-            <div className="scale-90 md:scale-100">
               <LanguageToggle />
             </div>
 
-            {/* Upgrade Button for Free Users */}
-            {isFreeUser && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/upgrade")}
-                className="bg-blue-600 text-white hover:bg-blue-700 border-none transition-all px-4 md:px-6 h-8 md:h-9 font-bold shadow-lg shadow-blue-500/20 active:scale-95"
-              >
-                <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2 fill-current" />
-                <span className="hidden md:inline text-xs font-bold uppercase tracking-wider">Upgrade</span>
-              </Button>
-            )}
+            {/* Desktop - Show all settings */}
+            <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle />
+              <LanguageToggle />
 
-            {/* Admin Button - Hide text on mobile */}
-            {isAdmin && (
+              {/* Upgrade Button for Free Users - Desktop */}
+              {isFreeUser && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/upgrade")}
+                  className="bg-blue-600 text-white hover:bg-blue-700 border-none transition-all px-4 h-9 font-bold shadow-lg shadow-blue-500/20"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Upgrade</span>
+                </Button>
+              )}
+
+              {/* Admin Button - Desktop */}
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push("/admin")}
+                  className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-3 h-9"
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  <span className="text-xs">{t("dashboard.admin")}</span>
+                </Button>
+              )}
+
+              {/* Email - Desktop */}
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors truncate max-w-[150px]">
+                {user?.email}
+              </span>
+
+              {/* Logout Button - Desktop */}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => router.push("/admin")}
-                className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-2 md:px-4 h-8 md:h-9"
+                onClick={handleLogout}
+                className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-3 h-9"
               >
-                <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2" />
-                <span className="hidden md:inline text-xs">{t("dashboard.admin")}</span>
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="text-xs">{t("dashboard.logout")}</span>
               </Button>
-            )}
+            </div>
 
-            {/* Email - Hidden on mobile and tablet */}
-            <span className="hidden lg:inline text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors truncate max-w-[150px]">
-              {user.email}
-            </span>
-
-            {/* Logout Button - Icon only on mobile */}
+            {/* Mobile + Desktop - Hamburger for Settings Drawer */}
             <Button
               variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-2 md:px-4 h-8 md:h-9"
+              size="icon"
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2" />
-              <span className="hidden md:inline text-xs">{t("dashboard.logout")}</span>
+              <Menu className="w-6 h-6" />
             </Button>
           </div>
         </div>
       </nav>
 
+      {/* Settings Drawer - Mobile Only */}
+      <SettingsDrawer isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
       {/* Main Content */}
-      <main className="relative z-10 max-w-6xl mx-auto p-4 md:p-6 md:py-10">
-
-        <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-center md:items-center gap-4">
-          <div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
-              {t("dashboard.title")}
-            </h2>
-            <p className="text-muted-foreground text-base md:text-lg">
-              {t("dashboard.subtitle")}
-            </p>
-          </div>
-          
-          {/* Conversion Metrics Badges */}
-          {jobs.length > 0 && (
-            <div className="flex gap-3 md:gap-4">
-              {/* Interview Conversion Badge */}
-              {(() => {
-                const totalJobs = jobs.length;
-                const interviewCount = jobs.filter(j => j.status.interviewEmail).length;
-                const interviewConversion = totalJobs > 0 ? (interviewCount / totalJobs) * 100 : 0;
-                return (
-                  <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm min-w-[100px] md:min-w-[120px] text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                      {interviewConversion.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
-                      Interview
-                    </div>
-                    <div className="text-[12px] text-muted-foreground">
-                      {interviewCount} dari {totalJobs}
-                    </div>
-                  </div>
-                );
-              })()}
-              
-              {/* Offer Conversion Badge */}
-              {(() => {
-                const totalJobs = jobs.length;
-                const offerCount = jobs.filter(j => j.status.contractEmail).length;
-                const offerConversion = totalJobs > 0 ? (offerCount / totalJobs) * 100 : 0;
-                return (
-                  <div className="bg-card border border-border rounded-xl p-4 md:p-5 shadow-sm min-w-[100px] md:min-w-[120px] text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                      {offerConversion.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
-                      Offer
-                    </div>
-                    <div className="text-[12px] text-muted-foreground">
-                      {offerCount} dari {totalJobs}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-
-        {/* Info Langganan */}
-        {(subscription && !isAdmin) && (
-          <div className="mb-6 md:mb-8">
-            <SubscriptionInfo />
-          </div>
-        )}
-
-        {/* Gmail Connect */}
-        <div className="mb-6 md:mb-8">
-          <GmailConnect />
-        </div>
-
-        {/* Small Upgrade Banner for Free Users (Before limit reached) */}
-        {isFreeUser && jobs.length < FREE_PLAN_JOB_LIMIT && (
-          <div className="mb-6 md:mb-8">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-400">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-foreground">Upgrade ke Pro</p>
-                  <p className="text-muted-foreground text-sm">Dapatkan akses tak terbatas dan fitur premium (Smart Filters & Reminders).</p>
-                </div>
-              </div>
-              <Button
-                onClick={() => router.push("/upgrade")}
-                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              >
-                Lihat Paket
-              </Button>
+      {loading ? (
+        <main className="relative z-10 w-full p-4 md:p-6 md:py-10">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-48 md:h-56 bg-card border border-border rounded-xl" />
+              ))}
             </div>
           </div>
-        )}
-
-        {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 md:h-56 bg-card border border-border rounded-xl" />
-            ))}
+        </main>
+      ) : isSubscribed || isFreeUser ? (
+        <DashboardLayout jobs={jobs} userId={user.uid} plan={plan} />
+      ) : (
+        <main className="relative z-10 w-full p-4 md:p-6 md:py-10">
+          <div className="max-w-6xl mx-auto">
+            <SubscriptionBanner />
           </div>
-        ) : isSubscribed || isFreeUser ? (
-          <>
-            {isFreeUser && jobs.length >= FREE_PLAN_JOB_LIMIT && (
-              <div className="mb-6">
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
-                  <div>
-                    <p className="text-blue-700 dark:text-blue-400 font-bold mb-1">Job limit reached!</p>
-                    <p className="text-muted-foreground text-sm">You&apos;ve reached the limit of {FREE_PLAN_JOB_LIMIT} jobs on the Free Plan.</p>
-                  </div>
-                  <Button
-                    onClick={() => router.push("/upgrade")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto font-bold shadow-md"
-                  >
-                    Upgrade to Pro Now
-                  </Button>
-                </div>
-              </div>
-            )}
-            <DashboardClient initialJobs={jobs} userId={user.uid} plan={plan} />
-          </>
-        ) : (
-          <SubscriptionBanner />
-        )}
-      </main>
+        </main>
+      )}
     </div>
   );
 }

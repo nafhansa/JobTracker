@@ -121,35 +121,47 @@ export async function POST(req: Request) {
         eventData.userId = userId;
         if (userEmail) eventData.userEmail = userEmail;
 
-        // Also update active users
-        const activeUsersRef = adminDb.collection("analytics_active_users");
-        const existingUser = await activeUsersRef
-          .where("userId", "==", userId)
-          .limit(1)
-          .get();
+        // Also update active users (only if Firebase Admin is initialized)
+        if (adminDb) {
+          try {
+            const activeUsersRef = adminDb.collection("analytics_active_users");
+            const existingUser = await activeUsersRef
+              .where("userId", "==", userId)
+              .limit(1)
+              .get();
 
-        if (existingUser.empty) {
-          await activeUsersRef.add({
-            userId,
-            userEmail: userEmail || null,
-            lastSeen: timestamp,
-          });
-        } else {
-          const doc = existingUser.docs[0];
-          await doc.ref.update({
-            lastSeen: timestamp,
-          });
+            if (existingUser.empty) {
+              await activeUsersRef.add({
+                userId,
+                userEmail: userEmail || null,
+                lastSeen: timestamp,
+              });
+            } else {
+              const doc = existingUser.docs[0];
+              await doc.ref.update({
+                lastSeen: timestamp,
+              });
+            }
+          } catch (error) {
+            console.warn("⚠️ Failed to update active users:", error);
+          }
         }
         break;
     }
 
-    // Add event to Firebase collection
+    // Add event to Firebase collection (only if Firebase Admin is initialized)
     try {
+      if (!adminDb) {
+        console.warn("⚠️ Firebase Admin not initialized, skipping analytics tracking");
+        return NextResponse.json({ success: true, skipped: "Firebase not initialized" });
+      }
+
       const eventsRef = adminDb.collection(collectionPath);
       await eventsRef.add(eventData);
     } catch (firebaseError) {
       console.error("Firebase tracking error:", firebaseError);
-      throw firebaseError;
+      // Don't throw - analytics failures shouldn't break the app
+      return NextResponse.json({ success: true, warning: "Analytics tracking failed" });
     }
 
     return NextResponse.json({ success: true });
