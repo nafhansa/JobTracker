@@ -153,7 +153,8 @@ export const checkIsPro = (subscription: SubscriptionData | null | undefined): b
  */
 export const isAdminUser = (email: string | null | undefined): boolean => {
   const ADMIN_EMAILS = ['nafhan1723@gmail.com', 'nafhan.sh@gmail.com'];
-  return ADMIN_EMAILS.includes(email || '');
+  const lowerEmail = (email || '').toLowerCase().trim();
+  return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(lowerEmail);
 };
 
 /**

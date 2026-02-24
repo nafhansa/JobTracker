@@ -8,7 +8,7 @@ import JobStats from "@/components/tracker/JobStats";
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getPlanLimits, isAdminUser } from "@/lib/firebase/subscription";
+import { getPlanLimits, isAdminUser } from "@/lib/supabase/subscriptions";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 

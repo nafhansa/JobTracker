@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle, Clock } from "lucide-react";
 import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT } from "@/types";
-import { checkCanAddJob, canEditDelete } from "@/lib/firebase/subscription";
+import { checkCanAddJob, canEditDelete } from "@/lib/supabase/subscriptions";
 
 interface JobModalProps {
   userId: string;
@@ -147,57 +147,57 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-card text-foreground border-border shadow-lg">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-md">
-              {isEditMode ? <Pencil className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+      <DialogContent className="sm:max-w-[500px] max-w-[95vw] max-h-[90vh] overflow-y-auto bg-card text-foreground border-border shadow-lg">
+        <DialogHeader className="space-y-1 pb-2">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-md">
+              {isEditMode ? <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5" />}
             </span>
-            {isEditMode ? t("form.title.edit") : t("form.title.add")}
+            <span className="text-base sm:text-xl">{isEditMode ? t("form.title.edit") : t("form.title.add")}</span>
           </DialogTitle>
         </DialogHeader>
 
         {/* Warning for edit mode (free users) */}
         {isEditMode && !canEdit && (
-          <div className="p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
-            <Lock className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold mb-1">{t("form.warning.editLocked")}</p>
-              <p className="text-xs">{t("form.warning.editUpgrade")}</p>
+          <div className="p-2.5 sm:p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
+            <Lock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm">
+              <p className="font-semibold mb-0.5">{t("form.warning.editLocked")}</p>
+              <p className="text-[10px] sm:text-xs">{t("form.warning.editUpgrade")}</p>
             </div>
           </div>
         )}
 
         {/* Warning for add mode (limit reached) */}
         {!isEditMode && !canAdd && (
-          <div className="p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold mb-1">{t("form.warning.limitReached")}</p>
-              <p className="text-xs">{t("form.warning.limitUpgrade").replace("{limit}", FREE_PLAN_JOB_LIMIT.toString())}</p>
+          <div className="p-2.5 sm:p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm">
+              <p className="font-semibold mb-0.5">{t("form.warning.limitReached")}</p>
+              <p className="text-[10px] sm:text-xs">{t("form.warning.limitUpgrade").replace("{limit}", FREE_PLAN_JOB_LIMIT.toString())}</p>
             </div>
           </div>
         )}
 
         {/* Usage indicator for free users */}
         {isFreeUser && !isEditMode && (
-          <div className="p-2 bg-muted/50 border border-border rounded text-xs text-muted-foreground">
+          <div className="p-1.5 sm:p-2 bg-muted/50 border border-border rounded text-[10px] sm:text-xs text-muted-foreground">
             {t("form.usage").replace("{current}", currentJobCount.toString()).replace("{limit}", FREE_PLAN_JOB_LIMIT.toString())}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid gap-5 py-4">
+        <form onSubmit={handleSubmit} className="grid gap-3 sm:gap-4 py-2 sm:py-4">
           
           {/* Job Title */}
-          <div className="grid gap-2">
-            <Label htmlFor="title" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.jobTitle")} *</Label>
+          <div className="grid gap-1.5">
+            <Label htmlFor="title" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">{t("form.jobTitle")} *</Label>
             <div className="relative">
-              <Briefcase className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
+              <Briefcase className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50" />
               <Input
                 id="title"
                 required
                 placeholder={t("form.jobTitle.placeholder")}
-                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
+                className="pl-8 sm:pl-9 h-8 sm:h-9 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                 value={formData.jobTitle}
                 onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
               />
@@ -205,32 +205,32 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           </div>
 
           {/* Company */}
-          <div className="grid gap-2">
-            <Label htmlFor="industry" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.company")} *</Label>
+          <div className="grid gap-1.5">
+            <Label htmlFor="industry" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">{t("form.company")} *</Label>
             <div className="relative">
-              <Building className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
+              <Building className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50" />
               <Input
                 id="industry"
                 required
                 placeholder={t("form.company.placeholder")}
-                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
+                className="pl-8 sm:pl-9 h-8 sm:h-9 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                 value={formData.industry}
                 onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
             {/* Salary */}
-            <div className="grid gap-2">
-              <Label htmlFor="salary" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.salary")}</Label>
+            <div className="grid gap-1.5">
+              <Label htmlFor="salary" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">{t("form.salary")}</Label>
               <div className="relative">
-                <Wallet className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
+                <Wallet className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50" />
                 <Input
                   id="salary"
                   type="number"
                   placeholder={t("form.salary.placeholder")}
-                  className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
+                  className="pl-8 sm:pl-9 h-8 sm:h-9 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                   value={formData.potentialSalary}
                   onChange={(e) => setFormData({ ...formData, potentialSalary: e.target.value })}
                 />
@@ -238,15 +238,15 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             </div>
             
             {/* Email (OPSIONAL - required dihapus) */}
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.recruiterEmail")}</Label>
+            <div className="grid gap-1.5">
+              <Label htmlFor="email" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">{t("form.recruiterEmail")}</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-primary/50" />
+                <Mail className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50" />
                 <Input
                   id="email"
                   type="email"
                   placeholder={t("form.recruiterEmail.placeholder")} 
-                  className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
+                  className="pl-8 sm:pl-9 h-8 sm:h-9 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:bg-white transition-all"
                   value={formData.recruiterEmail}
                   onChange={(e) => setFormData({ ...formData, recruiterEmail: e.target.value })}
                 />
@@ -255,13 +255,13 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           </div>
 
           {/* Job Source */}
-          <div className="grid gap-2">
-            <Label htmlFor="jobSource" className="text-foreground font-semibold tracking-wide text-xs uppercase">Job Source</Label>
+          <div className="grid gap-1.5">
+            <Label htmlFor="jobSource" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">Job Source</Label>
             <div className="relative">
-              <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+              <LinkIcon className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50 pointer-events-none z-10" />
               <select
                 id="jobSource"
-                className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                className="pl-8 sm:pl-9 w-full h-8 sm:h-9 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
                 value={formData.applicationUrl}
                 onChange={(e) => setFormData({ ...formData, applicationUrl: e.target.value })}
               >
@@ -277,7 +277,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
                 <option value="Upwork">Upwork</option>
               </select>
               <svg
-                className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                className="absolute right-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-muted-foreground pointer-events-none"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -288,14 +288,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           </div>
 
           {/* Job Type + Location */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="jobType" className="text-foreground font-semibold tracking-wide text-xs uppercase">{t("form.jobType")}</Label>
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="jobType" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">{t("form.jobType")}</Label>
               <div className="relative">
-                <Clock className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+                <Clock className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50 pointer-events-none z-10" />
                 <select
                   id="jobType"
-                  className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                  className="pl-8 sm:pl-9 w-full h-8 sm:h-9 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
                   value={formData.jobType}
                   onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
                 >
@@ -306,7 +306,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
                   <option value="Internship">Internship</option>
                 </select>
                 <svg
-                  className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                  className="absolute right-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-muted-foreground pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -316,13 +316,13 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="location" className="text-foreground font-semibold tracking-wide text-xs uppercase">Location</Label>
+            <div className="grid gap-1.5">
+              <Label htmlFor="location" className="text-foreground font-semibold tracking-wide text-[10px] sm:text-xs uppercase">Location</Label>
               <div className="relative">
-                <Building className="absolute left-3 top-3 h-4 w-4 text-primary/50 pointer-events-none z-10" />
+                <Building className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary/50 pointer-events-none z-10" />
                 <select
                   id="location"
-                  className="pl-9 w-full h-9 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
+                  className="pl-8 sm:pl-9 w-full h-8 sm:h-9 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/50 focus-visible:border-primary transition-all appearance-none cursor-pointer"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 >
@@ -332,7 +332,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
                   <option value="Hybrid">Hybrid</option>
                 </select>
                 <svg
-                  className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none"
+                  className="absolute right-3 top-2.5 sm:top-3 h-3.5 sm:h-4 w-3.5 sm:w-4 text-muted-foreground pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -346,10 +346,10 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
           <Button 
             type="submit" 
             disabled={loading || (isEditMode && !canEdit) || (!isEditMode && !canAdd)}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 mt-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 sm:py-3 mt-1 sm:mt-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
             ) : (isEditMode && !canEdit) ? (
               t("form.warning.editLocked")
             ) : (!isEditMode && !canAdd) ? (
@@ -365,7 +365,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
             <Button
               type="button"
               onClick={() => router.push("/upgrade")}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-2 shadow-lg shadow-blue-500/20"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 sm:py-3 mt-1 sm:mt-2 shadow-lg shadow-blue-500/20 text-sm"
             >
               {t("dashboard.upgrade")}
             </Button>
