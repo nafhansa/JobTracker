@@ -213,32 +213,8 @@ function PricingCard({
         const amount = planType === 'lifetime' ? 50000 : 30000;
         const orderId = `JT-${user.uid}-${Date.now()}`;
         
-        try {
-          const response = await fetch('/api/payment/midtrans/charge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              orderId,
-              amount,
-              plan: planType,
-              customerDetails: {
-                email: user.email,
-              },
-            }),
-          });
-
-          const data = await response.json();
-          
-          if (data.success) {
-            alert(`Silakan transfer Rp${amount.toLocaleString('id-ID')} ke:\nBank: ${data.bank}\nVA Number: ${data.vaNumber}\n\nOrder ID: ${data.orderId}`);
-          } else {
-            alert('Gagal membuat pembayaran. Silakan coba lagi.');
-          }
-        } catch (error) {
-          console.error('Payment error:', error);
-          alert('Terjadi kesalahan. Silakan coba lagi.');
-        }
+        // Redirect to Midtrans payment page
+        router.push(`/payment/midtrans?orderId=${orderId}`);
       } else {
         router.push("/dashboard");
       }

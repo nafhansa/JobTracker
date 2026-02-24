@@ -1,100 +1,94 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 import crypto from 'crypto';
-import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
-import { supabase } from '@/lib/supabase/client';
+import { MIDTRANS_CONFIG, MIDTRANS_PRICES } from "@/lib/midtrans-config";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, orderId, amount, customerDetails, plan } = body;
+    const { userId, plan, customerDetails } = body;
 
-    if (!userId || !orderId || !amount || !plan) {
+    if (!userId || !plan || !customerDetails) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: "Missing required fields: userId, plan, customerDetails" },
         { status: 400 }
       );
     }
 
+    const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+    const amount = planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR;
+
+    const orderId = `JT-${userId}-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+
     const transactionDetails = {
-      order_id: orderId,
-      gross_amount: amount,
-    };
-
-    const customerInfo = {
-      first_name: customerDetails?.firstName || 'JobTracker',
-      last_name: customerDetails?.lastName || 'User',
-      email: customerDetails?.email || '',
-      phone: customerDetails?.phone || '',
-    };
-
-    const itemDetails = [
-      {
-        id: plan === 'monthly' ? 'jobtracker_monthly' : 'jobtracker_lifetime',
-        price: amount,
-        quantity: 1,
-        name: plan === 'monthly' ? 'JobTracker Monthly Pro' : 'JobTracker Lifetime Pro',
+      transaction_details: {
+        order_id: orderId,
+        gross_amount: amount,
       },
-    ];
-
-    const paymentType = 'bank_transfer';
-
-    const bankTransferOptions = {
-      bank: 'bca',
+      customer_details: {
+        first_name: customerDetails.firstName || 'JobTracker',
+        last_name: customerDetails.lastName || 'User',
+        email: customerDetails.email || '',
+        phone: customerDetails.phone || '',
+      },
+      item_details: [
+        {
+          id: planType === 'lifetime' ? 'jobtracker_lifetime' : 'jobtracker_monthly',
+          price: amount,
+          quantity: 1,
+          name: planType === 'lifetime' ? 'JobTracker Lifetime Pro' : 'JobTracker Monthly Pro',
+          brand: 'JobTracker',
+        },
+      ],
     };
 
-    const transactionData = {
-      payment_type: paymentType,
+    const snapBody = {
       transaction_details: transactionDetails,
-      customer_details: customerInfo,
-      item_details: itemDetails,
-      bank_transfer: bankTransferOptions,
-      custom_field1: userId,
-      custom_field2: plan,
     };
 
     const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
 
-    const response = await fetch(`${MIDTRANS_CONFIG.apiUrl}/v2/charge`, {
+    const response = await fetch(`${MIDTRANS_CONFIG.apiUrl}/v1/snap/transactions`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Authorization': `Basic ${authString}`,
       },
-      body: JSON.stringify(transactionData),
+      body: JSON.stringify(snapBody),
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
-      console.error('Midtrans error:', result);
+    if (!result.status_code || result.status_code !== 201) {
+      console.error('Midtrans Snap error:', result);
       return NextResponse.json(
-        { error: result.message || 'Failed to create transaction' },
+        { error: result.status_message || 'Failed to create transaction' },
+        { status: result.status_code || 500 }
+      );
+    }
+
+    const token = result.data?.token;
+    const redirectUrl = result.data?.redirect_url;
+
+    if (!token) {
+      console.error('Midtrans Snap error: No token in response');
+      return NextResponse.json(
+        { error: 'No token returned from Midtrans' },
         { status: 500 }
       );
     }
 
-    const vaNumber = result.va_numbers?.[0]?.va_number;
-    const bank = result.va_numbers?.[0]?.bank;
-
     return NextResponse.json({
       success: true,
-      orderId: result.order_id,
-      transactionId: result.transaction_id,
-      grossAmount: result.gross_amount,
-      currency: result.currency,
-      paymentType: result.payment_type,
-      transactionTime: result.transaction_time,
-      transactionStatus: result.transaction_status,
-      fraudStatus: result.fraud_status,
-      vaNumber,
-      bank,
-      expiryTime: result.expiry_time,
+      orderId,
+      token,
+      redirectUrl,
     });
   } catch (error) {
-    console.error('Midtrans charge error:', error);
+    console.error('Midtrans Snap charge error:', error);
+    const err = error as { message?: string; code?: string };
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: err.message || 'Failed to create transaction' },
       { status: 500 }
     );
   }
