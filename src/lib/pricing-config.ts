@@ -13,6 +13,9 @@ export interface PricingPlan {
 export const LIFETIME_ACCESS_LIMIT = 20;
 
 export const PRICING_USD = {
+  free: {
+    price: '$0',
+  },
   monthly: {
     price: '$1.99',
     originalPrice: '$2.99',
@@ -24,6 +27,9 @@ export const PRICING_USD = {
 };
 
 export const PRICING_IDR = {
+  free: {
+    price: '$0',
+  },
   monthly: {
     price: 'Rp30.000',
     originalPrice: undefined,

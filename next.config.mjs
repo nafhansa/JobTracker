@@ -2,8 +2,8 @@
 import withPWA from 'next-pwa';
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-    turbopack: {},
+
+const baseConfig = {
     async headers() {
         return [
             {
@@ -32,11 +32,15 @@ const nextConfig = {
     },
 };
 
-export default withPWA({
-    dest: 'public',
-    disable: process.env.NODE_ENV === 'development',
-    register: true,
-    skipWaiting: true,
-    buildExcludes: [/middleware-manifest\.json$/],
-    runtimeCaching: [],
-})(nextConfig);
+const config = process.env.NODE_ENV === 'development' 
+    ? baseConfig 
+    : withPWA({
+        dest: 'public',
+        disable: process.env.NODE_ENV === 'development',
+        register: true,
+        skipWaiting: true,
+        buildExcludes: [/middleware-manifest\.json$/],
+        runtimeCaching: [],
+    })(baseConfig);
+
+export default config;

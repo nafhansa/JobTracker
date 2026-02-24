@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
-import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
@@ -48,7 +48,9 @@ export default function PricingPage() {
   }, []);
 
   const pricing = isIndonesia ? PRICING_IDR : PRICING_USD;
+  const isLoading = loadingLocation || loadingLifetime;
   const showLifetime = !loadingLifetime && lifetimeAvailability?.isAvailable;
+  const showIndonesiaBadge = isIndonesia && !isLoading;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
@@ -63,7 +65,7 @@ export default function PricingPage() {
             {t("pricing.subtitle")}
           </p>
           
-          {isIndonesia && (
+          {showIndonesiaBadge && (
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
               <span>🇮🇩</span>
               <span>Pembayaran via Midtrans (BCA, Mandiri, BNI, dll)</span>
@@ -71,7 +73,7 @@ export default function PricingPage() {
           )}
         </section>
 
-        {showLifetime && lifetimeAvailability && (
+        {!loadingLifetime && showLifetime && lifetimeAvailability && (
           <section className="w-full max-w-6xl mx-auto px-6 mt-12">
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
@@ -103,7 +105,7 @@ export default function PricingPage() {
             
             <PricingCard
               plan={t("pricing.free.title")}
-              price="$0"
+              price={pricing.free.price}
               period="forever"
               description={t("pricing.free.desc")}
               features={[
@@ -132,7 +134,7 @@ export default function PricingPage() {
               isIndonesia={isIndonesia}
             />
 
-            {showLifetime && (
+            {showLifetime ? (
               <PricingCard
                 plan={t("pricing.lifetime.title")}
                 price={pricing.lifetime.price}
@@ -151,14 +153,16 @@ export default function PricingPage() {
                 showSlotCounter={true}
                 remainingSlots={lifetimeAvailability?.remaining || 0}
               />
-            )}
+            ) : loadingLifetime ? (
+              <PricingCardSkeleton isFeatured={true} />
+            ) : null}
           </div>
 
-          {!showLifetime && !loadingLifetime && (
-            <div className="mt-12 bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-              <AlertTriangle className="w-6 h-6 text-yellow-600 mx-auto mb-2" />
-              <p className="text-yellow-900 font-medium mb-1">Lifetime Access Habis</p>
-              <p className="text-yellow-700 text-sm">
+          {!loadingLifetime && !showLifetime && (
+            <div className="mt-12 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center">
+              <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+              <p className="text-yellow-900 dark:text-yellow-100 font-medium mb-1">Lifetime Access Habis</p>
+              <p className="text-yellow-700 dark:text-yellow-200 text-sm">
                 Semua {LIFETIME_ACCESS_LIMIT} slot lifetime access sudah terisi. Tapi jangan khawatir, paket bulanan tetap tersedia!
               </p>
             </div>
@@ -339,6 +343,33 @@ function PricingCard({
           {t("pricing.guarantee")}
         </p>
       )}
+    </div>
+  );
+}
+
+function PricingCardSkeleton({ isFeatured = false }: { isFeatured?: boolean }) {
+  return (
+    <div
+      className={`group relative p-8 rounded-2xl transition-all duration-300 bg-card border shadow-sm animate-pulse ${
+        isFeatured 
+          ? "border-primary border-2 shadow-md md:-translate-y-4 z-10" 
+          : "border-border"
+      }`}
+    >
+      <div className="space-y-4">
+        <div className="h-7 bg-muted rounded w-24"></div>
+        <div className="h-4 bg-muted rounded w-full"></div>
+        <div className="h-10 bg-muted rounded w-32 mt-4"></div>
+        <div className="space-y-3 mt-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-muted rounded-full"></div>
+              <div className="h-4 bg-muted rounded w-full"></div>
+            </div>
+          ))}
+        </div>
+        <div className="h-12 bg-muted rounded w-full mt-8"></div>
+      </div>
     </div>
   );
 }

@@ -34,11 +34,6 @@ export async function POST(req: Request) {
       userData.subscription_plan = existingUser.subscription_plan || 'free';
       userData.subscription_status = existingUser.subscription_status || 'active';
       userData.is_pro = existingUser.is_pro || false;
-      // Populate subscription JSONB from individual columns
-      userData.subscription = {
-        plan: existingUser.subscription_plan || 'free',
-        status: existingUser.subscription_status || 'active'
-      };
       
       // Update existing user
       const { error: updateError } = await (supabaseAdmin
@@ -63,7 +58,6 @@ export async function POST(req: Request) {
           subscription_plan: 'free',
           subscription_status: 'active',
           is_pro: false,
-          subscription: { plan: 'free', status: 'active' },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
