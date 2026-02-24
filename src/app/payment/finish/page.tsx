@@ -1,29 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Home, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 export default function PaymentFinishPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get("order_id");
-    const transactionStatus = params.get("transaction_status");
+    if (!searchParams) return;
+    
+    const transactionStatus = searchParams.get("transaction_status");
 
-    console.log("Payment finish:", { orderId, transactionStatus });
+    console.log("Payment finish:", { transactionStatus });
 
     if (transactionStatus === "settlement" || transactionStatus === "capture") {
+      setIsRedirecting(true);
       setTimeout(() => {
         router.push("/dashboard");
       }, 3000);
     }
-  }, [router]);
+  }, [searchParams, router]);
 
-  const params = new URLSearchParams(window.location.search);
-  const transactionStatus = params.get("transaction_status");
+  const transactionStatus = searchParams?.get("transaction_status");
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">

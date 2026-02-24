@@ -1,15 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { XCircle, Home, ArrowRight, RefreshCw } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 export default function PaymentErrorPage() {
   const router = useRouter();
-
-  const params = new URLSearchParams(window.location.search);
-  const orderId = params.get("order_id");
-  const errorCode = params.get("error_code");
+  const searchParams = useSearchParams();
+  const orderId = searchParams?.get("order_id");
+  const errorCode = searchParams?.get("error_code");
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -24,7 +23,7 @@ export default function PaymentErrorPage() {
           <div className="space-y-4">
             <h1 className="text-3xl font-bold">Payment Failed</h1>
             <p className="text-muted-foreground">
-              There was an error processing your payment. Please try again or contact support if the problem persists.
+              There was an error processing your payment. Please try again or contact support if problem persists.
             </p>
             
             {orderId && (

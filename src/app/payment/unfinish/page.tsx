@@ -1,14 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Clock, Home, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 export default function PaymentUnfinishPage() {
   const router = useRouter();
-
-  const params = new URLSearchParams(window.location.search);
-  const orderId = params.get("order_id");
+  const searchParams = useSearchParams();
+  const orderId = searchParams?.get("order_id");
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
