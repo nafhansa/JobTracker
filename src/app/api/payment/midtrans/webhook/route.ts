@@ -69,13 +69,18 @@ export async function POST(req: Request) {
       try {
         const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
 
-        console.log('Creating subscription for user:', userId, 'with plan:', planType);
+        console.log('=== WEBHOOK SUBSCRIPTION CREATION ===');
+        console.log('User ID:', userId);
+        console.log('Plan:', planType);
+        console.log('Order ID:', order_id);
 
         const { data: existingSubscription } = await (supabaseAdmin as any)
           .from('subscriptions')
-          .select('id')
+          .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
           .eq('user_id', userId)
           .maybeSingle();
+
+        console.log('Existing subscription found:', existingSubscription);
 
         const subscriptionData: any = {
           user_id: userId,
@@ -85,22 +90,31 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         };
 
+        console.log('New subscription data to insert:', subscriptionData);
+
         if (planType === 'monthly') {
           const now = new Date();
           const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
           subscriptionData.renews_at = nextMonth.toISOString();
           subscriptionData.ends_at = null;
+          console.log('Monthly plan: Set renews_at to:', nextMonth.toISOString());
         } else if (planType === 'lifetime') {
           subscriptionData.renews_at = null;
           subscriptionData.ends_at = null;
+          console.log('Lifetime plan: Set renews_at and ends_at to null');
         }
 
         if (!existingSubscription) {
           subscriptionData.id = generateUUID();
           subscriptionData.created_at = new Date().toISOString();
+          console.log('Creating new subscription with ID:', subscriptionData.id);
+        } else {
+          console.log('Updating existing subscription with ID:', existingSubscription.id);
         }
 
-        const { error: subscriptionError } = await (supabaseAdmin as any)
+        console.log('About to upsert to subscriptions table:', subscriptionData);
+
+        const { error: subscriptionError, data: upsertedData } = await (supabaseAdmin as any)
           .from('subscriptions')
           .upsert(subscriptionData, { onConflict: 'user_id' });
 
@@ -108,6 +122,9 @@ export async function POST(req: Request) {
           console.error('Error upserting subscription:', subscriptionError);
           throw subscriptionError;
         }
+
+        console.log('Upsert result:', { success: !subscriptionError, data: upsertedData });
+        console.log('Subscription upsert completed successfully');
 
         const { error: userError } = await (supabaseAdmin as any)
           .from('users')

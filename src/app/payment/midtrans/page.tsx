@@ -104,13 +104,15 @@ function PaymentPage() {
 
           setTimeout(async () => {
             if (user) {
-              try {
-                console.log('Force reloading subscription for user:', user.uid);
-                const success = await forceReloadSubscription();
-                console.log('Force reload result:', success);
-              } catch (error) {
-                console.error('Failed to force reload subscription:', error);
-              }
+              console.log('Payment page: About to force reload subscription');
+              console.log('Payment page: Current user:', {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName
+              });
+
+              const result = await forceReloadSubscription();
+              console.log('Payment page: Force reload result:', result);
             }
             router.push('/dashboard');
           }, 2000);
