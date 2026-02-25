@@ -109,8 +109,8 @@ export async function POST(req: Request) {
 
     const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
     const snapApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-      ? 'https://api.midtrans.com/snap/v1/transactions'
-      : 'https://api.sandbox.midtrans.com/snap/v1/transactions';
+      ? 'https://app.midtrans.com/snap/v1/transactions'
+      : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
     console.log('Using Snap API URL:', snapApiUrl);
 
