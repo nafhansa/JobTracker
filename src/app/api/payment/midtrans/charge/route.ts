@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG, MIDTRANS_PRICES } from "@/lib/midtrans-config";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
   try {
@@ -14,26 +15,26 @@ export async function GET(req: Request) {
       );
     }
 
-    const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
-    const statusApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-      ? 'https://api.midtrans.com'
-      : 'https://api.sandbox.midtrans.com';
+    const { data: transaction, error } = await (supabaseAdmin as any)
+      .from('pending_midtrans_transactions')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
 
-    const response = await fetch(`${statusApiUrl}/v2/${orderId}/status`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`,
-      },
-    });
-
-    const result = await response.json();
+    if (error || !transaction) {
+      console.error('Transaction not found:', error);
+      return NextResponse.json(
+        { error: "Payment session expired or not found. Please go back and try again." },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      orderId: result.order_id || orderId,
-      amount: result.gross_amount ? parseInt(result.gross_amount) : null,
+      orderId: transaction.order_id,
+      amount: transaction.amount,
+      token: transaction.snap_token,
+      plan: transaction.plan,
     });
   } catch (error) {
     console.error('Payment GET error:', error);
@@ -180,6 +181,24 @@ export async function POST(req: Request) {
 
     const token = result.token;
     const redirectUrl = result.redirect_url;
+
+    const transactionId = crypto.randomUUID();
+
+    const { error: dbError } = await (supabaseAdmin as any)
+      .from('pending_midtrans_transactions')
+      .insert({
+        id: transactionId,
+        order_id: orderId,
+        user_id: userId,
+        plan: planType,
+        amount: amount,
+        snap_token: token,
+        customer_email: customerDetails.email || null,
+      });
+
+    if (dbError) {
+      console.error('Failed to store transaction in database:', dbError);
+    }
 
     return NextResponse.json({
       success: true,

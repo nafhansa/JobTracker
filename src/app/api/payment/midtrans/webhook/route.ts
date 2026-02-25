@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { createSubscription } from '@/lib/supabase/subscriptions';
 import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +31,19 @@ export async function POST(req: Request) {
     }
 
     console.log('Midtrans webhook verified:', { order_id, transaction_status, userId, plan });
+
+    const isFinalStatus = ['settlement', 'capture', 'deny', 'cancel', 'expire'].includes(transaction_status);
+
+    if (isFinalStatus) {
+      const { error: deleteError } = await (supabaseAdmin as any)
+        .from('pending_midtrans_transactions')
+        .delete()
+        .eq('order_id', order_id);
+
+      if (deleteError) {
+        console.error('Error deleting pending transaction:', deleteError);
+      }
+    }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {

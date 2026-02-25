@@ -36,15 +36,6 @@ function PaymentPage() {
       }
 
       try {
-        const token = localStorage.getItem('midtransToken');
-        const storedOrderId = localStorage.getItem('midtransOrderId');
-
-        if (!token || storedOrderId !== orderId) {
-          setError("Payment session expired. Please go back and try again.");
-          setIsLoading(false);
-          return;
-        }
-
         const response = await fetch(`/api/payment/midtrans/charge?orderId=${orderId}`);
 
         if (!response.ok) {
@@ -56,12 +47,10 @@ function PaymentPage() {
 
         const data = await response.json();
 
-        if (data.success) {
-          const amountFromStorage = localStorage.getItem('midtransAmount');
+        if (data.success && data.amount) {
           setPaymentData({
             ...data,
-            token: token,
-            amount: data.amount || (amountFromStorage ? parseInt(amountFromStorage) : null),
+            amount: data.amount,
           });
           setIsLoading(false);
         } else {
