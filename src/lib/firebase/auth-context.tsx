@@ -186,24 +186,34 @@ export const forceReloadSubscription = async () => {
       .from('subscriptions')
       .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     console.log('Force reload: Database query result:', {
       subscriptionData,
-      subscriptionError
+      subscriptionError,
+      rowsReturned: subscriptionData ? 1 : 0
     });
 
     if (subscriptionData && !subscriptionError) {
       console.log('Force reload: Subscription FOUND for user:', userId);
-      console.log('Force reload: Subscription details:', subscriptionData);
-      console.log('Force reload: Dispatching subscription-updated event');
+      console.log('Force reload: Subscription details:', {
+        id: (subscriptionData as any)?.id,
+        plan: (subscriptionData as any)?.plan,
+        status: (subscriptionData as any)?.status,
+        midtransSubscriptionId: (subscriptionData as any)?.midtrans_subscription_id,
+        renewsAt: (subscriptionData as any)?.renews_at,
+        endsAt: (subscriptionData as any)?.ends_at,
+        createdAt: (subscriptionData as any)?.created_at,
+        updatedAt: (subscriptionData as any)?.updated_at
+      });
 
       const event = new CustomEvent('subscription-updated', {
         detail: subscriptionData,
         bubbles: true,
         cancelable: true
       });
-
       window.dispatchEvent(event);
 
       console.log('Force reload: Event dispatched successfully');
@@ -214,29 +224,18 @@ export const forceReloadSubscription = async () => {
       };
     } else if (subscriptionError) {
       console.error('Force reload: Subscription fetch error:', subscriptionError);
-      console.error('Force reload: Error details:', {
-        message: subscriptionError.message,
-        details: subscriptionError.details,
-        hint: subscriptionError.hint,
-        code: subscriptionError.code
-      });
       return {
         success: false,
-        error: subscriptionError.message
-      };
-    } else {
-      console.warn('Force reload: No subscription found in database for user:', userId);
-      console.warn('Force reload: Will NOT dispatch event - keeping current state');
-      return {
-        success: false,
-        error: 'No subscription found'
+        error: subscriptionError?.message || 'Unknown error',
+        subscription: null
       };
     }
   } catch (error) {
     console.error('Force reload: Unexpected error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      subscription: null
     };
   }
 };
