@@ -3,17 +3,19 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { reloadSubscriptionFromServer } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
-import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  ArrowRight, 
-  AlertTriangle, 
-  Loader2, 
-  ShieldCheck, 
-  Lock, 
-  CreditCard 
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ArrowRight,
+  AlertTriangle,
+  Loader2,
+  ShieldCheck,
+  Lock,
+  CreditCard,
+  RefreshCw
 } from "lucide-react";
 
 function PaymentPage() {
@@ -24,6 +26,7 @@ function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<any>(null);
   const [error, setError] = useState<string>("");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const orderId = searchParams.get("orderId");
 
@@ -85,6 +88,7 @@ function PaymentPage() {
     try {
       setIsLoading(true);
       setError("");
+      setPaymentSuccess(false);
 
       if (typeof window === 'undefined' || !window.snap) {
         setError("Midtrans Snap not loaded. Please refresh page.");
@@ -95,9 +99,19 @@ function PaymentPage() {
       const snapToken = paymentData?.token;
 
       window.snap?.pay(snapToken, {
-        onSuccess: (result: any) => {
+        onSuccess: async (result: any) => {
           console.log('Payment success:', result);
-          setTimeout(() => {
+          setPaymentSuccess(true);
+
+          setTimeout(async () => {
+            if (user) {
+              try {
+                console.log('Reloading subscription for user:', user.uid);
+                await reloadSubscriptionFromServer(user.uid);
+              } catch (error) {
+                console.error('Failed to reload subscription:', error);
+              }
+            }
             router.push('/dashboard');
           }, 2000);
         },
@@ -109,16 +123,21 @@ function PaymentPage() {
           console.error('Payment failed:', result);
           setError('Payment failed. Please try again.');
           setIsLoading(false);
+          setPaymentSuccess(false);
         },
         onClose: () => {
           console.log('Payment popup closed');
           setIsLoading(false);
+          if (!paymentSuccess) {
+            setPaymentData(null);
+          }
         },
       });
     } catch (err) {
       console.error('Payment error:', err);
       setError('Failed to initiate payment. Please try again.');
       setIsLoading(false);
+      setPaymentSuccess(false);
     }
   };
 
@@ -180,17 +199,31 @@ function PaymentPage() {
             Back to Upgrade
           </button>
 
-          {/* Main Card */}
-          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <Loader2 className="w-10 h-10 text-primary animate-spin mb-6" />
-                <h2 className="text-lg font-semibold mb-2">Preparing Checkout</h2>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Please wait a moment while we set up your secure payment session.
-                </p>
-              </div>
-            ) : error ? (
+           {/* Main Card */}
+           <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+             {isLoading ? (
+               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                 <Loader2 className="w-10 h-10 text-primary animate-spin mb-6" />
+                   <h2 className="text-lg font-semibold mb-2">Preparing Checkout</h2>
+                   <p className="text-sm text-muted-foreground max-w-xs">
+                     Please wait a moment while we set up your secure payment session.
+                   </p>
+               </div>
+             ) : paymentSuccess ? (
+               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                 <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mb-6">
+                   <CheckCircle2 className="w-8 h-8" />
+                 </div>
+                 <h2 className="text-xl font-bold mb-2 text-emerald-600">Payment Successful!</h2>
+                 <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                   Thank you for your subscription! We're updating your account...
+                 </p>
+                 <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                   <Loader2 className="w-4 h-4 animate-spin" />
+                   <span className="text-sm">Redirecting to dashboard...</span>
+                 </div>
+               </div>
+             ) : error ? (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
                   <AlertTriangle className="w-8 h-8" />

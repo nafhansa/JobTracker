@@ -142,3 +142,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export const reloadSubscriptionFromServer = async (userId: string) => {
+  try {
+    const { supabase } = await import("@/lib/supabase/client");
+
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    console.log('Manual reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
+
+    if (subscriptionData && !subscriptionError) {
+      return {
+        success: true,
+        subscription: subscriptionData
+      };
+    } else {
+      return {
+        success: false,
+        subscription: { plan: "free", status: "active" }
+      };
+    }
+  } catch (error) {
+    console.error("Failed to reload subscription:", error);
+    return {
+      success: false,
+      subscription: { plan: "free", status: "active" }
+    };
+  }
+};
