@@ -3,6 +3,10 @@ import crypto from 'crypto';
 import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+function generateUUID(): string {
+  return crypto.randomUUID();
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -59,17 +63,27 @@ export async function POST(req: Request) {
       try {
         const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
 
+        const { data: existingSubscription } = await (supabaseAdmin as any)
+          .from('subscriptions')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        const subscriptionData: any = {
+          user_id: userId,
+          plan: planType,
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        };
+
+        if (!existingSubscription) {
+          subscriptionData.id = generateUUID();
+          subscriptionData.created_at = new Date().toISOString();
+        }
+
         const { error: subscriptionError } = await (supabaseAdmin as any)
           .from('subscriptions')
-          .upsert(
-            {
-              user_id: userId,
-              plan: planType,
-              status: 'active',
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'user_id' }
-          );
+          .upsert(subscriptionData, { onConflict: 'user_id' });
 
         if (subscriptionError) {
           console.error('Error upserting subscription:', subscriptionError);
