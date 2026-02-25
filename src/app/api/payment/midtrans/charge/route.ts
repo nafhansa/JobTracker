@@ -15,8 +15,11 @@ export async function GET(req: Request) {
     }
 
     const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
+    const statusApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://api.midtrans.com'
+      : 'https://api.sandbox.midtrans.com';
 
-    const response = await fetch(`${MIDTRANS_CONFIG.apiUrl}/v2/${orderId}/status`, {
+    const response = await fetch(`${statusApiUrl}/v2/${orderId}/status`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -67,9 +70,12 @@ export async function POST(req: Request) {
     const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
     const amount = planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR;
 
-    const orderId = `JT-${userId}-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substring(2, 10);
+    const userIdShort = userId.substring(0, 12);
+    const orderId = `JT-${userIdShort}-${timestamp}-${randomStr}`;
 
-    const transactionDetails = {
+    const snapBody = {
       transaction_details: {
         order_id: orderId,
         gross_amount: amount,
@@ -89,25 +95,84 @@ export async function POST(req: Request) {
           brand: 'JobTracker',
         },
       ],
+      custom_field1: userId,
+      custom_field2: planType,
     };
 
-    const snapBody = {
-      transaction_details: transactionDetails,
-    };
+    if (!MIDTRANS_CONFIG.serverKey) {
+      console.error('Midtrans server key not configured');
+      return NextResponse.json(
+        { error: 'Midtrans server key not configured' },
+        { status: 500 }
+      );
+    }
 
     const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
+    const apiUrl = `${MIDTRANS_CONFIG.apiUrl}/snap/v1/transactions`;
 
-    const response = await fetch(`${MIDTRANS_CONFIG.apiUrl}/v1/snap/transactions`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`,
-      },
-      body: JSON.stringify(snapBody),
+    console.log('Creating Midtrans transaction:', {
+      orderId,
+      amount,
+      apiUrl,
+      serverKeyLength: MIDTRANS_CONFIG.serverKey.length,
+      authStringLength: authString.length,
+      requestBody: JSON.stringify(snapBody),
     });
 
-    const result = await response.json();
+    let response;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authString}`,
+        },
+        body: JSON.stringify(snapBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      console.error('Failed to connect to Midtrans API:', fetchError);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Midtrans API request timed out. Please try again.' },
+          { status: 504 }
+        );
+      }
+      return NextResponse.json(
+        { error: `Failed to connect to Midtrans API: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` },
+        { status: 500 }
+      );
+    }
+
+    const responseText = await response.text();
+    console.log('Midtrans response status:', response.status);
+    console.log('Midtrans response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Midtrans response body:', responseText);
+    console.log('Response body length:', responseText.length);
+
+    if (!response.ok) {
+      console.error('Midtrans API error:', response.status, responseText);
+      return NextResponse.json(
+        { error: `Midtrans API error: ${response.status} - ${responseText}` },
+        { status: 500 }
+      );
+    }
+
+    if (!responseText || responseText.trim() === '') {
+      console.error('Midtrans API returned empty response body');
+      return NextResponse.json(
+        { error: 'Midtrans API returned empty response' },
+        { status: 500 }
+      );
+    }
+
+    const result = JSON.parse(responseText);
 
     if (!result.status_code || result.status_code !== '201') {
       console.error('Midtrans Snap error:', result);

@@ -7,35 +7,35 @@ import { supabase } from '@/lib/supabase/client';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const signatureKey = req.headers.get('x-callback-token');
+    const { order_id, transaction_status, gross_amount, custom_field1: userId, custom_field2: plan, signature_key } = body;
 
-    if (!signatureKey) {
-      return NextResponse.json(
-        { error: 'No signature key' },
-        { status: 403 }
-      );
-    }
-
-    const { order_id, transaction_status, gross_amount, custom_field1: userId, custom_field2: plan } = body;
+    console.log('Midtrans webhook received:', { order_id, transaction_status, gross_amount });
 
     const stringToSign = `${order_id}${transaction_status}${gross_amount}${MIDTRANS_CONFIG.serverKey}`;
     const calculatedSignature = crypto.createHash('sha512').update(stringToSign).digest('hex');
 
-    if (signatureKey !== calculatedSignature) {
-      console.error('Invalid signature:', { received: signatureKey, calculated: calculatedSignature });
+    console.log('Signature verification:', { 
+      received: signature_key, 
+      calculated: calculatedSignature,
+      stringToSign: `${order_id}${transaction_status}${gross_amount}`,
+      serverKeyLength: MIDTRANS_CONFIG.serverKey?.length
+    });
+
+    if (signature_key !== calculatedSignature) {
+      console.error('Invalid signature:', { received: signature_key, calculated: calculatedSignature });
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 403 }
       );
     }
 
-    console.log('Midtrans webhook:', { order_id, transaction_status, userId, plan });
+    console.log('Midtrans webhook verified:', { order_id, transaction_status, userId, plan });
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {
-        await createSubscription(userId, plan === 'jobtracker_lifetime' ? 'lifetime' : 'monthly');
+        await createSubscription(userId, plan === 'lifetime' ? 'lifetime' : 'monthly');
 
-        if (plan === 'jobtracker_lifetime') {
+        if (plan === 'lifetime') {
           const { error: lifetimeError } = await (supabase.from('lifetime_access_purchases') as any)
             .insert({
               user_id: userId,
@@ -68,4 +68,15 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, x-callback-token, x-signature-key',
+    },
+  });
 }

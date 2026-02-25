@@ -51,12 +51,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const { supabase } = await import("@/lib/supabase/client");
           const { data, error } = await supabase
             .from('users')
-            .select('subscription, updated_at, created_at')
+            .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
             .eq('id', user.uid)
             .single();
 
           if (data && !error) {
-            setSubscription((data as any)?.subscription || { plan: "free", status: "active" });
+            const subscriptionData = {
+              plan: (data as any)?.subscription_plan || 'free',
+              status: (data as any)?.subscription_status || 'active',
+              is_pro: (data as any)?.is_pro || false,
+            };
+            setSubscription(subscriptionData);
             setUpdatedAt((data as any)?.updated_at || null);
           } else {
             setSubscription({ plan: "free", status: "active" });

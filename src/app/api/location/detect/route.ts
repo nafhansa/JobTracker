@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     
     const isIndonesia = geoInfo.countryCode 
       ? INDONESIA_COUNTRY_CODES.includes(geoInfo.countryCode.toUpperCase())
-      : false;
+      : true;  // Default to true if location cannot be detected
     
     return NextResponse.json({
       isIndonesia,
@@ -65,8 +65,8 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("Error detecting location:", error);
     return NextResponse.json(
-      { isIndonesia: false, error: "Failed to detect location" },
-      { status: 500 }
+      { isIndonesia: true, error: "Failed to detect location" },  // Default to true
+      { status: 200 }  // Don't return 500, still return the default
     );
   }
 }

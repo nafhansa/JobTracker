@@ -12,7 +12,7 @@ export async function detectLocation(): Promise<LocationData> {
     return data;
   } catch (error) {
     console.error('Error detecting location:', error);
-    return { isIndonesia: false };
+    return { isIndonesia: true };
   }
 }
 

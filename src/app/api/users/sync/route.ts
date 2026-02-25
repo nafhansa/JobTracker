@@ -7,7 +7,17 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+
     const { userId, email } = body;
 
     if (!userId || !email) {

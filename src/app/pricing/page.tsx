@@ -222,7 +222,7 @@ function PricingCard({
     if (isIndonesia && user) {
       try {
         const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
-        
+
         const response = await fetch('/api/payment/midtrans/charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -238,19 +238,26 @@ function PricingCard({
           }),
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Payment API error:', response.status, errorText);
+          alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+          return;
+        }
+
         const data = await response.json();
-        
+
         if (data.success) {
           localStorage.setItem('midtransToken', data.token);
           localStorage.setItem('midtransOrderId', data.orderId);
           router.push(`/payment/midtrans?orderId=${data.orderId}`);
         } else {
           console.error('Failed to create transaction:', data.error);
-          alert('Failed to create payment. Please try again.');
+          alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Payment error:', error);
-        alert('Failed to create payment. Please try again.');
+        alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else if (user) {
       router.push("/dashboard");

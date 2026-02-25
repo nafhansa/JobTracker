@@ -4,8 +4,8 @@ export const MIDTRANS_CONFIG = {
   clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || '',
   isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
   apiUrl: process.env.MIDTRANS_IS_PRODUCTION === 'true'
-    ? 'https://api.midtrans.com'
-    : 'https://api.sandbox.midtrans.com',
+    ? 'https://app.midtrans.com'
+    : 'https://app.sandbox.midtrans.com',
   snapJsUrl: process.env.MIDTRANS_IS_PRODUCTION === 'true'
     ? 'https://app.midtrans.com/snap/snap.js'
     : 'https://app.sandbox.midtrans.com/snap/snap.js',

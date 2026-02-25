@@ -37,6 +37,14 @@ function PaymentPage() {
         }
 
         const response = await fetch(`/api/payment/midtrans/charge?orderId=${orderId}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          setError(`Payment API error (${response.status}): ${errorText || 'Unknown error'}`);
+          setIsLoading(false);
+          return;
+        }
+
         const data = await response.json();
 
         if (data.success) {

@@ -28,7 +28,7 @@ export const PRICING_USD = {
 
 export const PRICING_IDR = {
   free: {
-    price: '$0',
+    price: 'Rp 0',
   },
   monthly: {
     price: 'Rp30.000',
