@@ -108,12 +108,16 @@ export async function POST(req: Request) {
     }
 
     const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
-    const apiUrl = `${MIDTRANS_CONFIG.apiUrl}/snap/v1/transactions`;
+    const snapApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://api.midtrans.com/snap/v1/transactions'
+      : 'https://api.sandbox.midtrans.com/snap/v1/transactions';
+
+    console.log('Using Snap API URL:', snapApiUrl);
 
     console.log('Creating Midtrans transaction:', {
       orderId,
       amount,
-      apiUrl,
+      snapApiUrl,
       serverKeyLength: MIDTRANS_CONFIG.serverKey.length,
       authStringLength: authString.length,
       requestBody: JSON.stringify(snapBody),
@@ -124,7 +128,7 @@ export async function POST(req: Request) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      response = await fetch(apiUrl, {
+      response = await fetch(snapApiUrl, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -174,24 +178,18 @@ export async function POST(req: Request) {
 
     const result = JSON.parse(responseText);
 
-    if (!result.status_code || result.status_code !== '201') {
-      console.error('Midtrans Snap error:', result);
-      return NextResponse.json(
-        { error: result.status_message || 'Failed to create transaction' },
-        { status: result.status_code || 500 }
-      );
-    }
+    console.log('Midtrans response parsed:', result);
 
-    const token = result.data?.token;
-    const redirectUrl = result.data?.redirect_url;
-
-    if (!token) {
-      console.error('Midtrans Snap error: No token in response');
+    if (!result.token) {
+      console.error('Midtrans Snap error: No token in response', result);
       return NextResponse.json(
         { error: 'No token returned from Midtrans' },
         { status: 500 }
       );
     }
+
+    const token = result.token;
+    const redirectUrl = result.redirect_url;
 
     return NextResponse.json({
       success: true,
