@@ -174,12 +174,12 @@ export default function DashboardPage() {
               </Button>
             </div>
 
-            {/* Mobile + Desktop - Hamburger for Settings Drawer */}
+            {/* Mobile Only - Hamburger for Settings Drawer */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground md:hidden"
             >
               <Menu className="w-6 h-6" />
             </Button>
