@@ -5,7 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, CheckCircle2, ArrowRight, AlertTriangle, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  CheckCircle2, 
+  ArrowRight, 
+  AlertTriangle, 
+  Loader2, 
+  ShieldCheck, 
+  Lock, 
+  CreditCard 
+} from "lucide-react";
 
 function PaymentPage() {
   const router = useRouter();
@@ -107,16 +116,20 @@ function PaymentPage() {
     }
   };
 
+  // --- UI STATES ---
+
   if (!orderId) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Invalid Request</h1>
-          <p className="text-muted-foreground">Order ID is missing from URL.</p>
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">Invalid Request</h1>
+          <p className="text-muted-foreground">Order ID is missing from the URL.</p>
           <button
             onClick={() => router.push("/upgrade")}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+            className="mt-6 w-full py-3 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 transition-colors"
           >
             Back to Upgrade
           </button>
@@ -127,129 +140,139 @@ function PaymentPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <Loader2 className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+        <p className="text-sm text-muted-foreground font-medium animate-pulse">Authenticating...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <p className="text-muted-foreground">Please log in to continue.</p>
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-4">
+          <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h1 className="text-xl font-semibold">Authentication Required</h1>
+          <p className="text-muted-foreground">Please log in to complete your payment.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F8F9FA] dark:bg-background text-foreground font-sans">
       <Navbar />
 
-      <main className="flex-1 relative z-10 flex flex-col items-center pt-24 pb-16 px-6">
-        <button
-          onClick={() => router.push("/upgrade")}
-          className="mb-6 text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4 rotate-180" />
-          Back to Upgrade
-        </button>
+      <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 sm:px-6">
+        <div className="w-full max-w-lg">
+          {/* Back Button */}
+          <button
+            onClick={() => router.push("/upgrade")}
+            className="mb-8 text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors group"
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            Back to Upgrade
+          </button>
 
-        <div className="w-full max-w-3xl mx-auto space-y-8">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-              <h2 className="text-xl font-semibold">Preparing Payment...</h2>
-              <p className="text-muted-foreground">Please wait while we prepare your secure payment.</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-red-500 mb-2">Payment Error</h2>
-              <p className="text-red-500">{error}</p>
-              <button
-                onClick={() => router.push("/upgrade")}
-                className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : paymentData && (
-            <div className="space-y-8">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 rounded-xl p-8">
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground">Complete Your Payment</h2>
-                  <p className="text-muted-foreground">
-                    You will be redirected to Midtrans secure payment gateway.
-                  </p>
+          {/* Main Card */}
+          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <Loader2 className="w-10 h-10 text-primary animate-spin mb-6" />
+                <h2 className="text-lg font-semibold mb-2">Preparing Checkout</h2>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Please wait a moment while we set up your secure payment session.
+                </p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-8 h-8" />
                 </div>
-
-                <div className="border-t border-border pt-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="text-base font-mono text-foreground">{orderId}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Amount</p>
-                      <p className="text-xl font-bold text-foreground">
-                        Rp{paymentData.amount?.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Payment Method</p>
-                    <p className="text-base font-medium text-primary">Midtrans Snap</p>
-                  </div>
-                </div>
-
+                <h2 className="text-xl font-bold mb-2">Payment Error</h2>
+                <p className="text-sm text-muted-foreground mb-8 max-w-sm">{error}</p>
                 <button
-                  onClick={handlePayment}
-                  disabled={isLoading}
-                  className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white text-lg font-semibold rounded-xl hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-md"
+                  onClick={() => window.location.reload()}
+                  className="w-full py-3 bg-foreground text-background font-medium rounded-xl hover:bg-foreground/90 transition-colors"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Continue to Payment
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
+                  Try Again
                 </button>
               </div>
-
-              <div className="text-center mt-6 space-y-4">
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <span>Secure payment powered by Midtrans</span>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <p>🔒 Your payment information is encrypted and secure</p>
-                  <p>💳 Multiple payment methods available (GoPay, ShopeePay, etc.)</p>
+            ) : paymentData && (
+              <div className="flex flex-col">
+                {/* Header */}
+                <div className="bg-muted/30 border-b border-border p-6 text-center">
+                  <h2 className="text-lg font-semibold">Order Summary</h2>
                 </div>
 
-                <div className="text-center">
+                {/* Body / Receipt */}
+                <div className="p-6 space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">Order ID</span>
+                      <span className="text-sm font-mono text-foreground">{orderId}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center pb-4 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">Payment Method</span>
+                      <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-primary" />
+                        Midtrans
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-base font-medium">Total Amount</span>
+                      <span className="text-2xl font-bold tracking-tight text-primary">
+                        Rp {paymentData.amount?.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pay Button */}
                   <button
-                    onClick={() => router.push("/upgrade")}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    onClick={handlePayment}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-primary-foreground text-base font-semibold rounded-xl hover:bg-primary/90 transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
                   >
-                    Cancel & Back
+                    Pay Now
+                    <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
+
+                {/* Footer Trust Badges */}
+                <div className="bg-muted/30 p-6 border-t border-border">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                      <span>Secure by Midtrans</span>
+                    </div>
+                    <div className="hidden sm:block text-border">•</div>
+                    <div className="flex items-center gap-1.5">
+                      <Lock className="w-4 h-4" />
+                      <span>Encrypted Checkout</span>
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
+          </div>
+          
+          {/* Bottom Cancel Link */}
+          {!isLoading && !error && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => router.push("/upgrade")}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel transaction
+              </button>
             </div>
           )}
         </div>
       </main>
 
-      <footer className="py-10 border-t border-border text-center text-sm text-muted-foreground relative z-10">
+      <footer className="py-6 border-t border-border text-center text-xs text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} JobTracker. All rights reserved.</p>
       </footer>
     </div>
@@ -259,8 +282,8 @@ function PaymentPage() {
 export default function MidtransPaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <Loader2 className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     }>
       <PaymentPage />
