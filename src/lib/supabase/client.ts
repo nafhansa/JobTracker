@@ -57,6 +57,21 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>;
       };
+      pending_midtrans_transactions: {
+        Row: {
+          id: string;
+          order_id: string;
+          user_id: string;
+          plan: string;
+          amount: number;
+          snap_token: string;
+          customer_email: string | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['pending_midtrans_transactions']['Row'], 'id' | 'created_at' | 'expires_at'>;
+        Update: Partial<Database['public']['Tables']['pending_midtrans_transactions']['Insert']>;
+      };
       analytics_micro_conversions: {
         Row: {
           id: string;

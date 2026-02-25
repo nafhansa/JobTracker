@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="tieGradientPadded" x1="256" y1="80" x2="256" y2="460" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#0099FF" />
+            <stop offset="40%" stop-color="#0066CC" />
+            <stop offset="100%" stop-color="#1A2A6C" />
+        </linearGradient>
+    </defs>
+
+    <g transform="translate(256 272) scale(0.75) translate(-256 -272)">
+        <path d="M 150 80 L 190 140 L 210 110 Z" fill="url(#tieGradientPadded)"/>
+
+        <path d="M 362 80 L 322 140 L 302 110 Z" fill="url(#tieGradientPadded)"/>
+
+        <path d="M 220 110 L 292 110 L 276 165 L 236 165 Z" fill="url(#tieGradientPadded)"/>
+
+        <path d="M 234 180 L 278 180 L 320 400 L 256 465 L 192 400 Z" fill="url(#tieGradientPadded)"/>
+    </g>
+</svg>

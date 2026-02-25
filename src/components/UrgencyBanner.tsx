@@ -10,8 +10,8 @@ EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
 EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
 
 // Early bird lifetime price
-const EARLY_BIRD_LIFETIME_PRICE = "7.99";
-const REGULAR_LIFETIME_PRICE = "17.99";
+const EARLY_BIRD_LIFETIME_PRICE = "51.988";
+const REGULAR_LIFETIME_PRICE = "58.000";
 
 const calculateTimeLeft = () => {
   const now = new Date().getTime();
@@ -77,7 +77,7 @@ export function UrgencyBanner() {
             Early Bird Special:
           </span>
           <span className="text-sm sm:text-base font-semibold text-blue-900">
-            Lifetime Access Only ${EARLY_BIRD_LIFETIME_PRICE} (Was ${REGULAR_LIFETIME_PRICE})
+            Lifetime Access Only Rp{EARLY_BIRD_LIFETIME_PRICE} (Was Rp{REGULAR_LIFETIME_PRICE})
           </span>
         </div>
         

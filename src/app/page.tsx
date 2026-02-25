@@ -277,7 +277,7 @@ export default function LandingPage() {
                       {t("early.title.mobile")}
                     </h2>
                     <p className="text-base text-foreground mb-4">
-                      {t("early.price.mobile")} <span className="font-bold text-primary">$7.99</span>
+                      {t("early.price.mobile")} <span className="font-bold text-primary">Rp51.988</span>
                     </p>
                     <p className="text-sm text-muted-foreground line-through mb-2">
                       {t("early.regular")}

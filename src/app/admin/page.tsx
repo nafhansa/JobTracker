@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { AnalyticsStats } from "@/types";
 import { getOrCreateSessionId } from "@/lib/utils/analytics";
-import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network, MousePointer, Scroll, Timer } from "lucide-react";
+import { Users, LogIn, Activity, TrendingUp, Clock, Filter, Globe, Eye, Smartphone, Repeat, RefreshCw, Shield, MapPin, Network, MousePointer, Scroll, Timer, Crown } from "lucide-react";
 
 // Admin emails - constant outside component
 const ADMIN_EMAILS = ["nafhan1723@gmail.com", "nafhan.sh@gmail.com"];
@@ -23,11 +23,21 @@ interface AppUser {
   };
 }
 
+interface LifetimePurchase {
+  id: string;
+  user_id: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  purchased_at: string;
+}
+
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsStats | null>(null);
+  const [lifetimePurchases, setLifetimePurchases] = useState<LifetimePurchase[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [timeFilter, setTimeFilter] = useState<string>("all");
@@ -118,8 +128,24 @@ export default function AdminPage() {
             console.error("Error fetching users:", error);
           }
         };
+
+        const fetchLifetimePurchases = async () => {
+          try {
+            const response = await fetch("/api/admin/lifetime-purchases");
+            const data = await response.json();
+            
+            if (response.ok) {
+              setLifetimePurchases(data);
+            } else {
+              console.error("Failed to fetch lifetime purchases");
+            }
+          } catch (error) {
+            console.error("Error fetching lifetime purchases:", error);
+          }
+        };
         
         fetchUsers();
+        fetchLifetimePurchases();
         fetchAnalytics(undefined, undefined, false, false);
       } else {
         // Kalau bukan admin, tendang ke dashboard biasa
@@ -734,6 +760,91 @@ export default function AdminPage() {
                     <tr>
                       <td colSpan={6} className="px-6 py-8 text-center text-sm text-muted-foreground">
                         No login logs found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Lifetime Access Purchases */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" />
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Lifetime Access Purchases</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Monitor the 20 limited lifetime slots</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Purchased:</span>
+                <span className="font-bold text-primary ml-1">{lifetimePurchases.length}/20</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span>{20 - lifetimePurchases.length} slots remaining</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-primary/30 rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Purchased At</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Time Ago</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-card divide-y divide-border">
+                  {lifetimePurchases.length > 0 ? (
+                    lifetimePurchases.map((purchase) => {
+                      const purchaseDate = new Date(purchase.purchased_at);
+                      const timeAgo = Math.floor((Date.now() - purchaseDate.getTime()) / 1000);
+                      const formatTimeAgo = () => {
+                        if (timeAgo < 60) return `${timeAgo}s ago`;
+                        if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
+                        if (timeAgo < 86400) return `${Math.floor(timeAgo / 3600)}h ago`;
+                        return `${Math.floor(timeAgo / 86400)}d ago`;
+                      };
+                      
+                      return (
+                        <tr key={purchase.id} className="hover:bg-accent transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-mono">
+                            {purchaseDate.toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground/80 font-mono">
+                            {purchase.order_id}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground/80 font-mono">
+                            {purchase.user_id}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-medium">
+                            {purchase.currency === 'IDR' ? 'Rp' : '$'}{Number(purchase.amount).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                            {formatTimeAgo()}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                        No lifetime purchases yet
                       </td>
                     </tr>
                   )}

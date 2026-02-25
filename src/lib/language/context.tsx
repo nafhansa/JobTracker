@@ -75,8 +75,8 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Early Bird Section
     "early.badge": "Early Bird Special",
-    "early.title": "Limited Time: Lifetime Access Only $7.99",
-    "early.subtitle": "Was $17.99 • Save 44% • Pay Once, Own Forever",
+    "early.title": "Limited Time: Lifetime Access Only Rp51.988",
+    "early.subtitle": "Was Rp58.000 • Save 10% • Pay Once, Own Forever",
     "early.timer": "Offer ends in:",
     "early.days": "Days",
     "early.hours": "Hrs",
@@ -85,7 +85,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.cta": "Claim Early Bird Offer",
     "early.title.mobile": "Limited Time Offer",
     "early.price.mobile": "Get Lifetime Access for",
-    "early.regular": "Regular Price: $17.99",
+    "early.regular": "Regular Price: Rp58.000",
     
     // Comparison Section
     "comparison.title": "Spreadsheets vs JobTracker",

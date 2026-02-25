@@ -10,6 +10,8 @@ import { ArrowLeft, CreditCard, Calendar, AlertCircle, Loader2, CheckCircle, Gif
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { getJobCount } from "@/lib/supabase/jobs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { detectLocation } from "@/lib/utils/location";
+import { PRICING_USD, PRICING_IDR } from "@/lib/pricing-config";
 
 export default function BillingPage() {
   const router = useRouter();
@@ -17,6 +19,8 @@ export default function BillingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [jobCount, setJobCount] = useState<number | null>(null);
+  const [isIndonesia, setIsIndonesia] = useState(true);
+  const [loadingLocation, setLoadingLocation] = useState(true);
 
   const isFreePlan = subscription?.plan === "free";
 
@@ -27,15 +31,28 @@ export default function BillingPage() {
   }, [isFreePlan, user]);
 
   useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        const location = await detectLocation();
+        setIsIndonesia(location.isIndonesia);
+      } catch (error) {
+        console.error('Error detecting location:', error);
+        setIsIndonesia(true);
+      } finally {
+        setLoadingLocation(false);
+      }
+    };
+    fetchLocation();
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [user, authLoading, router]);
 
   const handleCancelSubscription = async () => {
-    const paddleSubId = subscription?.paddleSubscriptionId as string | undefined;
-    const paypalSubId = subscription?.paypalSubscriptionId as string | undefined;
-    const subscriptionId = paddleSubId || paypalSubId;
+    const subscriptionId = subscription?.midtransSubscriptionId as string | undefined;
 
     if (!subscriptionId) {
       alert("No subscription found to cancel");
@@ -56,7 +73,7 @@ export default function BillingPage() {
         },
         body: JSON.stringify({
           subscriptionId,
-          provider: paddleSubId ? "paddle" : "paypal"
+          provider: "midtrans"
         })
       });
 
@@ -87,6 +104,7 @@ export default function BillingPage() {
   const isLifetime = subscription?.plan === "lifetime";
   const isActive = subscription?.status === "active";
   const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
+  const pricing = isIndonesia ? PRICING_IDR : PRICING_USD;
 
   const rawRenewsAt = subscription?.renewsAt;
   const rawEndsAt = subscription?.endsAt;
@@ -175,7 +193,7 @@ export default function BillingPage() {
                 <div className="flex justify-between items-center py-3 border-b border-border">
                   <span className="text-muted-foreground">Price</span>
                   <span className="font-semibold text-foreground">
-                    {isFreePlan ? "Free" : isLifetime ? "$17.99 (One-time)" : "$2.99/month"}
+                    {isFreePlan ? "Free" : isLifetime ? pricing.lifetime.price + " (One-time)" : pricing.monthly.price + (isIndonesia ? "/bulan" : "/month")}
                   </span>
                 </div>
 
@@ -205,15 +223,13 @@ export default function BillingPage() {
                 )}
 
                 {/* Subscription ID */}
-                {(subscription.paddleSubscriptionId || subscription.paypalSubscriptionId) && (
+                {subscription.midtransSubscriptionId && (
                   <div className="flex justify-between items-center py-3">
                     <span className="text-muted-foreground">Subscription ID</span>
                     <span className="font-mono text-xs text-muted-foreground">
-                      {subscription.paddleSubscriptionId
-                        ? `${(subscription.paddleSubscriptionId as string).slice(0, 20)}...`
-                        : subscription.paypalSubscriptionId
-                          ? `${(subscription.paypalSubscriptionId as string).slice(0, 20)}...`
-                          : "N/A"}
+                      {subscription.midtransSubscriptionId
+                        ? `${(subscription.midtransSubscriptionId as string).slice(0, 20)}...`
+                        : "N/A"}
                     </span>
                   </div>
                 )}

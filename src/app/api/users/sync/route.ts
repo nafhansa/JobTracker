@@ -7,7 +7,17 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+
     const { userId, email } = body;
 
     if (!userId || !email) {
@@ -31,15 +41,17 @@ export async function POST(req: Request) {
 
     // Preserve existing subscription data if user exists
     if (existingUser) {
-      userData.subscription_plan = existingUser.subscription_plan || 'free';
-      userData.subscription_status = existingUser.subscription_status || 'active';
-      userData.is_pro = existingUser.is_pro || false;
-      // Populate subscription JSONB from individual columns
-      userData.subscription = {
-        plan: existingUser.subscription_plan || 'free',
-        status: existingUser.subscription_status || 'active'
-      };
-      
+      // Only update email and updated_at, preserve all subscription data
+      if (existingUser.subscription_plan) {
+        userData.subscription_plan = existingUser.subscription_plan;
+      }
+      if (existingUser.subscription_status) {
+        userData.subscription_status = existingUser.subscription_status;
+      }
+      if (existingUser.is_pro !== undefined && existingUser.is_pro !== null) {
+        userData.is_pro = existingUser.is_pro;
+      }
+
       // Update existing user
       const { error: updateError } = await (supabaseAdmin
         .from('users') as any)
@@ -63,7 +75,6 @@ export async function POST(req: Request) {
           subscription_plan: 'free',
           subscription_status: 'active',
           is_pro: false,
-          subscription: { plan: 'free', status: 'active' },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });

@@ -120,6 +120,15 @@
     }
   }
 
+  @keyframes scale-up-down {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+  }
+
   /* Class Utility untuk menjalankan animasi */
   /* Durasi 50s dibuat agar jalannya pelan dan enak dibaca */
   .animate-marquee-reverse {
