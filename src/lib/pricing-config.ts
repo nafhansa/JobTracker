@@ -17,12 +17,14 @@ export const PRICING_USD = {
     price: '$0',
   },
   monthly: {
-    price: '$1.99',
+    price: '$2.66',
     originalPrice: '$2.99',
+    discount: '11.13%',
   },
   lifetime: {
-    price: '$7.99',
-    originalPrice: '$17.99',
+    price: '$7.16',
+    originalPrice: '$7.99',
+    discount: '10.36%',
   },
 };
 
@@ -31,11 +33,13 @@ export const PRICING_IDR = {
     price: 'Rp 0',
   },
   monthly: {
-    price: 'Rp30.000',
-    originalPrice: undefined,
+    price: 'Rp31.988',
+    originalPrice: 'Rp36.000',
+    discount: '11.13%',
   },
   lifetime: {
-    price: 'Rp50.000',
-    originalPrice: undefined,
+    price: 'Rp51.988',
+    originalPrice: 'Rp58.000',
+    discount: '10.36%',
   },
 };

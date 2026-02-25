@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
+import { TwitterShareModal } from "@/components/TwitterShareModal";
 import { ArrowLeft, CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { detectLocation } from "@/lib/utils/location";
@@ -66,11 +67,14 @@ export default function UpgradePage() {
 
 function PricingCards({ user }: { user: any }) {
   const { t } = useLanguage();
-  
+  const router = useRouter();
+
   const [isIndonesia, setIsIndonesia] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [lifetimeAvailability, setLifetimeAvailability] = useState<any>(null);
   const [loadingLifetime, setLoadingLifetime] = useState(true);
+  const [showTwitterModal, setShowTwitterModal] = useState(false);
+  const [pendingPlanType, setPendingPlanType] = useState<'monthly' | 'lifetime'>('monthly');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -139,6 +143,7 @@ function PricingCards({ user }: { user: any }) {
               buttonText={t("pricing.monthly.cta")}
               user={user}
               isIndonesia={isIndonesia}
+              discount={pricing.monthly.discount}
             />
 
             {showLifetime ? (
@@ -160,6 +165,11 @@ function PricingCards({ user }: { user: any }) {
                 isIndonesia={isIndonesia}
                 showSlotCounter={true}
                 remainingSlots={lifetimeAvailability?.remaining || 0}
+                discount={pricing.lifetime.discount}
+                onLifetimeClick={() => {
+                  setPendingPlanType('lifetime');
+                  setShowTwitterModal(true);
+                }}
               />
             ) : null}
           </div>
@@ -169,17 +179,59 @@ function PricingCards({ user }: { user: any }) {
               <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
               <p className="text-yellow-900 dark:text-yellow-100 font-medium mb-1">Lifetime Access Habis</p>
               <p className="text-yellow-700 dark:text-yellow-200 text-sm">
-                Semua 20 slot lifetime access sudah terisi. Tapi jangan khawatir, paket bulanan tetap tersedia!
+                Semua {LIFETIME_ACCESS_LIMIT} slot lifetime access sudah terisi. Tapi jangan khawatir, paket bulanan tetap tersedia!
               </p>
             </div>
           )}
+
+          <TwitterShareModal
+            isOpen={showTwitterModal}
+            onClose={() => setShowTwitterModal(false)}
+            onConfirm={async () => {
+              setShowTwitterModal(false);
+              if (user) {
+                const planType = pendingPlanType;
+                const response = await fetch('/api/payment/midtrans/charge', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.uid,
+                    plan: planType,
+                    currency: isIndonesia ? 'IDR' : 'USD',
+                    customerDetails: {
+                      firstName: user.displayName?.split(' ')[0] || '',
+                      lastName: user.displayName?.split(' ').slice(1).join('') || '',
+                      email: user.email || '',
+                      phone: user.phoneNumber || '',
+                    },
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('Payment API error:', response.status, errorText);
+                  alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+                  return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                  router.push(`/payment/midtrans?orderId=${data.orderId}`);
+                } else {
+                  console.error('Failed to create transaction:', data.error);
+                  alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
+                }
+              }
+             }}
+          />
         </>
       )}
     </div>
   );
 }
 
-function PricingCard({
+ function PricingCard({
   plan,
   price,
   originalPrice,
@@ -194,6 +246,8 @@ function PricingCard({
   remainingSlots = 0,
   disabled = false,
   user,
+  discount,
+  onLifetimeClick,
 }: {
   plan: string;
   price: string;
@@ -209,6 +263,8 @@ function PricingCard({
   remainingSlots?: number;
   disabled?: boolean;
   user?: any;
+  discount?: string;
+  onLifetimeClick?: () => void;
 }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -221,15 +277,55 @@ function PricingCard({
         try {
           const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
 
+        const response = await fetch('/api/payment/midtrans/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            plan: planType,
+            currency: isIndonesia ? 'IDR' : 'USD',
+            customerDetails: {
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join('') || '',
+              email: user.email || '',
+              phone: user.phoneNumber || '',
+            },
+          }),
+        });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Payment API error:', response.status, errorText);
+            alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+            return;
+          }
+
+          const data = await response.json();
+
+          if (data.success) {
+            router.push(`/payment/midtrans?orderId=${data.orderId}`);
+          } else {
+            console.error('Failed to create transaction:', data.error);
+            alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Payment error:', error);
+          alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      } else {
+        try {
+          const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
+
           const response = await fetch('/api/payment/midtrans/charge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: user.uid,
               plan: planType,
+              currency: 'USD',
               customerDetails: {
                 firstName: user.displayName?.split(' ')[0] || '',
-                lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+                lastName: user.displayName?.split(' ').slice(1).join('') || '',
                 email: user.email || '',
                 phone: user.phoneNumber || '',
               },
@@ -255,8 +351,6 @@ function PricingCard({
           console.error('Payment error:', error);
           alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-      } else {
-        router.push("/dashboard");
       }
     } else {
       router.push("/login");
@@ -300,7 +394,7 @@ function PricingCard({
             </span>
             <span className="text-[10px] font-semibold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 border border-blue-200">
               <Tag className="w-3 h-3" /> 
-              {(() => {
+              {discount ? `Save ${discount}` : (() => {
                 const original = parseFloat(originalPrice.replace(/[^0-9.]/g, ''));
                 const current = parseFloat(price.replace(/[^0-9.]/g, ''));
                 const discount = original > 0 ? Math.round(((original - current) / original) * 100) : 0;
@@ -338,7 +432,21 @@ function PricingCard({
 
       <div className="mt-8 relative z-20">
         <button
-          onClick={handleSubscribe}
+          onClick={() => {
+            if (disabled) return;
+            if (isFree) {
+              return;
+            }
+            if (!user) {
+              router.push("/login");
+              return;
+            }
+            if (isFeatured && onLifetimeClick) {
+              onLifetimeClick();
+            } else {
+              handleSubscribe();
+            }
+          }}
           disabled={disabled}
           className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-semibold rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
             isFeatured
@@ -348,7 +456,7 @@ function PricingCard({
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {disabled ? buttonText : (user ? (isIndonesia ? "Bayar Sekarang" : "Upgrade") : buttonText)}
+          {disabled ? buttonText : (user ? (isFree ? buttonText : isIndonesia ? "Bayar Sekarang" : "Pay Now") : buttonText)}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>

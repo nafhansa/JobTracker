@@ -46,10 +46,10 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+  export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, plan, customerDetails } = body;
+    const { userId, plan, customerDetails, currency = 'IDR' } = body;
 
     if (!userId || !plan || !customerDetails) {
       return NextResponse.json(
@@ -59,7 +59,9 @@ export async function POST(req: Request) {
     }
 
     const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
-    const amount = planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR;
+    const amount = currency === 'USD'
+      ? (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeUSD : MIDTRANS_PRICES.monthlyUSD)
+      : (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR);
 
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 10);
@@ -70,6 +72,7 @@ export async function POST(req: Request) {
       transaction_details: {
         order_id: orderId,
         gross_amount: amount,
+        currency: currency,
       },
       customer_details: {
         first_name: customerDetails.firstName || 'JobTracker',
@@ -84,10 +87,12 @@ export async function POST(req: Request) {
           quantity: 1,
           name: planType === 'lifetime' ? 'JobTracker Lifetime Pro' : 'JobTracker Monthly Pro',
           brand: 'JobTracker',
+          currency: currency,
         },
       ],
       custom_field1: userId,
       custom_field2: planType,
+      custom_field3: currency,
     };
 
     if (!MIDTRANS_CONFIG.serverKey) {

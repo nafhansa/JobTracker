@@ -10,7 +10,7 @@ function generateUUID(): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, signature_key } = body;
+    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key } = body;
 
     console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan });
 
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
               user_id: userId,
               order_id: order_id,
               amount: gross_amount,
-              currency: 'IDR',
+              currency: currency || 'IDR',
               purchased_at: new Date().toISOString(),
             });
 

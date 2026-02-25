@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     if (result.transaction_status === 'settlement' || result.transaction_status === 'capture') {
       const userId = result.custom_field1;
       const plan = result.custom_field2;
+      const currency = result.custom_field3 || 'IDR';
 
       if (!userId || !plan) {
         return NextResponse.json(
@@ -115,7 +116,7 @@ export async function POST(req: Request) {
               user_id: userId,
               order_id: orderId,
               amount: result.gross_amount,
-              currency: 'IDR',
+              currency: currency,
               purchased_at: new Date().toISOString(),
             });
 

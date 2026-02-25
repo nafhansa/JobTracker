@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { TwitterShareModal } from "@/components/TwitterShareModal";
 import { useState, useEffect } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { detectLocation } from "@/lib/utils/location";
@@ -27,6 +28,8 @@ export default function PricingPage() {
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [lifetimeAvailability, setLifetimeAvailability] = useState<LifetimeAvailability | null>(null);
   const [loadingLifetime, setLoadingLifetime] = useState(true);
+  const [showTwitterModal, setShowTwitterModal] = useState(false);
+  const [pendingPlanType, setPendingPlanType] = useState<'monthly' | 'lifetime'>('monthly');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,6 +144,7 @@ export default function PricingPage() {
                   ]}
                   buttonText={t("pricing.monthly.cta")}
                   isIndonesia={isIndonesia}
+                  discount={pricing.monthly.discount}
                 />
 
                 {showLifetime ? (
@@ -161,6 +165,11 @@ export default function PricingPage() {
                     isIndonesia={isIndonesia}
                     showSlotCounter={true}
                     remainingSlots={lifetimeAvailability?.remaining || 0}
+                    discount={pricing.lifetime.discount}
+                    onLifetimeClick={() => {
+                      setPendingPlanType('lifetime');
+                      setShowTwitterModal(true);
+                    }}
                   />
                 ) : null}
               </div>
@@ -182,6 +191,48 @@ export default function PricingPage() {
       <footer className="py-10 border-t border-border text-center text-sm text-muted-foreground relative z-10">
         <p>&copy; {new Date().getFullYear()} JobTracker. {t("footer.rights")}</p>
       </footer>
+
+      <TwitterShareModal
+        isOpen={showTwitterModal}
+        onClose={() => setShowTwitterModal(false)}
+        onConfirm={async () => {
+          setShowTwitterModal(false);
+          if (user) {
+            const planType = pendingPlanType;
+            const response = await fetch('/api/payment/midtrans/charge', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: user.uid,
+                plan: planType,
+                currency: isIndonesia ? 'IDR' : 'USD',
+                customerDetails: {
+                  firstName: user.displayName?.split(' ')[0] || '',
+                  lastName: user.displayName?.split(' ').slice(1).join('') || '',
+                  email: user.email || '',
+                  phone: user.phoneNumber || '',
+                },
+              }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Payment API error:', response.status, errorText);
+              alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+              return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+              router.push(`/payment/midtrans?orderId=${data.orderId}`);
+            } else {
+              console.error('Failed to create transaction:', data.error);
+              alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
+            }
+          }
+        }}
+      />
     </div>
   );
 }
@@ -199,6 +250,8 @@ function PricingCard({
   isIndonesia = false,
   showSlotCounter = false,
   remainingSlots = 0,
+  discount,
+  onLifetimeClick,
 }: {
   plan: string;
   price: string;
@@ -212,6 +265,8 @@ function PricingCard({
   isIndonesia?: boolean;
   showSlotCounter?: boolean;
   remainingSlots?: number;
+  discount?: string;
+  onLifetimeClick?: () => void;
 }) {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -230,9 +285,10 @@ function PricingCard({
           body: JSON.stringify({
             userId: user.uid,
             plan: planType,
+            currency: isIndonesia ? 'IDR' : 'USD',
             customerDetails: {
               firstName: user.displayName?.split(' ')[0] || '',
-              lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+              lastName: user.displayName?.split(' ').slice(1).join('') || '',
               email: user.email || '',
               phone: user.phoneNumber || '',
             },
@@ -259,7 +315,44 @@ function PricingCard({
         alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else if (user) {
-      router.push("/dashboard");
+      try {
+        const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
+
+        const response = await fetch('/api/payment/midtrans/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            plan: planType,
+            currency: 'USD',
+            customerDetails: {
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join('') || '',
+              email: user.email || '',
+              phone: user.phoneNumber || '',
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Payment API error:', response.status, errorText);
+          alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          router.push(`/payment/midtrans?orderId=${data.orderId}`);
+        } else {
+          console.error('Failed to create transaction:', data.error);
+          alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Payment error:', error);
+        alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } else {
       router.push("/login");
     }
@@ -302,7 +395,7 @@ function PricingCard({
             </span>
             <span className="text-[10px] font-semibold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 border border-blue-200">
               <Tag className="w-3 h-3" /> 
-              {(() => {
+              {discount ? `Save ${discount}` : (() => {
                 const original = parseFloat(originalPrice.replace(/[^0-9.]/g, ''));
                 const current = parseFloat(price.replace(/[^0-9.]/g, ''));
                 const discount = original > 0 ? Math.round(((original - current) / original) * 100) : 0;
@@ -340,7 +433,31 @@ function PricingCard({
 
       <div className="mt-8 relative z-20">
         <button
-          onClick={handleSubscribe}
+          onClick={() => {
+            if (isFree) {
+              router.push("/dashboard");
+            } else if (user) {
+              if (isIndonesia) {
+                if (isFeatured && onLifetimeClick) {
+                  onLifetimeClick();
+                } else {
+                  handleSubscribe();
+                }
+              } else {
+                if (isFeatured) {
+                  if (onLifetimeClick) {
+                    onLifetimeClick();
+                  } else {
+                    handleSubscribe();
+                  }
+                } else {
+                  router.push("/dashboard");
+                }
+              }
+            } else {
+              router.push("/login");
+            }
+          }}
           className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-semibold rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
             isFeatured
               ? "bg-primary text-white hover:bg-primary/90 shadow-md"
@@ -349,7 +466,7 @@ function PricingCard({
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {user ? (isIndonesia ? (isFree ? t("nav.dashboard") : "Bayar Sekarang") : t("nav.dashboard")) : buttonText}
+          {user ? (isFree ? t("nav.dashboard") : isIndonesia ? "Bayar Sekarang" : "Pay Now") : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>

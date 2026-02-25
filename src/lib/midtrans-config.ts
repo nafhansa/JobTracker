@@ -9,8 +9,10 @@ export const MIDTRANS_CONFIG = {
 };
 
 export const MIDTRANS_PRICES = {
-  monthlyIDR: 30000,
-  lifetimeIDR: 50000,
+  monthlyIDR: 31988,
+  lifetimeIDR: 51988,
+  monthlyUSD: 2.66,
+  lifetimeUSD: 7.16,
 };
 
 export const isMidtransConfigured = !!MIDTRANS_CONFIG.serverKey && !!MIDTRANS_CONFIG.clientKey;
