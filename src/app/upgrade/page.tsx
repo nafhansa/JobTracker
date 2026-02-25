@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Cl
 import { Button } from "@/components/ui/button";
 import { detectLocation } from "@/lib/utils/location";
 import { PRICING_USD, PRICING_IDR, LIFETIME_ACCESS_LIMIT } from "@/lib/pricing-config";
+import { MIDTRANS_PRICES } from "@/lib/midtrans-config";
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -247,6 +248,7 @@ function PricingCard({
           if (data.success) {
             localStorage.setItem('midtransToken', data.token);
             localStorage.setItem('midtransOrderId', data.orderId);
+            localStorage.setItem('midtransAmount', (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR).toString());
             router.push(`/payment/midtrans?orderId=${data.orderId}`);
           } else {
             console.error('Failed to create transaction:', data.error);

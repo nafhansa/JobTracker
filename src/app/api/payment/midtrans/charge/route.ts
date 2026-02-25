@@ -14,9 +14,26 @@ export async function GET(req: Request) {
       );
     }
 
+    const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
+    const statusApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://api.midtrans.com'
+      : 'https://api.sandbox.midtrans.com';
+
+    const response = await fetch(`${statusApiUrl}/v2/${orderId}/status`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`,
+      },
+    });
+
+    const result = await response.json();
+
     return NextResponse.json({
       success: true,
-      orderId,
+      orderId: result.order_id || orderId,
+      amount: result.gross_amount ? parseInt(result.gross_amount) : null,
     });
   } catch (error) {
     console.error('Payment GET error:', error);

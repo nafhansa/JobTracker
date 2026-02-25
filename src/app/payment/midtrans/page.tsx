@@ -57,9 +57,11 @@ function PaymentPage() {
         const data = await response.json();
 
         if (data.success) {
+          const amountFromStorage = localStorage.getItem('midtransAmount');
           setPaymentData({
             ...data,
             token: token,
+            amount: data.amount || (amountFromStorage ? parseInt(amountFromStorage) : null),
           });
           setIsLoading(false);
         } else {
@@ -214,7 +216,7 @@ function PaymentPage() {
                     </div>
                     
                     <div className="flex justify-between items-center pb-4 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">Payment Method</span>
+                      <span className="text-sm text-muted-foreground">Payment Gateway</span>
                       <span className="text-sm font-medium text-foreground flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-primary" />
                         Midtrans

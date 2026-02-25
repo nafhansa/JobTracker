@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { detectLocation } from "@/lib/utils/location";
 import { PRICING_USD, PRICING_IDR, LIFETIME_ACCESS_LIMIT } from "@/lib/pricing-config";
+import { MIDTRANS_PRICES } from "@/lib/midtrans-config";
 
 interface LifetimeAvailability {
   totalPurchased: number;
@@ -250,6 +251,7 @@ function PricingCard({
         if (data.success) {
           localStorage.setItem('midtransToken', data.token);
           localStorage.setItem('midtransOrderId', data.orderId);
+          localStorage.setItem('midtransAmount', (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR).toString());
           router.push(`/payment/midtrans?orderId=${data.orderId}`);
         } else {
           console.error('Failed to create transaction:', data.error);
