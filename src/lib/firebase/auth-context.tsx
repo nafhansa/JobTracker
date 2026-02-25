@@ -62,11 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (subscriptionData && !subscriptionError) {
         console.log('reloadSubscription: Setting subscription to:', subscriptionData);
         setSubscription(subscriptionData);
+      } else if (subscriptionError) {
+        console.error('reloadSubscription: Subscription fetch error:', subscriptionError);
       } else {
-        console.log('reloadSubscription: No subscription data found, setting to free');
-        setSubscription({ plan: "free", status: "active" });
+        console.log('reloadSubscription: No subscription data found in database');
       }
 
+      // Fetch user data for updated_at (separate from subscription)
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
@@ -89,8 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         // Sync Firebase user to Supabase (dual storage)
         await syncFirebaseUserToSupabase(user);
-        
-        // Get subscription from Supabase instead of Firestore (bypass permission issues)
+
+        // Get subscription from Supabase subscriptions table
         try {
           const { supabase } = await import("@/lib/supabase/client");
 
@@ -103,11 +105,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (subscriptionData && !subscriptionError) {
             console.log('Subscription data found:', subscriptionData);
             setSubscription(subscriptionData);
+          } else if (subscriptionError) {
+            console.error('Subscription fetch error:', subscriptionError);
           } else {
             console.log('No subscription found, setting to free');
             setSubscription({ plan: "free", status: "active" });
           }
+        } catch (error) {
+          console.error("Failed to fetch subscription:", error);
+          // DON'T reset to free on error - keep existing subscription state
+        }
 
+        // Fetch user data for updated_at only (not subscription)
+        try {
+          const { supabase } = await import("@/lib/supabase/client");
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
@@ -116,15 +127,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (userData && !userError) {
             setUpdatedAt((userData as any)?.updated_at || null);
-          } else {
-            setUpdatedAt(null);
           }
         } catch (error) {
-          console.error("Supabase subscription fetch failed:", error);
-          setSubscription({ plan: "free", status: "active" });
-          setUpdatedAt(null);
+          console.error("Failed to fetch user data:", error);
         }
       } else {
+        // User logged out
         setSubscription(null);
         setUpdatedAt(null);
       }
@@ -132,6 +140,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Listen for subscription update events (from payment page)
+  useEffect(() => {
+    const handleSubscriptionUpdate = (event: CustomEvent) => {
+      const subscriptionData = event.detail;
+      console.log('Subscription update event received:', subscriptionData);
+      if (subscriptionData) {
+        setSubscription(subscriptionData);
+      }
+    };
+
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate as EventListener);
+    };
   }, []);
   
   return (
@@ -142,6 +167,84 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export const forceReloadSubscription = async () => {
+  try {
+    const { supabase } = await import("@/lib/supabase/client");
+    const auth = (await import("./config")).auth;
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.error('forceReloadSubscription: No authenticated user');
+      return false;
+    }
+
+    const userId = currentUser.uid;
+
+    console.log('forceReloadSubscription: Fetching subscription for user:', userId);
+
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    console.log('forceReloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
+
+    if (subscriptionData && !subscriptionError) {
+      console.log('forceReloadSubscription: Successfully loaded subscription:', subscriptionData);
+      // Find the context and update it via a custom event
+      window.dispatchEvent(new CustomEvent('subscription-updated', { detail: subscriptionData }));
+      return true;
+    } else {
+      console.log('forceReloadSubscription: No subscription found or error');
+      return false;
+    }
+  } catch (error) {
+    console.error('Failed to force reload subscription:', error);
+    return false;
+  }
+};
+
+export const fetchAndSetSubscription = async (userId: string) => {
+  try {
+    const { supabase } = await import("@/lib/supabase/client");
+
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    console.log('fetchAndSetSubscription: Subscription result:', { subscriptionData, subscriptionError });
+
+    if (subscriptionData && !subscriptionError) {
+      console.log('fetchAndSetSubscription: Setting subscription to:', subscriptionData);
+      return {
+        success: true,
+        subscription: subscriptionData
+      };
+    } else if (subscriptionError) {
+      console.error('fetchAndSetSubscription: Subscription fetch error:', subscriptionError);
+      return {
+        success: false,
+        subscription: null
+      };
+    } else {
+      console.log('fetchAndSetSubscription: No subscription found');
+      return {
+        success: false,
+        subscription: null
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch and set subscription:", error);
+    return {
+      success: false,
+      subscription: null
+    };
+  }
+};
 
 export const reloadSubscriptionFromServer = async (userId: string) => {
   try {
@@ -160,17 +263,24 @@ export const reloadSubscriptionFromServer = async (userId: string) => {
         success: true,
         subscription: subscriptionData
       };
-    } else {
+    } else if (subscriptionError) {
+      console.error('Manual reloadSubscription: Subscription fetch error:', subscriptionError);
       return {
         success: false,
-        subscription: { plan: "free", status: "active" }
+        subscription: null
+      };
+    } else {
+      console.log('Manual reloadSubscription: No subscription found in database');
+      return {
+        success: false,
+        subscription: null
       };
     }
   } catch (error) {
     console.error("Failed to reload subscription:", error);
     return {
       success: false,
-      subscription: { plan: "free", status: "active" }
+      subscription: null
     };
   }
 };

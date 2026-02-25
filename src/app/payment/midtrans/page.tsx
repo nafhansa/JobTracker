@@ -2,8 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/firebase/auth-context";
-import { reloadSubscriptionFromServer } from "@/lib/firebase/auth-context";
+import { useAuth, forceReloadSubscription } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
 import {
@@ -106,10 +105,11 @@ function PaymentPage() {
           setTimeout(async () => {
             if (user) {
               try {
-                console.log('Reloading subscription for user:', user.uid);
-                await reloadSubscriptionFromServer(user.uid);
+                console.log('Force reloading subscription for user:', user.uid);
+                const success = await forceReloadSubscription();
+                console.log('Force reload result:', success);
               } catch (error) {
-                console.error('Failed to reload subscription:', error);
+                console.error('Failed to force reload subscription:', error);
               }
             }
             router.push('/dashboard');
