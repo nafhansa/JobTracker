@@ -50,26 +50,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const { supabase } = await import("@/lib/supabase/client");
-      const { data, error } = await supabase
+
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+        .eq('user_id', user.uid)
+        .maybeSingle();
+
+      console.log('reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
+
+      if (subscriptionData && !subscriptionError) {
+        console.log('reloadSubscription: Setting subscription to:', subscriptionData);
+        setSubscription(subscriptionData);
+      } else {
+        console.log('reloadSubscription: No subscription data found, setting to free');
+        setSubscription({ plan: "free", status: "active" });
+      }
+
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
         .eq('id', user.uid)
         .single();
 
-      console.log('reloadSubscription: Result:', { data, error });
-
-      if (data && !error) {
-        const subscriptionData = {
-          plan: (data as any)?.subscription_plan || 'free',
-          status: (data as any)?.subscription_status || 'active',
-          is_pro: (data as any)?.is_pro || false,
-        };
-        console.log('reloadSubscription: Setting subscription to:', subscriptionData);
-        setSubscription(subscriptionData);
-        setUpdatedAt((data as any)?.updated_at || null);
+      if (userData && !userError) {
+        setUpdatedAt((userData as any)?.updated_at || null);
       } else {
-        console.log('reloadSubscription: No subscription data found, setting to free');
-        setSubscription({ plan: "free", status: "active" });
         setUpdatedAt(null);
       }
     } catch (error) {
@@ -87,22 +93,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Get subscription from Supabase instead of Firestore (bypass permission issues)
         try {
           const { supabase } = await import("@/lib/supabase/client");
-          const { data, error } = await supabase
+
+          const { data: subscriptionData, error: subscriptionError } = await supabase
+            .from('subscriptions')
+            .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+            .eq('user_id', user.uid)
+            .maybeSingle();
+
+          if (subscriptionData && !subscriptionError) {
+            console.log('Subscription data found:', subscriptionData);
+            setSubscription(subscriptionData);
+          } else {
+            console.log('No subscription found, setting to free');
+            setSubscription({ plan: "free", status: "active" });
+          }
+
+          const { data: userData, error: userError } = await supabase
             .from('users')
             .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
             .eq('id', user.uid)
             .single();
 
-          if (data && !error) {
-            const subscriptionData = {
-              plan: (data as any)?.subscription_plan || 'free',
-              status: (data as any)?.subscription_status || 'active',
-              is_pro: (data as any)?.is_pro || false,
-            };
-            setSubscription(subscriptionData);
-            setUpdatedAt((data as any)?.updated_at || null);
+          if (userData && !userError) {
+            setUpdatedAt((userData as any)?.updated_at || null);
           } else {
-            setSubscription({ plan: "free", status: "active" });
             setUpdatedAt(null);
           }
         } catch (error) {

@@ -102,27 +102,27 @@ function PricingCards({ user }: { user: any }) {
   return (
     <div className="w-full max-w-6xl">
       {!loadingLifetime && showLifetime && lifetimeAvailability && (
-        <div className="mb-8 bg-gradient-to-r from-orange-500 to-red-500 border-2 border-orange-600 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg animate-[scale-up-down_2s_ease-in-out_infinite]">
+        <div className="mb-8 bg-gradient-to-r from-orange-500/90 to-red-500/90 border border-orange-400/50 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg animate-[scale-up-down_2s_ease-in-out_infinite]">
           <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-full">
-              <Clock className="w-6 h-6 text-white" />
+            <div className="bg-white/20 p-2.5 rounded-full">
+              <Clock className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-white text-lg">🔥 HURRY! Only {lifetimeAvailability.remaining} Lifetime Slots Left!</p>
+              <p className="font-semibold text-white text-base">Limited Availability: {lifetimeAvailability.remaining} slots remaining</p>
               <p className="text-sm text-white/90">
-                Grab yours before it's gone forever! {LIFETIME_ACCESS_LIMIT - lifetimeAvailability.remaining} already claimed
+                {LIFETIME_ACCESS_LIMIT - lifetimeAvailability.remaining} already claimed • Claim yours today
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-32 h-3 bg-white/30 rounded-full overflow-hidden">
+            <div className="w-32 h-2.5 bg-white/30 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white transition-all duration-500"
                 style={{ width: `${(lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100}%` }}
               />
             </div>
-            <span className="text-sm font-bold text-white bg-white/20 px-3 py-1 rounded-full">
-              {Math.round((lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100)}% Left
+            <span className="text-sm font-medium text-white bg-white/15 px-3 py-1.5 rounded-full">
+              {Math.round((lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100)}% available
             </span>
           </div>
         </div>
@@ -135,7 +135,7 @@ function PricingCards({ user }: { user: any }) {
         </div>
       ) : (
         <>
-          <div className={`grid gap-6 lg:gap-8 items-start ${showLifetime ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+          <div className={`grid gap-6 lg:gap-8 items-stretch ${showLifetime ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             
             <PricingCard
               plan="Free Plan"
@@ -385,25 +385,25 @@ function PricingCards({ user }: { user: any }) {
 
   return (
     <div
-      className={`group relative p-8 rounded-2xl transition-all duration-300 bg-card border shadow-sm ${
-        isFeatured 
-          ? "border-primary border-2 shadow-md md:-translate-y-4 z-10" 
+      className={`group relative h-full flex flex-col p-10 rounded-2xl transition-all duration-300 bg-card border ${
+        isFeatured
+          ? "border-primary/50 shadow-lg md:-translate-y-2 z-10 ring-2 ring-primary/10"
           : isFree
           ? "border-border opacity-75"
-          : "border-border hover:border-primary/30 hover:shadow-md"
+          : "border-border hover:border-primary/20 hover:shadow-sm"
       }`}
     >
       {isFeatured && (
-        <div className="absolute -top-4 right-6">
-          <span className="bg-blue-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+        <div className="absolute -top-3 right-6">
+          <span className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium px-4 py-1.5 rounded-full tracking-wide shadow-md flex items-center gap-1">
             <Star className="w-3 h-3 fill-current" /> {t("pricing.badge.best")}
           </span>
         </div>
       )}
       
       {isFree && (
-        <div className="absolute -top-4 right-6">
-          <span className="bg-gray-400 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+        <div className="absolute -top-3 right-6">
+          <span className="bg-gray-500 text-white text-xs font-medium px-4 py-1.5 rounded-full tracking-wide shadow-md flex items-center gap-1">
             Current
           </span>
         </div>
@@ -412,14 +412,13 @@ function PricingCards({ user }: { user: any }) {
       <h3 className="text-2xl font-bold text-foreground">{plan}</h3>
       <p className="text-muted-foreground text-sm mt-2">{description}</p>
       
-      <div className="mt-6">
+      <div className="mt-8">
         {originalPrice && (
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2.5 mb-2">
             <span className="text-lg text-muted-foreground line-through decoration-muted-foreground decoration-2 font-medium">
               {originalPrice}
             </span>
-            <span className="text-[10px] font-semibold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1 border border-blue-200">
-              <Tag className="w-3 h-3" /> 
+            <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 flex items-center gap-1">
               {discount ? `Save ${discount}` : (() => {
                 const original = parseFloat(originalPrice.replace(/[^0-9.]/g, ''));
                 const current = parseFloat(price.replace(/[^0-9.]/g, ''));
@@ -436,21 +435,21 @@ function PricingCards({ user }: { user: any }) {
         </div>
 
         {showSlotCounter && (
-          <div className="mt-3 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-2 border-orange-500 rounded-lg p-3 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-orange-500 animate-[scale-up-down_1s_ease-in-out_infinite]" />
+          <div className="mt-3 bg-orange-50/80 dark:bg-orange-950/20 border border-orange-200/50 dark:border-orange-800/30 rounded-lg p-3 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
-                ⚡ ONLY {remainingSlots} SLOTS LEFT!
+              <span className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                {remainingSlots} slots remaining
               </span>
-              <span className="text-[10px] text-orange-600/80 dark:text-orange-400/80">
-                Limited offer - Don't miss out!
+              <span className="text-[10px] text-orange-600/70 dark:text-orange-400/70">
+                Limited availability
               </span>
             </div>
           </div>
         )}
       </div>
 
-      <ul className="mt-8 space-y-4">
+      <ul className="mt-8 space-y-4 flex-1">
         {features.map((feature, index) => (
           <li key={index} className="flex items-start gap-3">
             <div className={`mt-0.5 p-0.5 rounded-full ${isFeatured ? "bg-primary/20 text-primary" : "text-muted-foreground/40"}`}>
@@ -463,7 +462,7 @@ function PricingCards({ user }: { user: any }) {
         ))}
       </ul>
 
-      <div className="mt-8 relative z-20">
+      <div className="mt-10 relative z-20">
         <button
           onClick={() => {
             if (disabled) return;
@@ -481,9 +480,9 @@ function PricingCards({ user }: { user: any }) {
             }
           }}
           disabled={disabled}
-          className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-semibold rounded-lg transition-all duration-300 group-hover:scale-[1.02] ${
+          className={`relative w-full inline-flex items-center justify-center px-8 py-4 text-sm font-semibold rounded-lg transition-all duration-200 ${
             isFeatured
-              ? "bg-primary text-white hover:bg-primary/90 shadow-md"
+              ? "bg-primary text-white hover:bg-primary/80 focus-visible:ring-2 focus-visible:ring-primary/50"
               : isFree
               ? "bg-gray-400 text-white cursor-not-allowed"
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -493,12 +492,6 @@ function PricingCards({ user }: { user: any }) {
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>
-
-      {isFeatured && (
-        <p className="text-center text-[10px] text-muted-foreground mt-4">
-          {t("pricing.guarantee")}
-        </p>
-      )}
     </div>
   );
 }

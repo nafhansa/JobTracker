@@ -10,11 +10,15 @@ interface TwitterShareModalProps {
   onConfirm: () => void;
 }
 
-const TWEET_TEMPLATE = `Baru aja nemu JobTracker App - aplikasi tracking lamaran kerja terbaik buat para pencari kerja! 🚀 Pantau semua status lamaranmu di satu tempat biar nggak ada kesempatan yang terlewat.
+const TWEET_TEMPLATE = `Baru aja nemu JobTracker App!!
+
+Aplikasi tracking lamaran kerja buat para JOB SEEKERS 🚀 
+
+Pantau semua status lamaranmu di satu tempat biar nggak ada kesempatan yang terlewat.
 
 https://jobtrackerapp.site
 
-#JobTracker #InfoLoker #Karir #JobSearch`;
+#JobTracker #InfoLoker #Karir #JobApplication #JobHunt`;
 
 export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareModalProps) {
   const [hasShared, setHasShared] = useState(false);
@@ -34,7 +38,7 @@ export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareMo
           <div>
             <h2 className="text-xl font-bold text-foreground">Share to Get Lifetime Access</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Unlock 20% discount by sharing on X
+              Unlock the limited lifetime access by sharing on X
             </p>
           </div>
           <button
@@ -65,7 +69,7 @@ export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareMo
               {hasShared && (
               <Button
                 onClick={onConfirm}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-medium animate-[scale-up-down_1.5s_ease-in-out_infinite]"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 I've shared! Continue to Payment

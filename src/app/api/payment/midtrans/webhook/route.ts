@@ -81,8 +81,19 @@ export async function POST(req: Request) {
           user_id: userId,
           plan: planType,
           status: 'active',
+          midtrans_subscription_id: order_id,
           updated_at: new Date().toISOString(),
         };
+
+        if (planType === 'monthly') {
+          const now = new Date();
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+          subscriptionData.renews_at = nextMonth.toISOString();
+          subscriptionData.ends_at = null;
+        } else if (planType === 'lifetime') {
+          subscriptionData.renews_at = null;
+          subscriptionData.ends_at = null;
+        }
 
         if (!existingSubscription) {
           subscriptionData.id = generateUUID();

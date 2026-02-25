@@ -192,31 +192,8 @@ export default function BillingPage() {
                 {/* Pricing */}
                 <div className="flex justify-between items-center py-3 border-b border-border">
                   <span className="text-muted-foreground">Price</span>
-                  <span className="font-semibold text-foreground flex flex-col items-end">
-                    {isFreePlan ? "Free" : (
-                      <>
-                        <div className="flex items-center gap-2">
-                          {isLifetime && pricing.lifetime.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              {pricing.lifetime.originalPrice}
-                            </span>
-                          )}
-                          {!isLifetime && pricing.monthly.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              {pricing.monthly.originalPrice}
-                            </span>
-                          )}
-                          {(isLifetime ? pricing.lifetime.discount : pricing.monthly.discount) && (
-                            <span className="text-xs font-semibold text-primary bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                              Save {isLifetime ? pricing.lifetime.discount : pricing.monthly.discount}
-                            </span>
-                          )}
-                        </div>
-                        <span>
-                          {isLifetime ? pricing.lifetime.price + " (One-time)" : pricing.monthly.price + (isIndonesia ? "/bulan" : "/month")}
-                        </span>
-                      </>
-                    )}
+                  <span className="font-semibold text-foreground">
+                    {isFreePlan ? "Free" : isLifetime ? pricing.lifetime.price + " (One-time)" : pricing.monthly.price + (isIndonesia ? "/bulan" : "/month")}
                   </span>
                 </div>
 
@@ -246,7 +223,7 @@ export default function BillingPage() {
                 )}
 
                 {/* Subscription ID */}
-                {(subscription.paddleSubscriptionId || subscription.paypalSubscriptionId) && (
+                {subscription.midtransSubscriptionId && (
                   <div className="flex justify-between items-center py-3">
                     <span className="text-muted-foreground">Subscription ID</span>
                     <span className="font-mono text-xs text-muted-foreground">
