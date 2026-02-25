@@ -2,27 +2,63 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Home, ArrowRight } from "lucide-react";
+import { CheckCircle2, Home, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/lib/firebase/auth-context";
 
 function PaymentFinishContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { reloadSubscription } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verifyMessage, setVerifyMessage] = useState("Verifying payment...");
 
   useEffect(() => {
     if (!searchParams) return;
-    
+
+    const orderId = searchParams.get("order_id");
     const transactionStatus = searchParams.get("transaction_status");
 
-    console.log("Payment finish:", { transactionStatus });
+    console.log("Payment finish:", { orderId, transactionStatus });
 
-    if (transactionStatus === "settlement" || transactionStatus === "capture") {
-      setIsRedirecting(true);
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 3000);
-    }
+    const verifyPayment = async () => {
+      if (!orderId) {
+        setVerifyMessage("Order ID not found. Redirecting to dashboard...");
+        setTimeout(() => router.push("/dashboard"), 2000);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/payment/midtrans/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setVerifyMessage("Payment verified successfully! Your subscription is now active.");
+          await reloadSubscription();
+          setTimeout(() => {
+            setIsRedirecting(true);
+            router.push("/dashboard");
+          }, 2000);
+        } else {
+          setVerifyMessage(data.message || "Payment verification pending. Redirecting to dashboard...");
+          setTimeout(() => router.push("/dashboard"), 3000);
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+        setVerifyMessage("Unable to verify payment automatically. Please check your dashboard.");
+        setTimeout(() => router.push("/dashboard"), 3000);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verifyPayment();
   }, [searchParams, router]);
 
   const transactionStatus = searchParams?.get("transaction_status");
@@ -30,20 +66,25 @@ function PaymentFinishContent() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <Navbar />
-      
+
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
         <div className="max-w-md w-full text-center space-y-8">
-          <div className="w-20 h-20 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-          </div>
-          
+          {isVerifying ? (
+            <div className="w-20 h-20 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center">
+              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+            </div>
+          ) : (
+            <div className="w-20 h-20 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+            </div>
+          )}
+
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold">Payment Successful!</h1>
+            <h1 className="text-3xl font-bold">
+              {isVerifying ? "Processing Payment..." : "Payment Successful!"}
+            </h1>
             <p className="text-muted-foreground">
-              {transactionStatus === "settlement" || transactionStatus === "capture" 
-                ? "Your subscription has been activated. Redirecting to dashboard..."
-                : "Your payment is being processed. You'll receive a confirmation email shortly."
-              }
+              {verifyMessage}
             </p>
           </div>
 

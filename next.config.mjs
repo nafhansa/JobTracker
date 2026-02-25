@@ -29,6 +29,24 @@ const baseConfig = {
                 ],
             },
             {
+                source: '/payment/midtrans/:path*',
+                headers: [
+                    {
+                        key: 'Content-Security-Policy',
+                        value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://app.sandbox.midtrans.com https://app.midtrans.com https://snap-assets.al-pc-id-b.cdn.gtflabs.io https://api.sandbox.midtrans.com https://pay.google.com https://js-agent.newrelic.com https://bam.nr-data.net https://gwk.gopayapi.com/sdk/stable/gp-container.min.js; default-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https://*.midtrans.com https://*.firebaseio.com https://*.firebase.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:;",
+                    },
+                ],
+            },
+            {
+                source: '/payment/finish',
+                headers: [
+                    {
+                        key: 'Content-Security-Policy',
+                        value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://app.sandbox.midtrans.com https://app.midtrans.com; default-src 'self'; connect-src 'self' https://*.midtrans.com https://*.firebaseio.com https://*.firebase.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com; style-src 'self' 'unsafe-inline';",
+                    },
+                ],
+            },
+            {
                 source: '/api/payment/midtrans/webhook',
                 headers: [
                     {

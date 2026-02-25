@@ -28,6 +28,21 @@ function PaymentPage() {
   const orderId = searchParams.get("orderId");
 
   useEffect(() => {
+    const loadMidtransScript = () => {
+      if (typeof window !== 'undefined' && !window.snap) {
+        const script = document.createElement('script');
+        script.src = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
+          ? "https://app.midtrans.com/snap/snap.js"
+          : "https://app.sandbox.midtrans.com/snap/snap.js";
+        script.setAttribute('data-client-key', process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || '');
+        document.body.appendChild(script);
+      }
+    };
+
+    loadMidtransScript();
+  }, []);
+
+  useEffect(() => {
     const fetchPaymentData = async () => {
       if (!orderId) {
         setError("Missing order ID");

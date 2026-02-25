@@ -16,18 +16,20 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   subscription: SubscriptionData | null;
-  isPro: boolean; // 👈 Tambah field ini
+  isPro: boolean;
   updatedAt?: Date | string | null;
   createdAt?: Date | string | null;
+  reloadSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   subscription: null,
-  isPro: false, // Default false
+  isPro: false,
   updatedAt: null,
   createdAt: null,
+  reloadSubscription: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -36,8 +38,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | string | null>(null);
   
-  // State isPro kita hitung berdasarkan subscription
-  const isPro = checkIsPro(subscription); 
+  const isPro = checkIsPro(subscription);
+
+  const reloadSubscription = async () => {
+    if (!user) return;
+
+    try {
+      const { supabase } = await import("@/lib/supabase/client");
+      const { data, error } = await supabase
+        .from('users')
+        .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
+        .eq('id', user.uid)
+        .single();
+
+      if (data && !error) {
+        const subscriptionData = {
+          plan: (data as any)?.subscription_plan || 'free',
+          status: (data as any)?.subscription_status || 'active',
+          is_pro: (data as any)?.is_pro || false,
+        };
+        setSubscription(subscriptionData);
+        setUpdatedAt((data as any)?.updated_at || null);
+      } else {
+        setSubscription({ plan: "free", status: "active" });
+        setUpdatedAt(null);
+      }
+    } catch (error) {
+      console.error("Failed to reload subscription:", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -83,8 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   return (
-    // Masukkan isPro ke dalam value provider
-    <AuthContext.Provider value={{ user, loading, subscription, isPro, updatedAt }}>
+    <AuthContext.Provider value={{ user, loading, subscription, isPro, updatedAt, reloadSubscription }}>
       {children}
     </AuthContext.Provider>
   );
