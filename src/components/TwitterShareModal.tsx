@@ -62,10 +62,10 @@ export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareMo
               Share to X
             </Button>
 
-            {hasShared && (
+              {hasShared && (
               <Button
                 onClick={onConfirm}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-medium animate-pulse"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-medium animate-[scale-up-down_1.5s_ease-in-out_infinite]"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 I've shared! Continue to Payment

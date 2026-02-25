@@ -79,7 +79,7 @@ export default function PricingPage() {
 
         {!loadingLifetime && showLifetime && lifetimeAvailability && (
           <section className="w-full max-w-6xl mx-auto px-6 mt-12">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 border-2 border-orange-600 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg animate-pulse">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 border-2 border-orange-600 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg animate-[scale-up-down_2s_ease-in-out_infinite]">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 p-2 rounded-full">
                   <Clock className="w-6 h-6 text-white" />
@@ -414,7 +414,7 @@ function PricingCard({
 
         {showSlotCounter && (
           <div className="mt-3 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-2 border-orange-500 rounded-lg p-3 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-orange-500 animate-pulse" />
+            <Clock className="w-4 h-4 text-orange-500 animate-[scale-up-down_1s_ease-in-out_infinite]" />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
                 ⚡ ONLY {remainingSlots} SLOTS LEFT!
