@@ -90,7 +90,7 @@ function PaymentPage() {
           console.log('Payment pending:', result);
           setIsLoading(false);
         },
-        onFailed: (result: any) => {
+        onError: (result: any) => {
           console.error('Payment failed:', result);
           setError('Payment failed. Please try again.');
           setIsLoading(false);
