@@ -79,25 +79,27 @@ export default function PricingPage() {
 
         {!loadingLifetime && showLifetime && lifetimeAvailability && (
           <section className="w-full max-w-6xl mx-auto px-6 mt-12">
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 border-2 border-orange-600 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg animate-pulse">
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-primary" />
+                <div className="bg-white/20 p-2 rounded-full">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
                 <div>
-                  <p className="font-semibold text-foreground">Lifetime Access Slots Tersedia</p>
-                  <p className="text-sm text-muted-foreground">
-                    {lifetimeAvailability.remaining} dari {LIFETIME_ACCESS_LIMIT} slot tersisa
+                  <p className="font-bold text-white text-lg">🔥 HURRY! Only {lifetimeAvailability.remaining} Lifetime Slots Left!</p>
+                  <p className="text-sm text-white/90">
+                    Grab yours before it's gone forever! {LIFETIME_ACCESS_LIMIT - lifetimeAvailability.remaining} already claimed
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-500"
+              <div className="flex items-center gap-3">
+                <div className="w-32 h-3 bg-white/30 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white transition-all duration-500"
                     style={{ width: `${(lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-primary">
-                  {Math.round((lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100)}%
+                <span className="text-sm font-bold text-white bg-white/20 px-3 py-1 rounded-full">
+                  {Math.round((lifetimeAvailability.remaining / LIFETIME_ACCESS_LIMIT) * 100)}% Left
                 </span>
               </div>
             </div>
@@ -411,9 +413,16 @@ function PricingCard({
         </div>
 
         {showSlotCounter && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-primary">
-            <Clock className="w-3 h-3" />
-            <span>{remainingSlots} slot tersisa</span>
+          <div className="mt-3 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-2 border-orange-500 rounded-lg p-3 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-500 animate-pulse" />
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
+                ⚡ ONLY {remainingSlots} SLOTS LEFT!
+              </span>
+              <span className="text-[10px] text-orange-600/80 dark:text-orange-400/80">
+                Limited offer - Don't miss out!
+              </span>
+            </div>
           </div>
         )}
       </div>

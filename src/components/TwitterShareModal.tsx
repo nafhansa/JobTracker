@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Share2 } from "lucide-react";
+import { useState } from "react";
+import { X, Share2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TwitterShareModalProps {
@@ -9,7 +10,6 @@ interface TwitterShareModalProps {
   onConfirm: () => void;
 }
 
-// Template sudah diubah ke Bahasa Indonesia
 const TWEET_TEMPLATE = `Baru aja nemu JobTracker App - aplikasi tracking lamaran kerja terbaik buat para pencari kerja! 🚀 Pantau semua status lamaranmu di satu tempat biar nggak ada kesempatan yang terlewat.
 
 https://jobtrackerapp.site
@@ -17,10 +17,12 @@ https://jobtrackerapp.site
 #JobTracker #InfoLoker #Karir #JobSearch`;
 
 export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareModalProps) {
+  const [hasShared, setHasShared] = useState(false);
+
   const handleShareToX = () => {
     const tweetText = encodeURIComponent(TWEET_TEMPLATE);
-    // Link sudah di-adjust menggunakan x.com
     window.open(`https://x.com/intent/tweet?text=${tweetText}`, '_blank');
+    setHasShared(true);
   };
 
   if (!isOpen) return null;
@@ -54,19 +56,21 @@ export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareMo
           <div className="flex flex-col gap-3">
             <Button
               onClick={handleShareToX}
-              // Warna background diubah jadi hitam menyesuaikan branding X
               className="w-full bg-black hover:bg-zinc-800 text-white font-medium dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share to X
             </Button>
 
-            <Button
-              onClick={onConfirm}
-              className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
-            >
-              I've shared! Continue to Payment
-            </Button>
+            {hasShared && (
+              <Button
+                onClick={onConfirm}
+                className="w-full bg-primary hover:bg-primary/90 text-white font-medium animate-pulse"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                I've shared! Continue to Payment
+              </Button>
+            )}
 
             <Button
               onClick={onClose}
@@ -78,7 +82,7 @@ export function TwitterShareModal({ isOpen, onClose, onConfirm }: TwitterShareMo
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            After sharing, click "I've shared!" to proceed to payment
+            {hasShared ? "Click \"I've shared!\" to proceed to payment" : "After sharing, the continue button will appear below"}
           </p>
         </div>
       </div>
