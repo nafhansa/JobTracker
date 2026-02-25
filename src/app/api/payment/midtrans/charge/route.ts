@@ -14,39 +14,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
-    const statusApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-      ? 'https://api.midtrans.com'
-      : 'https://api.sandbox.midtrans.com';
-
-    const response = await fetch(`${statusApiUrl}/v2/${orderId}/status`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`,
-      },
-    });
-
-    const result = await response.json();
-
-    if (result.status_code === '404') {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      orderId: result.order_id,
-      amount: parseInt(result.gross_amount),
-      status: result.transaction_status,
-      paymentType: result.payment_type,
-      transactionTime: result.transaction_time,
+      orderId,
     });
   } catch (error) {
-    console.error('Midtrans GET transaction error:', error);
+    console.error('Payment GET error:', error);
     const err = error as { message?: string; code?: string };
     return NextResponse.json(
       { error: err.message || 'Failed to fetch transaction' },
