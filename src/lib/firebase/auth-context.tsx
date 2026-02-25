@@ -101,7 +101,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (subscriptionData && !subscriptionError) {
             console.log('Subscription data found:', subscriptionData);
-            setSubscription(subscriptionData);
+            const transformedSubscription: any = {
+              id: (subscriptionData as any).id,
+              user_id: (subscriptionData as any).user_id,
+              plan: (subscriptionData as any).plan,
+              status: (subscriptionData as any).status,
+              midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
+              renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
+              endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+              createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
+              updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
+            };
+            setSubscription(transformedSubscription);
           } else {
             console.log('No subscription found, setting to free');
             setSubscription({ plan: "free", status: "active" });
@@ -130,8 +141,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('Current subscription state before update:', subscription);
 
       if (subscriptionData) {
-        console.log('Setting subscription to:', subscriptionData);
-        setSubscription(subscriptionData);
+        const transformedSubscription: any = {
+          id: (subscriptionData as any).id,
+          user_id: (subscriptionData as any).user_id,
+          plan: (subscriptionData as any).plan,
+          status: (subscriptionData as any).status,
+          midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
+          renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
+          endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+          createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
+          updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
+        };
+        console.log('Setting subscription to:', transformedSubscription);
+        setSubscription(transformedSubscription);
       } else {
         console.log('Received null subscription data, keeping current state');
       }

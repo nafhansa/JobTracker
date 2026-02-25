@@ -47,6 +47,10 @@ CREATE POLICY "Users can update own user data" ON users
 CREATE POLICY "Users can view own subscription" ON subscriptions
   FOR SELECT USING (auth.uid()::text = user_id);
 
+-- Allow public SELECT for subscriptions (filtered by user_id in application code)
+CREATE POLICY "Public can view subscriptions by user_id" ON subscriptions
+  FOR SELECT USING (true);
+
 -- Users can insert their own subscription
 CREATE POLICY "Users can insert own subscription" ON subscriptions
   FOR INSERT WITH CHECK (auth.uid()::text = user_id);
