@@ -41,7 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isPro = checkIsPro(subscription);
 
   const reloadSubscription = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('reloadSubscription: No user found');
+      return;
+    }
+
+    console.log('reloadSubscription: Fetching subscription for user:', user.uid);
 
     try {
       const { supabase } = await import("@/lib/supabase/client");
@@ -51,15 +56,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', user.uid)
         .single();
 
+      console.log('reloadSubscription: Result:', { data, error });
+
       if (data && !error) {
         const subscriptionData = {
           plan: (data as any)?.subscription_plan || 'free',
           status: (data as any)?.subscription_status || 'active',
           is_pro: (data as any)?.is_pro || false,
         };
+        console.log('reloadSubscription: Setting subscription to:', subscriptionData);
         setSubscription(subscriptionData);
         setUpdatedAt((data as any)?.updated_at || null);
       } else {
+        console.log('reloadSubscription: No subscription data found, setting to free');
         setSubscription({ plan: "free", status: "active" });
         setUpdatedAt(null);
       }

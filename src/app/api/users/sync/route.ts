@@ -41,10 +41,17 @@ export async function POST(req: Request) {
 
     // Preserve existing subscription data if user exists
     if (existingUser) {
-      userData.subscription_plan = existingUser.subscription_plan || 'free';
-      userData.subscription_status = existingUser.subscription_status || 'active';
-      userData.is_pro = existingUser.is_pro || false;
-      
+      // Only update email and updated_at, preserve all subscription data
+      if (existingUser.subscription_plan) {
+        userData.subscription_plan = existingUser.subscription_plan;
+      }
+      if (existingUser.subscription_status) {
+        userData.subscription_status = existingUser.subscription_status;
+      }
+      if (existingUser.is_pro !== undefined && existingUser.is_pro !== null) {
+        userData.is_pro = existingUser.is_pro;
+      }
+
       // Update existing user
       const { error: updateError } = await (supabaseAdmin
         .from('users') as any)

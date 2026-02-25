@@ -40,11 +40,12 @@ function PaymentFinishContent() {
 
         if (data.success) {
           setVerifyMessage("Payment verified successfully! Your subscription is now active.");
-          await reloadSubscription();
-          setTimeout(() => {
+
+          setTimeout(async () => {
+            await reloadSubscription();
             setIsRedirecting(true);
             router.push("/dashboard");
-          }, 2000);
+          }, 1000);
         } else {
           setVerifyMessage(data.message || "Payment verification pending. Redirecting to dashboard...");
           setTimeout(() => router.push("/dashboard"), 3000);

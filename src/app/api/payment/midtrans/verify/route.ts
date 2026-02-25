@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
-import { createSubscription } from '@/lib/supabase/subscriptions';
-import { supabase } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
@@ -59,10 +57,46 @@ export async function POST(req: Request) {
       }
 
       try {
-        await createSubscription(userId, plan === 'lifetime' ? 'lifetime' : 'monthly');
+        const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+
+        const { error: subscriptionError } = await (supabaseAdmin as any)
+          .from('subscriptions')
+          .upsert(
+            {
+              user_id: userId,
+              plan: planType,
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+          );
+
+        if (subscriptionError) {
+          console.error('Error upserting subscription:', subscriptionError);
+          throw subscriptionError;
+        }
+
+        const { error: userError } = await (supabaseAdmin as any)
+          .from('users')
+          .upsert(
+            {
+              id: userId,
+              subscription_plan: planType,
+              subscription_status: 'active',
+              is_pro: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+
+        if (userError) {
+          console.error('Error updating user subscription:', userError);
+          throw userError;
+        }
 
         if (plan === 'lifetime') {
-          const { error: lifetimeError } = await (supabase.from('lifetime_access_purchases') as any)
+          const { error: lifetimeError } = await (supabaseAdmin as any)
+            .from('lifetime_access_purchases')
             .insert({
               user_id: userId,
               order_id: orderId,
