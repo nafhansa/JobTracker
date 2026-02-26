@@ -10,9 +10,9 @@ function generateUUID(): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key } = body;
+    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key, payment_type, subscription_id } = body;
 
-    console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan });
+    console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan, payment_type, subscription_id });
 
     if (signature_key) {
       const statusCode = status_code || getStatusCodeFromTransactionStatus(transaction_status);
@@ -65,6 +65,24 @@ export async function POST(req: Request) {
       }
     }
 
+    if (transaction_status === 'settlement' && payment_type === 'recurring') {
+      await handleRecurringPayment({
+        subscriptionId: subscription_id,
+        userId,
+        order_id,
+        gross_amount,
+      });
+      return NextResponse.json({ status: 'OK' });
+    }
+
+    if (body.event === 'subscription.cancelled' || body.event === 'subscription.expired') {
+      await handleSubscriptionCancellation({
+        subscriptionId: subscription_id,
+        userId,
+      });
+      return NextResponse.json({ status: 'OK' });
+    }
+
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {
         const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
@@ -76,7 +94,7 @@ export async function POST(req: Request) {
 
         const { data: existingSubscription } = await (supabaseAdmin as any)
           .from('subscriptions')
-          .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+          .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, renews_at, ends_at, created_at, updated_at')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -89,6 +107,10 @@ export async function POST(req: Request) {
           midtrans_subscription_id: order_id,
           updated_at: new Date().toISOString(),
         };
+
+        if (subscription_id) {
+          subscriptionData.midtrans_subscription_token = subscription_id;
+        }
 
         console.log('New subscription data to insert:', subscriptionData);
 
@@ -178,6 +200,111 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+async function handleRecurringPayment({
+  subscriptionId,
+  userId,
+  order_id,
+  gross_amount,
+}: {
+  subscriptionId: string;
+  userId: string;
+  order_id: string;
+  gross_amount: string;
+}) {
+  console.log('Handling recurring payment:', { subscriptionId, userId, order_id });
+
+  const { data: subscription } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .select('*')
+    .eq('midtrans_subscription_token', subscriptionId)
+    .single();
+
+  if (!subscription) {
+    console.error('Subscription not found for recurring payment:', subscriptionId);
+    return;
+  }
+
+  const nextMonth = new Date();
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+  const { error: updateError } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .update({
+      renews_at: nextMonth.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', subscription.id);
+
+  if (updateError) {
+    console.error('Failed to update subscription for recurring payment:', updateError);
+  } else {
+    console.log('Subscription renewed successfully until:', nextMonth.toISOString());
+  }
+
+  await (supabaseAdmin as any)
+    .from('users')
+    .update({
+      subscription_status: 'active',
+      is_pro: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+}
+
+async function handleSubscriptionCancellation({
+  subscriptionId,
+  userId,
+}: {
+  subscriptionId: string;
+  userId: string;
+}) {
+  console.log('Handling subscription cancellation:', { subscriptionId, userId });
+
+  const now = new Date().toISOString();
+
+  const { data: subscription } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .select('*')
+    .eq('midtrans_subscription_token', subscriptionId)
+    .single();
+
+  if (!subscription) {
+    console.error('Subscription not found for cancellation:', subscriptionId);
+    return;
+  }
+
+  const { error: updateError } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .update({
+      status: 'cancelled',
+      ends_at: subscription.renews_at || now,
+      midtrans_subscription_token: null,
+      updated_at: now,
+    })
+    .eq('id', subscription.id);
+
+  if (updateError) {
+    console.error('Failed to cancel subscription:', updateError);
+    return;
+  }
+
+  const { error: userError } = await (supabaseAdmin as any)
+    .from('users')
+    .update({
+      subscription_plan: 'free',
+      subscription_status: 'active',
+      is_pro: false,
+      updated_at: now,
+    })
+    .eq('id', userId);
+
+  if (userError) {
+    console.error('Failed to revert user to free plan:', userError);
+  }
+
+  console.log('Subscription cancelled successfully');
 }
 
 export async function OPTIONS(req: Request) {

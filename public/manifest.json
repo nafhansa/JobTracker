@@ -1,12 +1,22 @@
 {
   "name": "JobTracker - Track Your Job Applications",
-  "short_name": "JobTracker",
+  "short_name": "JobTrack",
   "description": "Track and manage all your job applications in one place. Stay organized and never miss an opportunity.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
+  "splash_screen": {
+    "background_color": "#ffffff",
+    "images": [
+      {
+        "src": "/splash.png",
+        "sizes": "1920x1080",
+        "type": "image/png"
+      }
+    ]
+  },
   "icons": [
     {
       "src": "/icon-android-72x72.png",
