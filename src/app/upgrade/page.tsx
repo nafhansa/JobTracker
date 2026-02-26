@@ -294,15 +294,19 @@ function PricingCards({ user }: { user: any }) {
 }) {
   const { t } = useLanguage();
   const router = useRouter();
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'gopay_tokenization'>('credit_card');
+
+  const isLifetime = plan.toLowerCase().includes('lifetime');
+  const isMonthly = plan.toLowerCase().includes('monthly');
+  const isFreePlan = plan.toLowerCase().includes('free');
 
   const handleSubscribe = async () => {
     if (disabled) return;
 
     if (user) {
-      if (isIndonesia) {
-        try {
-          const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
+      const planType = isLifetime ? 'lifetime' : 'monthly';
 
+      if (!isIndonesia || isLifetime) {
         const response = await fetch('/api/payment/midtrans/charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -310,6 +314,7 @@ function PricingCards({ user }: { user: any }) {
             userId: user.uid,
             plan: planType,
             currency: isIndonesia ? 'IDR' : 'USD',
+            paymentMethod: null,
             customerDetails: {
               firstName: user.displayName?.split(' ')[0] || '',
               lastName: user.displayName?.split(' ').slice(1).join('') || '',
@@ -319,63 +324,57 @@ function PricingCards({ user }: { user: any }) {
           }),
         });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Payment API error:', response.status, errorText);
-            alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
-            return;
-          }
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Payment API error:', response.status, errorText);
+          alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
+          return;
+        }
 
-          const data = await response.json();
+        const data = await response.json();
 
-          if (data.success) {
-            router.push(`/payment/midtrans?orderId=${data.orderId}`);
-          } else {
-            console.error('Failed to create transaction:', data.error);
-            alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
-          }
-        } catch (error) {
-          console.error('Payment error:', error);
-          alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (data.success) {
+          router.push(`/payment/midtrans?orderId=${data.orderId}`);
+        } else {
+          console.error('Failed to create transaction:', data.error);
+          alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
         }
       } else {
-        try {
-          const planType = plan.toLowerCase().includes('lifetime') ? 'lifetime' : 'monthly';
+        const response = await fetch('/api/payment/midtrans/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            plan: 'monthly',
+            currency: 'IDR',
+            paymentMethod: paymentMethod,
+            customerDetails: {
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join('') || '',
+              email: user.email || '',
+              phone: user.phoneNumber || '',
+            },
+          }),
+        });
 
-          const response = await fetch('/api/payment/midtrans/charge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              plan: planType,
-              currency: 'USD',
-              customerDetails: {
-                firstName: user.displayName?.split(' ')[0] || '',
-                lastName: user.displayName?.split(' ').slice(1).join('') || '',
-                email: user.email || '',
-                phone: user.phoneNumber || '',
-              },
-            }),
-          });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Payment API error:', response.status, errorText);
+          alert(`Payment error: ${response.status}: ${errorText || 'Unknown error'}`);
+          return;
+        }
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Payment API error:', response.status, errorText);
-            alert(`Payment error (${response.status}): ${errorText || 'Unknown error'}`);
-            return;
-          }
+        const data = await response.json();
 
-          const data = await response.json();
-
-          if (data.success) {
-            router.push(`/payment/midtrans?orderId=${data.orderId}`);
+        if (data.success) {
+          if (data.isRecurring) {
+            router.push(data.redirectUrl);
           } else {
-            console.error('Failed to create transaction:', data.error);
-            alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
+            router.push(`/payment/midtrans?orderId=${data.orderId}`);
           }
-        } catch (error) {
-          console.error('Payment error:', error);
-          alert(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } else {
+          console.error('Failed to create transaction:', data.error);
+          alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
         }
       }
     } else {
@@ -462,6 +461,54 @@ function PricingCards({ user }: { user: any }) {
         ))}
       </ul>
 
+      {!isFreePlan && !isLifetime && isMonthly && isIndonesia && (
+        <div className="mt-8 mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            Auto-Renew (Recommended)
+          </p>
+          <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+            Choose payment method for automatic monthly billing
+          </p>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-3 p-2 border border-blue-200 dark:border-blue-800 rounded cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+              <input
+                type="radio"
+                name={`paymentMethod-${plan}`}
+                value="credit_card"
+                checked={paymentMethod === 'credit_card'}
+                onChange={(e) => setPaymentMethod(e.target.value as 'credit_card' | 'gopay_tokenization')}
+                className="w-4 h-4 text-blue-600"
+              />
+              <div>
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Kartu Kredit/Debit</span>
+                <p className="text-xs text-blue-700 dark:text-blue-300">Visa, Mastercard, JCB</p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 p-2 border border-blue-200 dark:border-blue-800 rounded cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+              <input
+                type="radio"
+                name={`paymentMethod-${plan}`}
+                value="gopay_tokenization"
+                checked={paymentMethod === 'gopay_tokenization'}
+                onChange={(e) => setPaymentMethod(e.target.value as 'credit_card' | 'gopay_tokenization')}
+                className="w-4 h-4 text-blue-600"
+              />
+              <div>
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">GoPay</span>
+                <p className="text-xs text-blue-700 dark:text-blue-300">Auto-deduct from GoPay balance</p>
+              </div>
+            </label>
+          </div>
+
+          <p className="text-xs text-blue-700 dark:text-blue-300 mt-3 italic">
+            Pembayaran akan otomatis diperpanjang setiap bulan sampai Anda cancel.
+            Anda bisa cancel kapan saja di halaman Billing.
+          </p>
+        </div>
+      )}
+
       <div className="mt-10 relative z-20">
         <button
           onClick={() => {
@@ -488,7 +535,15 @@ function PricingCards({ user }: { user: any }) {
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {disabled ? buttonText : (user ? (isFree ? buttonText : isIndonesia ? "Bayar Sekarang" : "Pay Now") : buttonText)}
+          {disabled
+            ? buttonText
+            : user
+            ? (isFree
+                ? buttonText
+                : isIndonesia && isMonthly && !isFreePlan && !isLifetime
+                ? `Subscribe with Auto-Renew (${paymentMethod === 'credit_card' ? 'Card' : 'GoPay'})`
+                : isIndonesia ? "Bayar Sekarang" : "Pay Now")
+            : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>

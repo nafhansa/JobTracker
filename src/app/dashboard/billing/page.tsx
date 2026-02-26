@@ -52,7 +52,7 @@ export default function BillingPage() {
   }, [user, authLoading, router]);
 
   const handleCancelSubscription = async () => {
-    const subscriptionId = subscription?.midtransSubscriptionId as string | undefined;
+    const subscriptionId = subscription?.id;
 
     if (!subscriptionId) {
       alert("No subscription found to cancel");
@@ -139,7 +139,7 @@ export default function BillingPage() {
           <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-3 shadow-sm">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
             <p className="text-emerald-700">
-              Subscription cancelled successfully. Your access will continue until the end of the billing period.
+              Subscription cancelled successfully. Your access will continue until end of billing period.
             </p>
           </div>
         )}
@@ -234,6 +234,34 @@ export default function BillingPage() {
                   </div>
                 )}
 
+                {/* Payment Method for Recurring Subscriptions */}
+                {!isFreePlan && subscription?.midtransPaymentMethod && (
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Payment Method
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {subscription.midtransPaymentMethod === 'credit_card' && (
+                        <span className="flex items-center gap-2">
+                          Kartu Kredit/Debit
+                          <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded">
+                            Auto-Renew Active
+                          </span>
+                        </span>
+                      )}
+                      {subscription.midtransPaymentMethod === 'gopay_tokenization' && (
+                        <span className="flex items-center gap-2">
+                          GoPay
+                          <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded">
+                            Auto-Renew Active
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
                 {/* Cancellation Warning */}
                 {isCancelled && endsAt && (
                   <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3 shadow-sm">
@@ -244,7 +272,7 @@ export default function BillingPage() {
                       </p>
                       <p className="text-sm text-muted-foreground">
                         You&apos;ll continue to have access until {endsAt}.
-                        After that, your account will revert to the free plan.
+                        After that, your account will revert to free plan.
                       </p>
                     </div>
                   </div>
@@ -280,6 +308,8 @@ export default function BillingPage() {
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Cancelling...
                           </>
+                        ) : subscription?.midtransPaymentMethod ? (
+                          "Cancel Auto-Renew Subscription"
                         ) : (
                           "Cancel Subscription"
                         )}
@@ -288,22 +318,25 @@ export default function BillingPage() {
                     <AlertDialogContent className="bg-card border-border">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-foreground">
-                          Are you sure?
+                          {subscription?.midtransPaymentMethod
+                            ? "Cancel Auto-Renew Subscription?"
+                            : "Are you sure?"}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                          Your subscription will be cancelled, but you&apos;ll keep access until the end of
-                          your current billing period ({formatDate(rawRenewsAt)}). You can resubscribe anytime.
+                          {subscription?.midtransPaymentMethod
+                            ? `Your auto-renew subscription will be cancelled, but you&apos;ll keep access until the end of your current billing period (${formatDate(rawRenewsAt)}). After that, your account will revert to the free plan. You can subscribe again anytime.`
+                            : `Your subscription will be cancelled, but you&apos;ll keep access until the end of your current billing period (${formatDate(rawRenewsAt)}). You can resubscribe anytime.`}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>
-                          Keep Subscription
+                          {subscription?.midtransPaymentMethod ? "Keep Auto-Renew" : "Keep Subscription"}
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleCancelSubscription}
                           className="bg-red-500 hover:bg-red-600 text-white"
                         >
-                          Yes, Cancel
+                          {subscription?.midtransPaymentMethod ? "Yes, Cancel Auto-Renew" : "Yes, Cancel"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -355,10 +388,8 @@ export default function BillingPage() {
 function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
 
-  // Jika sudah berupa Date object
   if (dateValue instanceof Date) return dateValue;
 
-  // Jika berupa Firebase Timestamp object { seconds, nanoseconds }
   if (typeof dateValue === "object" && dateValue !== null) {
     interface FirestoreTimestampLike {
       toDate?: () => Date;
@@ -369,18 +400,15 @@ function parseFirebaseDate(dateValue: unknown): Date | null {
     }
   }
 
-  // Jika berupa number (timestamp)
   if (typeof dateValue === "number") {
     return new Date(dateValue);
   }
 
-  // Jika berupa string (Contoh: "February 8, 2026 at 5:00:00 PM UTC+7")
   if (typeof dateValue === "string") {
     const match = dateValue.match(
       /^([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2})\s?(AM|PM)? UTC([+-]\d+)?$/
     );
     if (!match) {
-      // Fallback untuk string ISO standar
       const d = new Date(dateValue);
       return isNaN(d.getTime()) ? null : d;
     }

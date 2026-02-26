@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('subscriptions')
-        .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+        .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
         .eq('user_id', user.uid)
         .maybeSingle();
 
@@ -61,7 +61,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (subscriptionData && !subscriptionError) {
         console.log('reloadSubscription: Setting subscription to:', subscriptionData);
-        setSubscription(subscriptionData);
+        const transformedSubscription: any = {
+          id: (subscriptionData as any).id,
+          user_id: (subscriptionData as any).user_id,
+          plan: (subscriptionData as any).plan,
+          status: (subscriptionData as any).status,
+          midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
+          midtransSubscriptionToken: (subscriptionData as any).midtrans_subscription_token,
+          midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
+          renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
+          endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+          createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
+          updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
+        };
+        setSubscription(transformedSubscription);
       } else {
         console.log('reloadSubscription: No subscription data found, setting to free');
       }
@@ -95,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           const { data: subscriptionData, error: subscriptionError } = await supabase
             .from('subscriptions')
-            .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+            .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
             .eq('user_id', user.uid)
             .maybeSingle();
 
@@ -107,6 +120,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               plan: (subscriptionData as any).plan,
               status: (subscriptionData as any).status,
               midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
+              midtransSubscriptionToken: (subscriptionData as any).midtrans_subscription_token,
+              midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
               renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
               endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
               createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
@@ -147,6 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           plan: (subscriptionData as any).plan,
           status: (subscriptionData as any).status,
           midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
+          midtransSubscriptionToken: (subscriptionData as any).midtrans_subscription_token,
+          midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
           renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
           endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
           createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
@@ -206,7 +223,7 @@ export const forceReloadSubscription = async () => {
 
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('subscriptions')
-      .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+      .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -225,6 +242,8 @@ export const forceReloadSubscription = async () => {
         plan: (subscriptionData as any)?.plan,
         status: (subscriptionData as any)?.status,
         midtransSubscriptionId: (subscriptionData as any)?.midtrans_subscription_id,
+        midtransSubscriptionToken: (subscriptionData as any)?.midtrans_subscription_token,
+        midtransPaymentMethod: (subscriptionData as any)?.midtrans_payment_method,
         renewsAt: (subscriptionData as any)?.renews_at,
         endsAt: (subscriptionData as any)?.ends_at,
         createdAt: (subscriptionData as any)?.created_at,
@@ -268,7 +287,7 @@ export const fetchAndSetSubscription = async (userId: string) => {
 
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('subscriptions')
-      .select('id, user_id, plan, status, midtrans_subscription_id, renews_at, ends_at, created_at, updated_at')
+      .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
       .eq('user_id', userId)
       .maybeSingle();
 
