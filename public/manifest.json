@@ -1,5 +1,5 @@
 {
-  "name": "JobTracker - Track Your Job Applications",
+  "name": "JobTracker App",
   "short_name": "JobTrack",
   "description": "Track and manage all your job applications in one place. Stay organized and never miss an opportunity.",
   "start_url": "/",
@@ -12,7 +12,7 @@
     "images": [
       {
         "src": "/splash.png",
-        "sizes": "1920x1080",
+        "sizes": "1080x1920",
         "type": "image/png"
       }
     ]
