@@ -8,9 +8,14 @@ export function SplashScreen() {
 
   useEffect(() => {
     const checkPWA = () => {
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-      const isIOSStandalone = (navigator as any).standalone === true;
-      return isStandalone || isIOSStandalone;
+      try {
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+        const isIOSStandalone = (navigator as any).standalone === true;
+        return isStandalone || isIOSStandalone;
+      } catch (error) {
+        console.error("Error checking PWA mode:", error);
+        return false;
+      }
     };
 
     const isPWA = checkPWA();
@@ -29,15 +34,13 @@ export function SplashScreen() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white transition-opacity duration-500">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="relative w-full h-full flex items-center justify-center">
-        <Image
+        <img
           src="/splash.png"
           alt="JobTracker"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
+          className="w-full h-full object-cover"
+          style={{ position: 'absolute', top: 0, left: 0 }}
         />
       </div>
     </div>
