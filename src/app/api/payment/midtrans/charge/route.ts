@@ -135,8 +135,10 @@ async function createSubscription({
     amount: amount.toString(),
     currency: "IDR",
     payment_type: paymentMethod === 'credit_card' ? 'credit_card' : 'gopay_tokenization',
-    interval: 1,
-    interval_unit: "month",
+    schedule: {
+      interval: 1,
+      interval_unit: "month",
+    },
     customer_details: {
       first_name: customerDetails.firstName || 'JobTracker',
       last_name: customerDetails.lastName || 'User',
@@ -219,6 +221,10 @@ async function createSubscription({
 
     if (dbError) {
       console.error('Failed to store subscription in database:', dbError);
+      return NextResponse.json(
+        { error: `Failed to store transaction: ${dbError.message}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -400,6 +406,10 @@ async function createSnapTransaction({
 
   if (dbError) {
     console.error('Failed to store transaction in database:', dbError);
+    return NextResponse.json(
+      { error: `Failed to store transaction: ${dbError.message}` },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({

@@ -367,11 +367,7 @@ function PricingCards({ user }: { user: any }) {
         const data = await response.json();
 
         if (data.success) {
-          if (data.isRecurring) {
-            router.push(data.redirectUrl);
-          } else {
-            router.push(`/payment/midtrans?orderId=${data.orderId}`);
-          }
+          router.push(`/payment/midtrans?orderId=${data.orderId}`);
         } else {
           console.error('Failed to create transaction:', data.error);
           alert(`Failed to create payment: ${data.error || 'Unknown error'}`);
