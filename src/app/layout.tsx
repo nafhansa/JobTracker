@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/firebase/auth-context";
 import { PaddleProvider } from "@/components/providers/PaddleProvider";
 import { LanguageProvider } from "@/lib/language/context";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { SplashScreen } from "@/components/SplashScreen";
 import type { Viewport } from "next";
 
 export const metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <PaddleProvider>
+              <SplashScreen />
               {children}
               <PWAInstallBanner />
             </PaddleProvider>
