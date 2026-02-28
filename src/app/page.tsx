@@ -21,12 +21,21 @@ export default function LandingPage() {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
-  const [ctaVariant] = useState<"A" | "B" | "C">(() => {
-    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
-    return variants[Math.floor(Math.random() * variants.length)];
-  });
+  const [ctaVariant, setCtaVariant] = useState<"A" | "B" | "C">("A");
   const [startTime] = useState(() => Date.now());
   const scrollDepthRef = useRef<number>(0);
+  const [pwaRedirecting, setPwaRedirecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state (client-side only)
+  useEffect(() => {
+    setMounted(true);
+    
+    // Set random CTA variant on client-side only
+    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
+    const randomIndex = Math.floor(Math.random() * variants.length);
+    setCtaVariant(variants[randomIndex]);
+  }, []);
 
   // Track page visit
   useEffect(() => {
@@ -58,15 +67,18 @@ export default function LandingPage() {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = (navigator as any).standalone === true;
       const detectedPWA = isStandalone || isIOSStandalone;
-      
+
       setIsPWA(detectedPWA);
-      
+
       return detectedPWA;
     };
 
     const detectedPWA = checkPWA();
 
     if (!detectedPWA) return;
+
+    // Set redirecting state
+    setPwaRedirecting(true);
 
     if (!authLoading) {
       if (user) {
@@ -76,6 +88,17 @@ export default function LandingPage() {
       }
     }
   }, [authLoading, user, router]);
+
+  // Handle redirect when auth state is ready
+  useEffect(() => {
+    if (pwaRedirecting && !authLoading) {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [pwaRedirecting, authLoading, user, router]);
 
   // PWA Install detection
   useEffect(() => {
@@ -173,50 +196,53 @@ export default function LandingPage() {
     trackMicroConversion("cta_click");
   };
 
-  // Don't render landing page if in PWA mode (will redirect)
-  if (isPWA) {
-    return null;
-  }
+  // Early bird countdown logic (client-side only to avoid hydration mismatch)
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(false);
 
-  // Early bird countdown logic
-  const EARLY_BIRD_END_DATE = new Date();
-  EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
-  EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
+  useEffect(() => {
+    const EARLY_BIRD_END_DATE = new Date();
+    EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
+    EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
 
-  const calculateTimeLeft = () => {
-    const now = new Date().getTime();
-    const end = EARLY_BIRD_END_DATE.getTime();
-    const difference = end - now;
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const end = EARLY_BIRD_END_DATE.getTime();
+      const difference = end - now;
 
-    if (difference <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    }
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+      }
 
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      expired: false,
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        expired: false,
+      };
     };
-  };
 
-  const [timeLeft, setTimeLeft] = useState(() => {
+    // Set initial values
     const initial = calculateTimeLeft();
-    return {
+    setTimeLeft({
       days: initial.days,
       hours: initial.hours,
       minutes: initial.minutes,
       seconds: initial.seconds,
-    };
-  });
-  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(() => calculateTimeLeft().expired);
+    });
+    setIsEarlyBirdExpired(initial.expired);
 
-  useEffect(() => {
+    // Update every second
     const timer = setInterval(() => {
       const result = calculateTimeLeft();
       setTimeLeft((prev) => {
-        if (prev.days === result.days && prev.hours === result.hours && 
+        if (prev.days === result.days && prev.hours === result.hours &&
             prev.minutes === result.minutes && prev.seconds === result.seconds) {
           return prev;
         }
@@ -231,9 +257,17 @@ export default function LandingPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  // calculateTimeLeft is stable (doesn't depend on props/state), so we can safely ignore
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Show loading when redirecting in PWA mode
+  if (pwaRedirecting) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-muted-foreground animate-pulse">{t("dashboard.loading")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
@@ -332,7 +366,7 @@ export default function LandingPage() {
         </section>
 
         {/* --- EARLY BIRD SPECIAL SECTION --- */}
-        {!isEarlyBirdExpired && (
+        {mounted && !isEarlyBirdExpired && (
           <section className="w-full max-w-6xl px-6 py-12 md:py-16 relative z-10 mx-auto">
             <div className="relative bg-white rounded-2xl border border-border shadow-md overflow-hidden">
               <div className="relative z-10 p-6 md:p-10">
