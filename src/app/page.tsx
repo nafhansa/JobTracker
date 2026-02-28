@@ -2,23 +2,40 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image"; // Import Image dari Next.js
-import { ArrowRight, Star, Check, X, Clock, Zap } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Star, Check, X, Clock, Zap, Download, Share2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useLanguage } from "@/lib/language/context";
+import { useAuth } from "@/lib/firebase/auth-context";
 
 export default function LandingPage() {
   const { t } = useLanguage();
-  const [ctaVariant] = useState<"A" | "B" | "C">(() => {
-    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
-    return variants[Math.floor(Math.random() * variants.length)];
-  });
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+  const [ctaVariant, setCtaVariant] = useState<"A" | "B" | "C">("A");
   const [startTime] = useState(() => Date.now());
   const scrollDepthRef = useRef<number>(0);
+  const [pwaRedirecting, setPwaRedirecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state (client-side only)
+  useEffect(() => {
+    setMounted(true);
+    
+    // Set random CTA variant on client-side only
+    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
+    const randomIndex = Math.floor(Math.random() * variants.length);
+    setCtaVariant(variants[randomIndex]);
+  }, []);
 
   // Track page visit
   useEffect(() => {
@@ -43,6 +60,84 @@ export default function LandingPage() {
     };
     trackVisit();
   }, []);
+
+  // PWA detection and redirect logic
+  useEffect(() => {
+    const checkPWA = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (navigator as any).standalone === true;
+      const detectedPWA = isStandalone || isIOSStandalone;
+
+      setIsPWA(detectedPWA);
+
+      return detectedPWA;
+    };
+
+    const detectedPWA = checkPWA();
+
+    if (!detectedPWA) return;
+
+    // Set redirecting state
+    setPwaRedirecting(true);
+
+    if (!authLoading) {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [authLoading, user, router]);
+
+  // Handle redirect when auth state is ready
+  useEffect(() => {
+    if (pwaRedirecting && !authLoading) {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [pwaRedirecting, authLoading, user, router]);
+
+  // PWA Install detection
+  useEffect(() => {
+    const checkIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    setIsIOS(checkIOS);
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      setShowIOSInstructions(true);
+      return;
+    }
+
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+    }
+  };
 
   // Track micro-conversions
   const trackMicroConversion = useCallback(async (type: string, value?: number) => {
@@ -101,50 +196,53 @@ export default function LandingPage() {
     trackMicroConversion("cta_click");
   };
 
-  // Track pricing click
-  const handlePricingClick = () => {
-    trackMicroConversion("pricing_click");
-  };
+  // Early bird countdown logic (client-side only to avoid hydration mismatch)
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(false);
 
-  // Early bird countdown logic
-  const EARLY_BIRD_END_DATE = new Date();
-  EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
-  EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
+  useEffect(() => {
+    const EARLY_BIRD_END_DATE = new Date();
+    EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
+    EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
 
-  const calculateTimeLeft = () => {
-    const now = new Date().getTime();
-    const end = EARLY_BIRD_END_DATE.getTime();
-    const difference = end - now;
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const end = EARLY_BIRD_END_DATE.getTime();
+      const difference = end - now;
 
-    if (difference <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    }
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+      }
 
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      expired: false,
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        expired: false,
+      };
     };
-  };
 
-  const [timeLeft, setTimeLeft] = useState(() => {
+    // Set initial values
     const initial = calculateTimeLeft();
-    return {
+    setTimeLeft({
       days: initial.days,
       hours: initial.hours,
       minutes: initial.minutes,
       seconds: initial.seconds,
-    };
-  });
-  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(() => calculateTimeLeft().expired);
+    });
+    setIsEarlyBirdExpired(initial.expired);
 
-  useEffect(() => {
+    // Update every second
     const timer = setInterval(() => {
       const result = calculateTimeLeft();
       setTimeLeft((prev) => {
-        if (prev.days === result.days && prev.hours === result.hours && 
+        if (prev.days === result.days && prev.hours === result.hours &&
             prev.minutes === result.minutes && prev.seconds === result.seconds) {
           return prev;
         }
@@ -159,9 +257,17 @@ export default function LandingPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  // calculateTimeLeft is stable (doesn't depend on props/state), so we can safely ignore
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Show loading when redirecting in PWA mode
+  if (pwaRedirecting) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-muted-foreground animate-pulse">{t("dashboard.loading")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
@@ -248,19 +354,19 @@ export default function LandingPage() {
                 </span>
               </Link>
 
-              <Link
-                href="/pricing"
-                onClick={handlePricingClick}
+              <button
+                onClick={handleInstallClick}
                 className="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-300"
               >
-                {t("hero.cta.secondary")}
-              </Link>
+                <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                Install App
+              </button>
             </div>
           </div>
         </section>
 
         {/* --- EARLY BIRD SPECIAL SECTION --- */}
-        {!isEarlyBirdExpired && (
+        {mounted && !isEarlyBirdExpired && (
           <section className="w-full max-w-6xl px-6 py-12 md:py-16 relative z-10 mx-auto">
             <div className="relative bg-white rounded-2xl border border-border shadow-md overflow-hidden">
               <div className="relative z-10 p-6 md:p-10">
@@ -320,7 +426,7 @@ export default function LandingPage() {
 
                   <Link
                     href="/pricing"
-                    onClick={handlePricingClick}
+                    onClick={handleCTAClick}
                     className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-lg font-semibold text-base hover:bg-primary/90 transition-all duration-300 shadow-md"
                   >
                     {t("early.cta")}
@@ -370,7 +476,7 @@ export default function LandingPage() {
 
                   <Link
                     href="/pricing"
-                    onClick={handlePricingClick}
+                    onClick={handleCTAClick}
                     className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all duration-300 shadow-md hover:scale-105"
                   >
                     {t("early.cta")}
@@ -550,6 +656,49 @@ export default function LandingPage() {
            </div>
         </div>
       </footer>
+
+      {/* iOS Install Instructions Modal */}
+      {showIOSInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowIOSInstructions(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Download className="w-5 h-5 text-primary" />
+                Install App
+              </h3>
+              <button
+                onClick={() => setShowIOSInstructions(false)}
+                className="p-1 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <p className="text-muted-foreground">To install JobTracker on your iOS device:</p>
+              <ol className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">1</span>
+                  <span>Tap the <strong className="text-primary">Share</strong> button <span className="text-lg">􀈂</span> in Safari</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">2</span>
+                  <span>Scroll down and tap <strong className="text-primary">Add to Home Screen</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">3</span>
+                  <span>Tap <strong className="text-primary">Add</strong> to install JobTracker</span>
+                </li>
+              </ol>
+            </div>
+            <button
+              onClick={() => setShowIOSInstructions(false)}
+              className="w-full mt-6 px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

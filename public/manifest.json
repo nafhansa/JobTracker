@@ -1,11 +1,11 @@
 {
-  "name": "JobTracker - Track Your Job Applications",
-  "short_name": "JobTracker",
+  "name": "JobTracker App",
+  "short_name": "JobTrack",
   "description": "Track and manage all your job applications in one place. Stay organized and never miss an opportunity.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#0A66C2",
   "orientation": "portrait-primary",
   "icons": [
     {
