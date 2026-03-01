@@ -132,22 +132,22 @@ export default function PricingPage() {
                   isFree
                 />
 
-                <PricingCard
-                  plan={t("pricing.monthly.title")}
-                  price={pricing.monthly.price}
-                  originalPrice={pricing.monthly.originalPrice}
-                  period={isIndonesia ? "/bulan" : "/month"}
-                  description={t("pricing.monthly.desc")}
-                  features={[
-                    t("pricing.monthly.feature1"),
-                    t("pricing.monthly.feature2"),
-                    t("pricing.monthly.feature3"),
-                    t("pricing.monthly.feature4"),
-                  ]}
-                  buttonText={t("pricing.monthly.cta")}
-                  isIndonesia={isIndonesia}
-                  discount={pricing.monthly.discount}
-                />
+            <PricingCard
+              plan={t("pricing.monthly.title")}
+              price={pricing.monthly.price}
+              originalPrice={pricing.monthly.originalPrice}
+              period={isIndonesia ? "/bulan" : "/month"}
+              description={t("pricing.monthly.desc")}
+              features={[
+                t("pricing.monthly.feature1"),
+                t("pricing.monthly.feature2"),
+                t("pricing.monthly.feature3"),
+                t("pricing.monthly.feature4"),
+              ]}
+              buttonText={t("pricing.monthly.cta")}
+              isIndonesia={isIndonesia}
+              discount={pricing.monthly.discount}
+            />
 
                 {showLifetime ? (
                   <PricingCard
@@ -274,6 +274,10 @@ function PricingCard({
   const { t } = useLanguage();
   const router = useRouter();
 
+  const isLifetime = plan.toLowerCase().includes('lifetime');
+  const isMonthly = plan.toLowerCase().includes('monthly');
+  const isFreePlan = plan.toLowerCase().includes('free');
+
   const handleSubscribe = async () => {
     const { user } = useAuth();
     
@@ -288,6 +292,7 @@ function PricingCard({
             userId: user.uid,
             plan: planType,
             currency: isIndonesia ? 'IDR' : 'USD',
+            enableAutoRenew: planType === 'monthly',
             customerDetails: {
               firstName: user.displayName?.split(' ')[0] || '',
               lastName: user.displayName?.split(' ').slice(1).join('') || '',
@@ -327,6 +332,7 @@ function PricingCard({
             userId: user.uid,
             plan: planType,
             currency: 'USD',
+            enableAutoRenew: planType === 'monthly',
             customerDetails: {
               firstName: user.displayName?.split(' ')[0] || '',
               lastName: user.displayName?.split(' ').slice(1).join('') || '',
@@ -438,7 +444,7 @@ function PricingCard({
           </li>
         ))}
       </ul>
-
+      
       <div className="mt-10 relative z-20">
         <button
           onClick={() => {
@@ -474,7 +480,7 @@ function PricingCard({
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {user ? (isFree ? t("nav.dashboard") : isIndonesia ? "Bayar Sekarang" : "Pay Now") : buttonText}
+          {user ? (isFree ? t("nav.dashboard") : isIndonesia ? "Mulai Sekarang" : "Pay Now") : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>

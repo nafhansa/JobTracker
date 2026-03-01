@@ -66,6 +66,8 @@ if (!projectId || !clientEmail || !privateKey) {
     FIREBASE_CLIENT_EMAIL: !!clientEmail,
     FIREBASE_PRIVATE_KEY: !!privateKey,
   });
+  adminDb = null;
+  adminAuth = null;
 } else if (!admin.apps.length) {
   try {
     const serviceAccount = {
@@ -121,7 +123,13 @@ if (!projectId || !clientEmail || !privateKey) {
     const err = error as { message?: string };
     console.error("❌ Firebase Admin initialization failed:", err.message);
     console.warn("⚠️ Continuing without Firebase Admin - some features may be limited");
+    adminDb = null;
+    adminAuth = null;
   }
+} else {
+  console.log("Firebase Admin already initialized, reusing existing instance");
+  adminDb = admin.firestore();
+  adminAuth = admin.auth();
 }
 
 const USER_COLLECTION = "users";

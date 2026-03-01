@@ -29,6 +29,11 @@ export async function GET(req: Request) {
       );
     }
 
+    console.log('GET /api/payment/midtrans/charge:', {
+      orderId,
+      snapToken: transaction.snap_token,
+    });
+    
     return NextResponse.json({
       success: true,
       orderId: transaction.order_id,
@@ -49,7 +54,7 @@ export async function GET(req: Request) {
   export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, plan, customerDetails, currency = 'IDR', paymentMethod } = body;
+    const { userId, plan, customerDetails, currency = 'IDR', enableAutoRenew } = body;
 
     if (!userId || !plan || !customerDetails) {
       return NextResponse.json(
@@ -58,14 +63,8 @@ export async function GET(req: Request) {
       );
     }
 
-    if (paymentMethod && currency !== 'IDR') {
-      return NextResponse.json(
-        { error: "Recurring payments only support IDR currency" },
-        { status: 400 }
-      );
-    }
-
     const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+    const shouldAutoRenew = enableAutoRenew !== undefined ? enableAutoRenew : planType === 'monthly';
     const amount = currency === 'USD'
       ? (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeUSD : MIDTRANS_PRICES.monthlyUSD)
       : (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR);
@@ -75,171 +74,20 @@ export async function GET(req: Request) {
     const userIdShort = userId.substring(0, 12);
     const orderId = `JT-${userIdShort}-${timestamp}-${randomStr}`;
 
-    if (paymentMethod) {
-      return await createSubscription({
-        userId,
-        planType,
-        amount,
-        currency,
-        paymentMethod,
-        customerDetails,
-        orderId,
-      });
-    } else {
-      return await createSnapTransaction({
-        userId,
-        planType,
-        amount,
-        currency,
-        customerDetails,
-        orderId,
-      });
-    }
+    return await createSnapTransaction({
+      userId,
+      planType,
+      amount,
+      currency,
+      customerDetails,
+      orderId,
+      enableAutoRenew: shouldAutoRenew,
+    });
   } catch (error) {
     console.error('Midtrans charge error:', error);
     const err = error as { message?: string; code?: string };
     return NextResponse.json(
       { error: err.message || 'Failed to create transaction' },
-      { status: 500 }
-    );
-  }
-}
-
-async function createSubscription({
-  userId,
-  planType,
-  amount,
-  currency,
-  paymentMethod,
-  customerDetails,
-  orderId,
-}: {
-  userId: string;
-  planType: 'monthly' | 'lifetime';
-  amount: number;
-  currency: string;
-  paymentMethod: 'credit_card' | 'gopay_tokenization';
-  customerDetails: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  };
-  orderId: string;
-}) {
-  const subscriptionId = crypto.randomUUID();
-  const internalToken = crypto.randomUUID();
-
-  const subscriptionBody = {
-    name: "JobTracker Monthly Pro",
-    amount: amount.toString(),
-    currency: "IDR",
-    payment_type: paymentMethod === 'credit_card' ? 'credit_card' : 'gopay_tokenization',
-    interval: 1,
-    interval_unit: "month",
-    customer_details: {
-      first_name: customerDetails.firstName || 'JobTracker',
-      last_name: customerDetails.lastName || 'User',
-      email: customerDetails.email || '',
-      phone: customerDetails.phone || '',
-    },
-    token: internalToken,
-    user_id: userId,
-    metadata: {
-      user_id: userId,
-      plan: planType,
-      order_id: orderId,
-    }
-  };
-
-  if (!MIDTRANS_CONFIG.serverKey) {
-    console.error('Midtrans server key not configured');
-    return NextResponse.json(
-      { error: 'Midtrans server key not configured' },
-      { status: 500 }
-    );
-  }
-
-  const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
-  const subscriptionApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-    ? 'https://api.midtrans.com/v1/subscriptions'
-    : 'https://api.sandbox.midtrans.com/v1/subscriptions';
-
-  console.log('Creating Midtrans subscription:', {
-    orderId,
-    amount,
-    paymentMethod,
-    subscriptionApiUrl,
-  });
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    const response = await fetch(subscriptionApiUrl, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`,
-      },
-      body: JSON.stringify(subscriptionBody),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Midtrans Subscription API error:', response.status, errorText);
-      return NextResponse.json(
-        { error: `Subscription API error: ${response.status} - ${errorText}` },
-        { status: 500 }
-      );
-    }
-
-    const result = await response.json();
-
-    console.log('Midtrans subscription response:', result);
-
-    const { error: dbError } = await (supabaseAdmin as any)
-      .from('pending_midtrans_transactions')
-      .insert({
-        id: subscriptionId,
-        order_id: orderId,
-        user_id: userId,
-        plan: planType,
-        amount: amount,
-        snap_token: result.token || result.redirect_url,
-        customer_email: customerDetails.email || null,
-        payment_method: paymentMethod,
-        subscription_token: internalToken,
-        is_recurring: true,
-      });
-
-    if (dbError) {
-      console.error('Failed to store subscription in database:', dbError);
-    }
-
-    return NextResponse.json({
-      success: true,
-      orderId,
-      token: result.token,
-      redirectUrl: result.redirect_url,
-      subscriptionId: result.id,
-      isRecurring: true,
-    });
-
-  } catch (error) {
-    console.error('Subscription creation error:', error);
-    if (error instanceof Error && error.name === 'AbortError') {
-      return NextResponse.json(
-        { error: 'Midtrans API request timed out. Please try again.' },
-        { status: 504 }
-      );
-    }
-    return NextResponse.json(
-      { error: 'Failed to create subscription' },
       { status: 500 }
     );
   }
@@ -252,6 +100,7 @@ async function createSnapTransaction({
   currency,
   customerDetails,
   orderId,
+  enableAutoRenew = false,
 }: {
   userId: string;
   planType: 'monthly' | 'lifetime';
@@ -264,8 +113,9 @@ async function createSnapTransaction({
     phone: string;
   };
   orderId: string;
+  enableAutoRenew?: boolean;
 }) {
-  const snapBody = {
+  const snapBody: any = {
     transaction_details: {
       order_id: orderId,
       gross_amount: amount,
@@ -292,6 +142,12 @@ async function createSnapTransaction({
     custom_field3: currency,
   };
 
+  if (enableAutoRenew && planType === 'monthly') {
+    snapBody.credit_card = {
+      save_card: true,
+    };
+  }
+
   if (!MIDTRANS_CONFIG.serverKey) {
     console.error('Midtrans server key not configured');
     return NextResponse.json(
@@ -314,6 +170,7 @@ async function createSnapTransaction({
     serverKeyLength: MIDTRANS_CONFIG.serverKey.length,
     authStringLength: authString.length,
     requestBody: JSON.stringify(snapBody),
+    enableAutoRenew,
   });
 
   let response;
@@ -400,6 +257,10 @@ async function createSnapTransaction({
 
   if (dbError) {
     console.error('Failed to store transaction in database:', dbError);
+    return NextResponse.json(
+      { error: `Failed to store transaction: ${dbError.message}` },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({

@@ -59,26 +59,30 @@ export default function BillingPage() {
       return;
     }
 
+    if (!user) {
+      alert("No user session");
+      return;
+    }
+
     setCancelling(true);
     try {
-      if (!user) {
-        throw new Error("No user session");
-      }
-      const token = await user.getIdToken();
+      console.log('Cancelling subscription:', { subscriptionId, userId: user.uid });
       const response = await fetch("/api/subscription/cancel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           subscriptionId,
+          userId: user.uid,
           provider: "midtrans"
         })
       });
 
       if (!response.ok) {
-        throw new Error("Failed to cancel subscription");
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Cancel API error:', errorData);
+        throw new Error(errorData.error || "Failed to cancel subscription");
       }
 
       setCancelSuccess(true);
@@ -87,7 +91,7 @@ export default function BillingPage() {
       }, 2000);
     } catch (error) {
       console.error("Cancel error:", error);
-      alert("Failed to cancel subscription. Please contact support.");
+      alert(error instanceof Error ? error.message : "Failed to cancel subscription. Please contact support.");
     } finally {
       setCancelling(false);
     }
