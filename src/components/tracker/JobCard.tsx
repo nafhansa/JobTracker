@@ -1,5 +1,6 @@
 import { JobApplication, JobStatus } from "@/types";
 import { formatDistance } from "date-fns";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -11,9 +12,13 @@ import {
   XCircle,
   Ban,
   Rocket,
-  Pencil, // Import Pencil
-  Mail,    // Import Mail
-  Lock     // Import Lock
+  Pencil,
+  Mail,
+  Lock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,6 +40,10 @@ interface JobCardProps {
 
 export default function JobCard({ job, onEdit }: JobCardProps) {
   const router = useRouter();
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth >= 768;
+  });
 
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...
   // Biar pendek, saya skip bagian yang tidak berubah. 
@@ -76,6 +85,10 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   const handleToggleStatus = async (clickedKey: keyof JobStatus) => {
     // Allow status changes even if rejected (user can update progress)
     const clickedIndex = statusKeys.indexOf(clickedKey);
@@ -87,6 +100,24 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
       for (let i = clickedIndex; i < statusKeys.length; i++) newStatus[statusKeys[i]] = false;
     }
     await supabaseUpdateJob(job.id!, { status: newStatus });
+  };
+
+  const handlePreviousStage = async () => {
+    if (lastActiveIndex > 0) {
+      const newStatus = { ...job.status };
+      const newStage = lastActiveIndex - 1;
+      for (let i = newStage; i < statusKeys.length; i++) newStatus[statusKeys[i]] = false;
+      await supabaseUpdateJob(job.id!, { status: newStatus });
+    }
+  };
+
+  const handleNextStage = async () => {
+    if (lastActiveIndex < statusKeys.length - 1) {
+      const newStatus = { ...job.status };
+      const newStage = lastActiveIndex + 1;
+      for (let i = 0; i <= newStage; i++) newStatus[statusKeys[i]] = true;
+      await supabaseUpdateJob(job.id!, { status: newStatus });
+    }
   };
 
   return (
@@ -106,12 +137,15 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
 
         {/* Header */}
         <div className="p-5 flex justify-between items-start relative z-10">
-          <div className="flex-1">
+          <div className="flex-1 md:cursor-default cursor-pointer" onClick={() => {
+            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+              toggleExpand();
+            }
+          }}>
             <div className="flex items-start gap-2">
               <h3 className={`font-bold text-base line-clamp-2 tracking-wide transition-colors ${isRejected && !hasReachedResponseOrInterview ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
                 {job.jobTitle}
               </h3>
-              {/* free users now allowed to edit/delete; no lock */}
             </div>
             <div className="flex items-center text-muted-foreground text-xs uppercase tracking-widest mt-1 gap-2 font-medium">
               <Building2 className="w-3.5 h-3.5" />
@@ -119,13 +153,21 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card border-border text-foreground shadow-lg">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleExpand}
+              className="md:hidden h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+              title={isExpanded ? "Minimize" : "Expand"}
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border text-foreground shadow-lg">
 
               {/* --- MENU EDIT --- */}
               <DropdownMenuItem
@@ -160,11 +202,14 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
                 Delete Application
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
 
-        {/* Body Information */}
-        <div className="px-5 pb-4 space-y-4 flex-1 relative z-10">
+        {isExpanded && (
+          <>
+            {/* Body Information */}
+            <div className="px-5 pb-4 space-y-4 flex-1 relative z-10">
           {job.potentialSalary ? (
             <div className={`inline-flex items-center text-xs font-semibold tracking-wide px-3 py-1.5 rounded-full shadow-sm
             ${isRejected && !hasReachedResponseOrInterview
@@ -211,11 +256,6 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
                 Current Stage
               </span>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-sm font-semibold tracking-wide ${
-                  completedCount === 5 ? "text-blue-600 dark:text-blue-400" : "text-foreground"
-                }`}>
-                  {currentStatusText}
-                </span>
                 {isRejected && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[10px] font-semibold uppercase tracking-wide">
                     <XCircle className="w-3 h-3" />
@@ -224,30 +264,62 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
                 )}
               </div>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground">
-              {isRejected && !hasReachedResponseOrInterview ? "CLOSED" : `${completedCount}/5`}
-            </span>
           </div>
 
           <div className="flex gap-1.5 h-2 w-full">
             {statusKeys.map((key) => (
               <div
                 key={key}
-                onClick={() => handleToggleStatus(key)}
                 title={statusLabels[key]}
-                className={`flex-1 rounded-sm transition-all duration-300 
+                className={`flex-1 rounded-sm transition-all duration-300
                 ${isRejected && !hasReachedResponseOrInterview
-                    ? "bg-red-200 cursor-not-allowed"
+                    ? "bg-red-200"
                     : job.status[key]
                       ? isRejected && hasReachedResponseOrInterview
-                        ? "bg-blue-600 shadow-sm scale-y-110 cursor-pointer opacity-75"
-                        : "bg-blue-600 shadow-sm scale-y-110 cursor-pointer"
-                      : "bg-muted hover:bg-blue-500/20 cursor-pointer"
+                        ? "bg-blue-600 shadow-sm scale-y-110 opacity-75"
+                        : "bg-blue-600 shadow-sm scale-y-110"
+                      : "bg-muted"
                   }`}
               />
             ))}
           </div>
+
+          <div className="flex items-center justify-center gap-3 mt-4">
+            <button
+              onClick={handlePreviousStage}
+              disabled={lastActiveIndex <= 0 || (isRejected && !hasReachedResponseOrInterview)}
+              className={`p-2.5 rounded-xl border transition-all duration-200 shadow-sm
+                ${lastActiveIndex <= 0 || (isRejected && !hasReachedResponseOrInterview)
+                  ? "border-border text-muted-foreground cursor-not-allowed opacity-30"
+                  : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
+                }`}
+              title="Previous Stage"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className={`text-sm font-semibold tracking-wide px-4 py-2 rounded-xl min-w-[120px] text-center border border-border shadow-sm
+              ${completedCount === 5 ? "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "text-foreground"}
+            `}>
+              {currentStatusText}
+            </div>
+
+            <button
+              onClick={handleNextStage}
+              disabled={lastActiveIndex >= statusKeys.length - 1 || (isRejected && !hasReachedResponseOrInterview)}
+              className={`p-2.5 rounded-xl border transition-all duration-200 shadow-sm
+                ${lastActiveIndex >= statusKeys.length - 1 || (isRejected && !hasReachedResponseOrInterview)
+                  ? "border-border text-muted-foreground cursor-not-allowed opacity-30"
+                  : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
+                }`}
+              title="Next Stage"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

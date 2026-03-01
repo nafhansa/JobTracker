@@ -74,7 +74,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   };
 
   return (
-    <div className="flex min-h-screen pt-16 lg:pt-20"> {/* Pakai min-h-screen, bukan fixed height */}
+    <div className={`flex ${activeSection === "applications" ? "h-[calc(100vh-40px)]" : "min-h-screen"} pt-16 lg:pt-20 overflow-hidden`}>
       {/* Sidebar - Desktop Only */}
       <div className="hidden lg:block">
         <Sidebar
@@ -86,10 +86,10 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 lg:pl-64 w-full">
-        <div className="max-w-7xl mx-auto p-4 md:p-6 pb-24 lg:pb-12"> {/* Tambah pb lebih besar untuk mobile nav */}
+      <main className={`flex-1 lg:pl-64 w-full ${activeSection === "applications" ? "overflow-hidden" : ""}`}>
+        <div className={`${activeSection === "applications" ? "h-full px-4 sm:px-6 md:px-8 lg:px-16 xl:px-18" : "max-w-7xl mx-auto p-4 md:p-6 pb-26 lg:pb-18"}`}>
           {/* Section Header */}
-          <div className="mb-6 md:mb-8">
+          <div className="mb-2 md:mb-3">
             {activeSection === "dashboard" && (
               <>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-tight">
@@ -102,10 +102,10 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
             )}
             {activeSection === "applications" && (
               <>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-tight">
+                <h1 className="text-3xl md:text-4xl pt-4 md:pt-4 font-bold text-foreground mb-1 tracking-tight">
                   {t("dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground text-sm md:text-base">
+                <p className="text-muted-foreground text-sm md:text-base mb-6 md:mb-8">
                   {t("dashboard.subtitle")}
                 </p>
               </>
@@ -123,7 +123,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           </div>
 
           {/* Content */}
-          <div className="animate-in fade-in duration-500">
+          <div className={`${activeSection === "applications" ? "h-full" : "animate-in fade-in duration-500"}`}>
             {renderContent()}
           </div>
         </div>
@@ -134,9 +134,9 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       {activeSection === "dashboard" && (
         <>
           {/* Mobile: Top-right button with text */}
-          <div className="fixed top-20 right-4 z-50 md:hidden">
+          <div className="fixed top-[83px] right-4 z-40 md:hidden">
             <Button
-              onClick={handleAddNew}
+              onClick={handleNavigateToApplications}
               className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 px-4 py-2 rounded-full flex items-center gap-2"
               size="sm"
             >
@@ -148,7 +148,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           {/* Desktop: Bottom-right floating button */}
           <div className="hidden md:block fixed bottom-8 right-8 z-50">
             <Button
-              onClick={handleAddNew}
+              onClick={handleNavigateToApplications}
               className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 rounded-full h-14 w-14 flex items-center justify-center"
               size="icon"
             >
