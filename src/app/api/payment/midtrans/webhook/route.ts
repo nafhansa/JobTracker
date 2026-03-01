@@ -141,11 +141,26 @@ export async function POST(req: Request) {
           plan: planType,
           status: 'active',
           midtrans_subscription_id: order_id,
+          midtrans_subscription_token: null,
+          midtrans_payment_method: null,
+          midtrans_account_id: null,
           updated_at: new Date().toISOString(),
         };
 
         if (subscription_id) {
           subscriptionData.midtrans_subscription_token = subscription_id;
+        } else if (saved_token_id) {
+          subscriptionData.midtrans_subscription_token = saved_token_id;
+        }
+
+        if (payment_type) {
+          subscriptionData.midtrans_payment_method = payment_type;
+        }
+
+        if (masked_card) {
+          subscriptionData.midtrans_account_id = masked_card;
+        } else if (saved_token_id) {
+          subscriptionData.midtrans_account_id = saved_token_id;
         }
 
         console.log('New subscription data to insert:', subscriptionData);
