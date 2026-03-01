@@ -509,13 +509,13 @@ async function handleFirstPaymentWithSaveCard({
       await (supabaseAdmin as any)
         .from('subscriptions')
         .update({
-          midtrans_subscription_id: result.id,
+          midtrans_subscription_token: result.id,
           renews_at: result.schedule?.next_execution_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId);
 
-      console.log('Subscription updated with Midtrans subscription ID:', result.id);
+      console.log('Subscription updated with Midtrans subscription token:', result.id);
     } catch (error) {
       console.error('Error creating Midtrans subscription:', error);
     }

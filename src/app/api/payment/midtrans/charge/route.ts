@@ -54,7 +54,7 @@ export async function GET(req: Request) {
   export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, plan, customerDetails, currency = 'IDR', enableAutoRenew = false } = body;
+    const { userId, plan, customerDetails, currency = 'IDR', enableAutoRenew } = body;
 
     if (!userId || !plan || !customerDetails) {
       return NextResponse.json(
@@ -64,6 +64,7 @@ export async function GET(req: Request) {
     }
 
     const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+    const shouldAutoRenew = enableAutoRenew !== undefined ? enableAutoRenew : planType === 'monthly';
     const amount = currency === 'USD'
       ? (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeUSD : MIDTRANS_PRICES.monthlyUSD)
       : (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeIDR : MIDTRANS_PRICES.monthlyIDR);
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
       currency,
       customerDetails,
       orderId,
-      enableAutoRenew,
+      enableAutoRenew: shouldAutoRenew,
     });
   } catch (error) {
     console.error('Midtrans charge error:', error);
@@ -169,6 +170,7 @@ async function createSnapTransaction({
     serverKeyLength: MIDTRANS_CONFIG.serverKey.length,
     authStringLength: authString.length,
     requestBody: JSON.stringify(snapBody),
+    enableAutoRenew,
   });
 
   let response;
