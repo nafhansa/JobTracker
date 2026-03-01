@@ -474,7 +474,7 @@ function PricingCard({
               : "bg-transparent border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          {user ? (isFree ? t("nav.dashboard") : isIndonesia ? "Bayar Sekarang" : "Pay Now") : buttonText}
+          {user ? (isFree ? t("nav.dashboard") : isIndonesia ? "Mulai Sekarang" : "Pay Now") : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
       </div>

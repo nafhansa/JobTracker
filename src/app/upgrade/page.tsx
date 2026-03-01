@@ -537,8 +537,8 @@ function PricingCards({ user }: { user: any }) {
             ? (isFree
                 ? buttonText
                 : isIndonesia && isMonthly && !isFreePlan && !isLifetime
-                ? `Subscribe with Auto-Renew (${paymentMethod === 'credit_card' ? 'Card' : 'GoPay'})`
-                : isIndonesia ? "Bayar Sekarang" : "Pay Now")
+                ? `Subscribe (${paymentMethod === 'credit_card' ? 'Card' : 'GoPay'})`
+                : isIndonesia ? "Mulai Sekarang" : "Pay Now")
             : buttonText}
           <ArrowRight className="ml-2 w-4 h-4" />
         </button>
