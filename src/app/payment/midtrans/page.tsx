@@ -97,6 +97,12 @@ function PaymentPage() {
 
       const snapToken = paymentData?.token;
 
+      if (!snapToken) {
+        setError("Payment token not found. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
       window.snap?.pay(snapToken, {
         onSuccess: async (result: any) => {
           console.log('Payment success:', result);

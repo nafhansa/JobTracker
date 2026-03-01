@@ -10,9 +10,9 @@ function generateUUID(): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key, payment_type, subscription_id } = body;
+    const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key, payment_type, subscription_id, saved_token_id, masked_card } = body;
 
-    console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan, payment_type, subscription_id });
+    console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan, payment_type, subscription_id, saved_token_id, masked_card });
 
     if (signature_key) {
       const statusCode = status_code || getStatusCodeFromTransactionStatus(transaction_status);
@@ -73,6 +73,42 @@ export async function POST(req: Request) {
         gross_amount,
       });
       return NextResponse.json({ status: 'OK' });
+    }
+
+    if (transaction_status === 'settlement' && payment_type === 'credit_card') {
+      console.log('=== CREDIT CARD PAYMENT DETECTED ===');
+      console.log('Has saved_token_id:', !!saved_token_id);
+      console.log('Has masked_card:', !!masked_card);
+
+      if (saved_token_id) {
+        console.log('=== HANDLING WITH SAVE CARD (AUTO-RENEWAL) ===');
+        await handleFirstPaymentWithSaveCard({
+          userId,
+          order_id,
+          gross_amount,
+          plan,
+          currency,
+          saved_token_id,
+          masked_card,
+        });
+      } else {
+        console.log('=== HANDLING WITHOUT SAVE CARD (ONE-TIME PAYMENT) ===');
+        await handleFirstPaymentWithoutSaveCard({
+          userId,
+          order_id,
+          gross_amount,
+          plan,
+          currency,
+        });
+      }
+      return NextResponse.json({ status: 'OK' });
+    }
+
+    if (transaction_status === 'settlement' && payment_type !== 'credit_card' && payment_type !== 'recurring') {
+      console.log('=== OTHER PAYMENT TYPE DETECTED ===');
+      console.log('Payment type:', payment_type);
+      console.log('User ID:', userId);
+      console.log('Plan:', plan);
     }
 
     if (body.event === 'subscription.cancelled' || body.event === 'subscription.expired') {
@@ -304,7 +340,271 @@ async function handleSubscriptionCancellation({
     console.error('Failed to revert user to free plan:', userError);
   }
 
-  console.log('Subscription cancelled successfully');
+    console.log('Subscription cancelled successfully');
+}
+
+async function handleFirstPaymentWithSaveCard({
+  userId,
+  order_id,
+  gross_amount,
+  plan,
+  currency,
+  saved_token_id,
+  masked_card,
+}: {
+  userId: string;
+  order_id: string;
+  gross_amount: string;
+  plan: string;
+  currency: string;
+  saved_token_id: string;
+  masked_card: string;
+}) {
+  console.log('=== HANDLING FIRST PAYMENT WITH SAVE CARD ===');
+  console.log('User ID:', userId);
+  console.log('Order ID:', order_id);
+  console.log('Saved Token ID:', saved_token_id);
+  console.log('Masked Card:', masked_card);
+
+  const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+
+  const subscriptionData: any = {
+    user_id: userId,
+    plan: planType,
+    status: 'active',
+    midtrans_subscription_id: order_id,
+    midtrans_subscription_token: saved_token_id,
+    midtrans_payment_method: 'credit_card',
+    midtrans_account_id: masked_card,
+    recurring_frequency: 'monthly',
+    updated_at: new Date().toISOString(),
+  };
+
+  if (planType === 'monthly') {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    subscriptionData.renews_at = nextMonth.toISOString();
+    subscriptionData.ends_at = null;
+    console.log('Monthly plan: Set renews_at to:', nextMonth.toISOString());
+  } else if (planType === 'lifetime') {
+    subscriptionData.renews_at = null;
+    subscriptionData.ends_at = null;
+    console.log('Lifetime plan: Set renews_at and ends_at to null');
+  }
+
+  const { data: existingSubscription } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .select('id, user_id, plan, status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!existingSubscription) {
+    subscriptionData.id = generateUUID();
+    subscriptionData.created_at = new Date().toISOString();
+  }
+
+  console.log('Upserting subscription with saved_token_id:', subscriptionData);
+
+  const { error: subscriptionError } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .upsert(subscriptionData, { onConflict: 'user_id' });
+
+  if (subscriptionError) {
+    console.error('Error upserting subscription:', subscriptionError);
+    return;
+  }
+
+  console.log('Subscription upserted successfully');
+
+  await (supabaseAdmin as any)
+    .from('users')
+    .upsert(
+      {
+        id: userId,
+        subscription_plan: planType,
+        subscription_status: 'active',
+        is_pro: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+
+  if (plan === 'lifetime') {
+    const { error: lifetimeError } = await (supabaseAdmin as any)
+      .from('lifetime_access_purchases')
+      .insert({
+        user_id: userId,
+        order_id: order_id,
+        amount: gross_amount,
+        currency: currency || 'IDR',
+        purchased_at: new Date().toISOString(),
+      });
+
+    if (lifetimeError) {
+      console.error('Error recording lifetime purchase:', lifetimeError);
+    }
+  }
+
+  console.log('=== FIRST PAYMENT WITH SAVE CARD HANDLED ===');
+
+  if (planType === 'monthly') {
+    console.log('Creating Midtrans recurring subscription for user:', userId);
+
+    try {
+      const response = await fetch(`${process.env.MIDTRANS_IS_PRODUCTION === 'true' ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com'}/v1/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64')}`,
+        },
+        body: JSON.stringify({
+          name: 'JobTracker Monthly Pro',
+          amount: gross_amount,
+          currency: currency || 'IDR',
+          payment_type: 'credit_card',
+          token: saved_token_id,
+          schedule: {
+            interval: 1,
+            interval_unit: 'month',
+          },
+          customer_details: {
+            email: '',
+            first_name: '',
+            last_name: '',
+            phone: '',
+          },
+          metadata: {
+            user_id: userId,
+            plan: 'monthly',
+            order_id: order_id,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to create Midtrans subscription:', errorText);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Midtrans subscription created:', result);
+
+      await (supabaseAdmin as any)
+        .from('subscriptions')
+        .update({
+          midtrans_subscription_id: result.id,
+          renews_at: result.schedule?.next_execution_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      console.log('Subscription updated with Midtrans subscription ID:', result.id);
+    } catch (error) {
+      console.error('Error creating Midtrans subscription:', error);
+    }
+  }
+}
+
+async function handleFirstPaymentWithoutSaveCard({
+  userId,
+  order_id,
+  gross_amount,
+  plan,
+  currency,
+}: {
+  userId: string;
+  order_id: string;
+  gross_amount: string;
+  plan: string;
+  currency: string;
+}) {
+  console.log('=== HANDLING ONE-TIME PAYMENT WITHOUT SAVE CARD ===');
+  console.log('User ID:', userId);
+  console.log('Order ID:', order_id);
+  console.log('Plan:', plan);
+
+  const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+
+  const subscriptionData: any = {
+    user_id: userId,
+    plan: planType,
+    status: 'active',
+    midtrans_subscription_id: order_id,
+    midtrans_subscription_token: null,
+    midtrans_payment_method: 'credit_card',
+    midtrans_account_id: null,
+    recurring_frequency: null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (planType === 'monthly') {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    subscriptionData.renews_at = nextMonth.toISOString();
+    subscriptionData.ends_at = null;
+    console.log('Monthly plan (one-time): Set renews_at to:', nextMonth.toISOString());
+  } else if (planType === 'lifetime') {
+    subscriptionData.renews_at = null;
+    subscriptionData.ends_at = null;
+    console.log('Lifetime plan: Set renews_at and ends_at to null');
+  }
+
+  const { data: existingSubscription } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .select('id, user_id, plan, status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!existingSubscription) {
+    subscriptionData.id = generateUUID();
+    subscriptionData.created_at = new Date().toISOString();
+  }
+
+  console.log('Upserting subscription WITHOUT saved_token_id:', subscriptionData);
+
+  const { error: subscriptionError } = await (supabaseAdmin as any)
+    .from('subscriptions')
+    .upsert(subscriptionData, { onConflict: 'user_id' });
+
+  if (subscriptionError) {
+    console.error('Error upserting subscription:', subscriptionError);
+    return;
+  }
+
+  console.log('Subscription upserted successfully (one-time payment)');
+
+  await (supabaseAdmin as any)
+    .from('users')
+    .upsert(
+      {
+        id: userId,
+        subscription_plan: planType,
+        subscription_status: 'active',
+        is_pro: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+
+  if (plan === 'lifetime') {
+    const { error: lifetimeError } = await (supabaseAdmin as any)
+      .from('lifetime_access_purchases')
+      .insert({
+        user_id: userId,
+        order_id: order_id,
+        amount: gross_amount,
+        currency: currency || 'IDR',
+        purchased_at: new Date().toISOString(),
+      });
+
+    if (lifetimeError) {
+      console.error('Error recording lifetime purchase:', lifetimeError);
+    }
+  }
+
+  console.log('=== ONE-TIME PAYMENT HANDLED ===');
 }
 
 export async function OPTIONS(req: Request) {
