@@ -250,7 +250,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
          )}
 
          {/* --- SCROLLABLE CARD GRID SECTION --- */}
-        <div className="flex-1 overflow-y-auto min-h-0 pr-1 pt-2 md:pt-4 pb-34 md:pb-30">
+        <div className="flex-1 overflow-y-auto min-h-0 pr-1 pt-2 md:pt-4 pb-40 md:pb-30">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
             {/* Job Cards List */}

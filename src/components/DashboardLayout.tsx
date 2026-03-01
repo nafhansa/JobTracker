@@ -105,7 +105,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
                 <h1 className="text-3xl md:text-4xl pt-4 md:pt-4 font-bold text-foreground mb-1 tracking-tight">
                   {t("dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground text-sm md:text-base">
+                <p className="text-muted-foreground text-sm md:text-base mb-6 md:mb-8">
                   {t("dashboard.subtitle")}
                 </p>
               </>
