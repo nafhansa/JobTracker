@@ -12,6 +12,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { order_id, transaction_status, status_code, gross_amount, custom_field1: userId, custom_field2: plan, custom_field3: currency, signature_key, payment_type, subscription_id, saved_token_id, masked_card } = body;
 
+    function getStatusCodeFromTransactionStatus(status: string): string {
+      const statusMap: Record<string, string> = {
+        'settlement': '200',
+        'capture': '200',
+        'deny': '202',
+        'cancel': '201',
+        'expire': '202',
+        'pending': '201'
+      };
+      return statusMap[status] || '200';
+    }
+
     console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, userId, plan, payment_type, subscription_id, saved_token_id, masked_card });
 
     if (signature_key) {
@@ -42,27 +54,22 @@ export async function POST(req: Request) {
 
     const isFinalStatus = ['settlement', 'capture', 'deny', 'cancel', 'expire'].includes(transaction_status);
 
-    function getStatusCodeFromTransactionStatus(status: string): string {
-      const statusMap: Record<string, string> = {
-        'settlement': '200',
-        'capture': '200',
-        'deny': '202',
-        'cancel': '201',
-        'expire': '202',
-        'pending': '201'
-      };
-      return statusMap[status] || '200';
-    }
+    if ((transaction_status === 'settlement' || transaction_status === 'capture') && payment_type === 'credit_card' && saved_token_id) {
+      console.log('=== CREDIT CARD PAYMENT WITH SAVE CARD DETECTED ===');
+      console.log('Has saved_token_id:', !!saved_token_id);
+      console.log('Has masked_card:', !!masked_card);
 
-    if (isFinalStatus) {
-      const { error: deleteError } = await (supabaseAdmin as any)
-        .from('pending_midtrans_transactions')
-        .delete()
-        .eq('order_id', order_id);
-
-      if (deleteError) {
-        console.error('Error deleting pending transaction:', deleteError);
-      }
+      console.log('=== HANDLING WITH SAVE CARD (AUTO-RENEWAL) ===');
+      await handleFirstPaymentWithSaveCard({
+        userId,
+        order_id,
+        gross_amount,
+        plan,
+        currency,
+        saved_token_id,
+        masked_card,
+      });
+      return NextResponse.json({ status: 'OK' });
     }
 
     if (transaction_status === 'settlement' && payment_type === 'recurring') {
@@ -75,33 +82,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'OK' });
     }
 
-    if (transaction_status === 'settlement' && payment_type === 'credit_card') {
-      console.log('=== CREDIT CARD PAYMENT DETECTED ===');
-      console.log('Has saved_token_id:', !!saved_token_id);
-      console.log('Has masked_card:', !!masked_card);
+    if (isFinalStatus) {
+      const { error: deleteError } = await (supabaseAdmin as any)
+        .from('pending_midtrans_transactions')
+        .delete()
+        .eq('order_id', order_id);
 
-      if (saved_token_id) {
-        console.log('=== HANDLING WITH SAVE CARD (AUTO-RENEWAL) ===');
-        await handleFirstPaymentWithSaveCard({
-          userId,
-          order_id,
-          gross_amount,
-          plan,
-          currency,
-          saved_token_id,
-          masked_card,
-        });
-      } else {
-        console.log('=== HANDLING WITHOUT SAVE CARD (ONE-TIME PAYMENT) ===');
-        await handleFirstPaymentWithoutSaveCard({
-          userId,
-          order_id,
-          gross_amount,
-          plan,
-          currency,
-        });
+      if (deleteError) {
+        console.error('Error deleting pending transaction:', deleteError);
       }
-      return NextResponse.json({ status: 'OK' });
     }
 
     if (transaction_status === 'settlement' && payment_type !== 'credit_card' && payment_type !== 'recurring') {
@@ -166,6 +155,7 @@ export async function POST(req: Request) {
         console.log('New subscription data to insert:', subscriptionData);
 
         if (planType === 'monthly') {
+          subscriptionData.recurring_frequency = 'monthly';
           const now = new Date();
           const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
           subscriptionData.renews_at = nextMonth.toISOString();
