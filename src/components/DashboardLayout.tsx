@@ -134,9 +134,9 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       {activeSection === "dashboard" && (
         <>
           {/* Mobile: Top-right button with text */}
-          <div className="fixed top-20 right-4 z-50 md:hidden">
+          <div className="fixed top-[83px] right-4 z-40 md:hidden">
             <Button
-              onClick={handleAddNew}
+              onClick={handleNavigateToApplications}
               className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 px-4 py-2 rounded-full flex items-center gap-2"
               size="sm"
             >
@@ -148,7 +148,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           {/* Desktop: Bottom-right floating button */}
           <div className="hidden md:block fixed bottom-8 right-8 z-50">
             <Button
-              onClick={handleAddNew}
+              onClick={handleNavigateToApplications}
               className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 rounded-full h-14 w-14 flex items-center justify-center"
               size="icon"
             >

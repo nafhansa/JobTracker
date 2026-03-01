@@ -109,7 +109,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
       {/* NAVBAR - Simplified for mobile */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 dark:bg-card/95 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 shadow-md">
+      <nav className="fixed top-0 left-0 right-0 z-[60] border-b border-border bg-background/95 dark:bg-card/95 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 shadow-md">
         <div className="flex items-center justify-between gap-4 max-w-full">
           {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">

@@ -139,4 +139,19 @@
   .paused {
     animation-play-state: paused;
   }
+
+  /* Keyframe untuk ring glow animation */
+  @keyframes ring-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
+    }
+  }
+
+  /* Class utility untuk ring glow animation */
+  .animate-ring-glow {
+    animation: ring-glow 2s ease-in-out infinite;
+  }
 }

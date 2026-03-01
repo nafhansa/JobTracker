@@ -128,7 +128,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
               <Button 
                 onClick={handleAddNew}
-                className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-md transition-all"
+                className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-blue-500/30 transition-all animate-ring-glow"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {t("add.button")}
