@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
 import JobFormModal from "@/components/forms/AddJobModal";
@@ -8,6 +8,12 @@ import JobStats from "@/components/tracker/JobStats";
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getPlanLimits, isAdminUser } from "@/lib/supabase/subscriptions";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
@@ -148,8 +154,75 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
             </div>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex flex-wrap gap-2 pb-2 overflow-x-auto">
+          {/* Filter Tabs - Mobile (Dropdown + All Jobs) */}
+          <div className="md:hidden flex flex-wrap gap-2 pb-2">
+            {/* All Jobs Button */}
+            <button
+              onClick={() => setFilterStatus("ALL")}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border
+                ${filterStatus === "ALL"
+                  ? "bg-primary text-white border-primary shadow-md"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}
+              `}
+            >
+              <Briefcase className="w-4 h-4" />
+              {t("filter.all")}
+              <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${filterStatus === "ALL" ? "bg-white/20" : "bg-muted"}`}>
+                {jobs.length}
+              </span>
+            </button>
+
+            {/* Dropdown for other filters */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={`
+                  flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 border
+                  ${filterStatus !== "ALL"
+                    ? "bg-primary text-white border-primary shadow-md"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}
+                `}>
+                  {filterStatus !== "ALL" ? (
+                    <>
+                      {tabs.find(t => t.id === filterStatus)?.icon && (
+                        <span className="w-4 h-4">
+                          {React.createElement(tabs.find(t => t.id === filterStatus)!.icon)}
+                        </span>
+                      )}
+                      {tabs.find(t => t.id === filterStatus)?.label}
+                    </>
+                  ) : (
+                    <>
+                  <Send className="w-4 h-4" />
+                  {t("filter.applied")}
+                </>
+                  )}
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                {tabs.filter(tab => tab.id !== "ALL").map((tab) => {
+                  const isActive = filterStatus === tab.id;
+                  const count = jobs.filter(j => getJobStage(j.status) === tab.id).length;
+                  const Icon = tab.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={tab.id}
+                      onClick={() => setFilterStatus(tab.id)}
+                      className={isActive ? "bg-accent" : ""}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      <span className="flex-1">{tab.label}</span>
+                      <span className="text-xs text-muted-foreground">{count}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Filter Tabs - Desktop (All tabs visible) */}
+          <div className="hidden md:flex flex-wrap gap-2 pb-2 overflow-x-auto">
             {tabs.map((tab) => {
               const isActive = filterStatus === tab.id;
               const count = jobs.filter(j =>
