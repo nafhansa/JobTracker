@@ -10,6 +10,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import DashboardSection from "@/components/DashboardSection";
 import DashboardClient from "@/components/tracker/DashboardClient";
 import ProfileSection from "@/components/ProfileSection";
+import SettingsSection from "@/components/SettingsSection";
 import GmailConnect from "@/components/GmailConnect";
 import JobFormModal from "@/components/forms/AddJobModal";
 import { getPlanLimits, isAdminUser } from "@/lib/supabase/subscriptions";
@@ -43,6 +44,12 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
     setIsModalOpen(true);
   };
 
+  const handlePlusButtonClick = () => {
+    setActiveSection("applications");
+    setEditingJob(null);
+    setIsModalOpen(true);
+  };
+
   const handleEditJob = (job: JobApplication) => {
     setEditingJob(job);
     setIsModalOpen(true);
@@ -68,13 +75,15 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
         );
       case "profile":
         return <ProfileSection isAdmin={isAdmin} />;
+      case "settings":
+        return <SettingsSection isAdmin={isAdmin} />;
       default:
         return null;
     }
   };
 
   return (
-    <div className={`flex ${activeSection === "applications" ? "h-[calc(100vh-40px)]" : "min-h-screen"} pt-16 lg:pt-20 overflow-hidden`}>
+    <div className={`flex ${activeSection === "applications" ? "h-[calc(100vh-40px)]" : "min-h-screen"} pt-0 lg:pt-20 overflow-hidden`}>
       {/* Sidebar - Desktop Only */}
       <div className="hidden lg:block">
         <Sidebar
@@ -86,80 +95,61 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       </div>
 
       {/* Main Content */}
-      <main className={`flex-1 lg:pl-64 w-full ${activeSection === "applications" ? "overflow-hidden" : ""}`}>
-        <div className={`${activeSection === "applications" ? "h-full px-4 sm:px-6 md:px-8 lg:px-16 xl:px-18" : "max-w-7xl mx-auto p-4 md:p-6 pb-26 lg:pb-18"}`}>
+      <main className={`flex-1 lg:pl-64 w-full min-h-0 ${activeSection === "applications" ? "overflow-hidden" : ""}`}>
+        <div className={`${activeSection === "applications" ? "h-full flex flex-col px-4 sm:px-6 md:px-8 lg:px-16 xl:px-18 pt-3 md:pt-4 min-h-0" : "max-w-7xl mx-auto p-4 pt-6 md:pt-6 md:p-6 pb-26 lg:pb-18"}`}>
           {/* Section Header */}
-          <div className="mb-2 md:mb-3">
+          <div className="mb-0 md:mb-1.5">
             {activeSection === "dashboard" && (
               <>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
                   Dashboard
                 </h1>
-                <p className="text-muted-foreground text-sm md:text-base">
+                <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                   Track your job search progress and performance metrics
                 </p>
               </>
             )}
             {activeSection === "applications" && (
               <>
-                <h1 className="text-3xl md:text-4xl pt-4 md:pt-4 font-bold text-foreground mb-1 tracking-tight">
+                <h1 className="text-3xl md:text-4xl pt-0.5 md:pt-2 font-bold text-foreground mb-0.5 tracking-tight">
                   {t("dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground text-sm md:text-base mb-6 md:mb-8">
+                <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                   {t("dashboard.subtitle")}
                 </p>
               </>
             )}
             {activeSection === "profile" && (
               <>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
                   Profile
                 </h1>
-                <p className="text-muted-foreground text-sm md:text-base">
+                <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                   View your subscription and account details
+                </p>
+              </>
+            )}
+            {activeSection === "settings" && (
+              <>
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                  Settings
+                </h1>
+                <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
+                  Customize your app preferences
                 </p>
               </>
             )}
           </div>
 
           {/* Content */}
-          <div className={`${activeSection === "applications" ? "h-full" : "animate-in fade-in duration-500"}`}>
+          <div className={`${activeSection === "applications" ? "h-full flex flex-col min-h-0" : "animate-in fade-in duration-500"}`}>
             {renderContent()}
           </div>
         </div>
       </main>
 
-      {/* Floating Button & Nav tetap sama */}
-      {/* Floating Add Button - Only show on dashboard section */}
-      {activeSection === "dashboard" && (
-        <>
-          {/* Mobile: Top-right button with text */}
-          <div className="fixed top-[83px] right-4 z-40 md:hidden">
-            <Button
-              onClick={handleNavigateToApplications}
-              className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 px-4 py-2 rounded-full flex items-center gap-2"
-              size="sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Application</span>
-            </Button>
-          </div>
-
-          {/* Desktop: Bottom-right floating button */}
-          <div className="hidden md:block fixed bottom-8 right-8 z-50">
-            <Button
-              onClick={handleNavigateToApplications}
-              className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20 rounded-full h-14 w-14 flex items-center justify-center"
-              size="icon"
-            >
-              <Plus className="w-6 h-6" />
-            </Button>
-          </div>
-        </>
-      )}
-
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
+      <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} />
 
       {/* Shared Job Form Modal */}
       <JobFormModal

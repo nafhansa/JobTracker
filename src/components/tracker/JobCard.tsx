@@ -233,17 +233,12 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground mt-4 border-t border-border pt-3">
-            <div className="flex items-center gap-1">
-              <CalendarDays className="w-3 h-3" />
-              {job.createdAt ? formatDistance(job.createdAt, new Date(), { addSuffix: true }) : "Just now"}
-            </div>
-            {job.applicationUrl && (
-              <a href={job.applicationUrl} target="_blank" rel="noreferrer" className="flex items-center hover:text-primary transition-colors duration-300">
-                View Job <ExternalLink className="w-3 h-3 ml-1" />
-              </a>
-            )}
-          </div>
+           <div className="flex items-center text-[10px] uppercase tracking-wider text-muted-foreground mt-4 border-t border-border pt-3">
+             <div className="flex items-center gap-1">
+               <CalendarDays className="w-3 h-3" />
+               {job.createdAt ? formatDistance(job.createdAt, new Date(), { addSuffix: true }) : "Just now"}
+             </div>
+           </div>
         </div>
 
         {/* Footer / Status Bar */}

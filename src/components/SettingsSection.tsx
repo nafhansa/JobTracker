@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, LogOut, ShieldCheck, Sparkles, Moon, Sun, Languages } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { LogOut, ShieldCheck, Sparkles, Moon, Sun, Languages } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import { logout } from "@/lib/firebase/auth";
@@ -14,9 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface SettingsDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface SettingsSectionProps {
+  isAdmin: boolean;
 }
 
 function getInitialTheme(): "light" | "dark" {
@@ -26,22 +25,17 @@ function getInitialTheme(): "light" | "dark" {
   return "light";
 }
 
-export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
+export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   const router = useRouter();
   const { user, subscription } = useAuth();
-  const { language, setLanguage } = useLanguage();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState<"light" | "dark">(() => getInitialTheme());
+
+  const isFreePlan = subscription?.plan === "free";
 
   const isAdminUser = (email?: string | null) => {
     return email === "admin@jobtracker.com" || email === "nafhan@gmail.com";
   };
-
-  const isFreePlan = subscription?.plan === "free";
-
-  useEffect(() => {
-    setIsAdmin(isAdminUser(user?.email || null));
-  }, [user?.email]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -59,64 +53,30 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
   };
 
   const handleLogout = async () => {
-    onClose();
     await logout();
     router.push("/login");
   };
 
   const handleUpgrade = () => {
     router.push("/upgrade");
-    onClose();
   };
 
   const handleAdmin = () => {
     router.push("/admin");
-    onClose();
   };
 
   return (
-    <>
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Drawer */}
-      <aside
-        className={`
-          fixed top-0 right-0 z-50 h-full w-72 bg-background dark:bg-card
-          transform transition-transform duration-300 ease-in-out shadow-2xl
-          ${isOpen ? "translate-x-0" : "translate-x-full"}
-        `}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Settings</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Settings List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Theme & Language */}
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="bg-card dark:bg-card border border-border rounded-xl overflow-hidden">
+        <div className="p-4 space-y-6">
           <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               Appearance
             </h3>
             <div className="space-y-3">
-              {/* Theme Card - Clickable */}
               <button
                 onClick={toggleTheme}
-                className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-accent rounded-lg transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-lg transition-colors"
               >
                 <span className="text-sm font-medium text-foreground">Theme</span>
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -125,10 +85,9 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
                 </div>
               </button>
 
-              {/* Language Card - Clickable */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-accent rounded-lg transition-colors">
+                  <button className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-lg transition-colors">
                     <span className="text-sm font-medium text-foreground">Language</span>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Languages className="w-5 h-5" />
@@ -156,14 +115,13 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
             </div>
           </div>
 
-          {/* Account */}
           <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               Account
             </h3>
             <div className="space-y-3">
               {user?.email && (
-                <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="p-4 bg-muted/30 rounded-lg">
                   <span className="text-xs text-muted-foreground">Email</span>
                   <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
                 </div>
@@ -171,7 +129,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
               <Button
                 variant="ghost"
                 onClick={handleLogout}
-                className="w-full justify-start text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="w-full justify-start text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-4"
               >
                 <LogOut className="w-4 h-4 mr-3" />
                 <span>Logout</span>
@@ -179,27 +137,13 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
             </div>
           </div>
 
-          {/* Subscription */}
           <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Subscription
-            </h3>
             <div className="space-y-3">
-              {isFreePlan && (
-                <Button
-                  onClick={handleUpgrade}
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg shadow-blue-500/20"
-                >
-                  <Sparkles className="w-4 h-4 mr-3" />
-                  <span>Upgrade to Pro</span>
-                </Button>
-              )}
-
               {isAdmin && (
                 <Button
                   onClick={handleAdmin}
                   variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent p-4"
                 >
                   <ShieldCheck className="w-4 h-4 mr-3" />
                   <span>Admin</span>
@@ -208,7 +152,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
             </div>
           </div>
         </div>
-      </aside>
-    </>
+      </div>
+    </div>
   );
 }

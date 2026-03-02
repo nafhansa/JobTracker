@@ -5,7 +5,7 @@ import { BarChart3, Briefcase, User, X, Menu } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { Button } from "@/components/ui/button";
 
-export type SidebarSection = "dashboard" | "applications" | "profile";
+export type SidebarSection = "dashboard" | "applications" | "profile" | "settings";
 
 export interface SidebarProps {
   activeSection: SidebarSection;
