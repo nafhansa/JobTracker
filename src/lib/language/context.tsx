@@ -278,6 +278,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sidebar.dashboard": "Dashboard",
     "sidebar.applications": "Applications",
     "sidebar.profile": "Profile",
+    "sidebar.settings": "Settings",
     "sidebar.connected": "Connected",
     
     // Job Form Modal
@@ -542,6 +543,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sidebar.dashboard": "Dashboard",
     "sidebar.applications": "Lamaran",
     "sidebar.profile": "Profil",
+    "sidebar.settings": "Pengaturan",
     "sidebar.connected": "Terhubung",
     
     // Job Form Modal
