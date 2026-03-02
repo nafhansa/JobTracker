@@ -104,7 +104,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   ];
 
    return (
-    <div className="max-w-[90rem] mx-auto h-full flex flex-col px-4 sm:px-6">
+     <div className="max-w-[90rem] mx-auto h-full flex flex-col min-h-0 px-4 sm:px-6">
 
        {/* --- FIXED TOP SECTION (Header, Search, Add, Filters) --- */}
        <div className="flex-shrink-0 space-y-2 pb-2 border-b border-border">
@@ -238,19 +238,17 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                 </button>
               </div>
             )}
-         </div>
+          </div>
 
-         {/* --- STATS SCROLLABLE SECTION (Conditional) --- */}
-         {showStats && (
-           <div className="flex-shrink-0 border-b border-border">
-             <div className="max-h-64 overflow-y-auto">
-               <JobStats jobs={jobs} />
-             </div>
-           </div>
-         )}
+          {/* --- SCROLLABLE CONTENT SECTION (Stats + Cards) --- */}
+          <div className="flex-1 overflow-y-auto min-h-0 pr-1 pt-2 md:pt-4 pb-40 md:pb-30">
 
-         {/* --- SCROLLABLE CARD GRID SECTION --- */}
-        <div className="flex-1 overflow-y-auto min-h-0 pr-1 pt-2 md:pt-4 pb-40 md:pb-30">
+          {/* --- STATS SECTION (Conditional) --- */}
+          {showStats && (
+            <div className="mb-4 border-b border-border">
+              <JobStats jobs={jobs} />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
             {/* Job Cards List */}
