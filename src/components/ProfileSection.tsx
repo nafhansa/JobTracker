@@ -145,32 +145,31 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
 
       {/* Subscription Plan Card */}
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 md:items-center items-start">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl border flex-shrink-0 ${
-              isFreePlan
-                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
-                : "bg-gradient-to-br from-blue-600 to-indigo-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-            }`}>
-              {isFreePlan ? <Gift className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
+            <div className="flex flex-col items-center">
+              <div className={`p-3 rounded-xl border flex-shrink-0 ${
+                isFreePlan
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+                  : "bg-gradient-to-br from-blue-600 to-indigo-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+              }`}>
+                {isFreePlan ? <Gift className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
+              </div>
+              <h3 className="text-base font-semibold text-foreground leading-none mt-2 text-center">
+                {isAdmin ? t("profile.admin") : isFreePlan ? t("profile.freePlan") : isLifetime ? t("profile.lifetime") : t("profile.monthly")}
+              </h3>
+              <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border leading-none mt-2 ${
+                subscription.status === 'active'
+                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                  : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+              }`}>
+                {subscription.status}
+              </span>
             </div>
 
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-semibold text-foreground leading-none">
-                  {isAdmin ? t("profile.admin") : isFreePlan ? t("profile.freePlan") : isLifetime ? t("profile.lifetime") : t("profile.monthly")}
-                </h3>
-                <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border leading-none ${
-                  subscription.status === 'active'
-                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                    : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                }`}>
-                  {subscription.status}
-                </span>
-              </div>
-
               {!isFreePlan && displayDate && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>
                     {subscription.status === 'active' ? t("profile.renewsOn") : t("profile.expiresOn")}: {displayDate}
