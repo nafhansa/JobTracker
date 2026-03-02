@@ -185,9 +185,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                   {filterStatus !== "ALL" ? (
                     <>
                       {tabs.find(t => t.id === filterStatus)?.icon && (
-                        <span className="w-4 h-4">
-                          {React.createElement(tabs.find(t => t.id === filterStatus)!.icon)}
-                        </span>
+                        React.createElement(tabs.find(t => t.id === filterStatus)!.icon, { className: "w-4 h-4" })
                       )}
                       {tabs.find(t => t.id === filterStatus)?.label}
                     </>

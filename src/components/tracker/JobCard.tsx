@@ -1,24 +1,18 @@
 import { JobApplication, JobStatus } from "@/types";
 import { formatDistance } from "date-fns";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Building2,
   MoreVertical,
   Trash2,
-  ExternalLink,
   Banknote,
   CalendarDays,
   XCircle,
   Ban,
-  Rocket,
   Pencil,
   Mail,
-  Lock,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { deleteJob as supabaseDeleteJob, updateJob as supabaseUpdateJob } from "@/lib/supabase/jobs";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import StatusProgressSelector from "./StatusProgressSelector";
 
 interface JobCardProps {
   job: JobApplication;
@@ -39,7 +34,6 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, onEdit }: JobCardProps) {
-  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth >= 768;
@@ -59,11 +53,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     interviewEmail: "Interview Invite",
     contractEmail: "Contract Offer 🚀",
   };
-  // Show current stage even if rejected (for jobs that reached response/interview)
-  const currentStatusText = lastActiveIndex >= 0 ? statusLabels[statusKeys[lastActiveIndex]] : "Not Started";
-  // Check if job reached response or interview stage (should stay in those categories even if rejected)
   const hasReachedResponseOrInterview = job.status.cvResponded || job.status.interviewEmail;
-  const completedCount = statusKeys.filter((k) => job.status[k]).length;
   const formattedSalary = new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -78,7 +68,6 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
   const handleEditClick = () => {
     onEdit(job);
   };
-
 
   const handleToggleReject = async () => {
     const newStatus = { ...job.status, rejected: !isRejected };
@@ -102,22 +91,8 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
-  const handlePreviousStage = async () => {
-    if (lastActiveIndex > 0) {
-      const newStatus = { ...job.status };
-      const newStage = lastActiveIndex - 1;
-      for (let i = newStage; i < statusKeys.length; i++) newStatus[statusKeys[i]] = false;
-      await supabaseUpdateJob(job.id!, { status: newStatus });
-    }
-  };
-
-  const handleNextStage = async () => {
-    if (lastActiveIndex < statusKeys.length - 1) {
-      const newStatus = { ...job.status };
-      const newStage = lastActiveIndex + 1;
-      for (let i = 0; i <= newStage; i++) newStatus[statusKeys[i]] = true;
-      await supabaseUpdateJob(job.id!, { status: newStatus });
-    }
+  const handleStatusChange = async (newStatus: JobStatus) => {
+    await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
   return (
@@ -181,7 +156,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
               <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-accent">
                 {isRejected ? (
                   <>
-                    <Rocket className="w-4 h-4 mr-2 text-blue-500" />
+                    <div className="w-4 h-4 mr-2 text-blue-500 flex items-center justify-center">✓</div>
                     Mark as Active
                   </>
                 ) : (
@@ -245,73 +220,47 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
         <div className={`relative z-10 border-t p-4 rounded-b-xl backdrop-blur-sm transition-colors duration-300
          ${isRejected && !hasReachedResponseOrInterview ? "bg-red-50 border-red-200" : isRejected && hasReachedResponseOrInterview ? "bg-muted/30 border-border border-t-red-200" : "bg-muted/30 border-border"}
       `}>
-          <div className="flex justify-between items-end mb-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
-                Current Stage
-              </span>
-              <div className="flex items-center gap-2 flex-wrap">
-                {isRejected && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[10px] font-semibold uppercase tracking-wide">
-                    <XCircle className="w-3 h-3" />
-                    Rejected
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+           <div className="flex justify-between items-end mb-3">
+             <div className="flex flex-col gap-1">
+               <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
+                 Current Stage
+               </span>
+               <div className="flex items-center gap-2 flex-wrap">
+                 {isRejected && (
+                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[10px] font-semibold uppercase tracking-wide">
+                     <XCircle className="w-3 h-3" />
+                     Rejected
+                   </span>
+                 )}
+               </div>
+             </div>
+           </div>
 
-          <div className="flex gap-1.5 h-2 w-full">
-            {statusKeys.map((key) => (
-              <div
-                key={key}
-                title={statusLabels[key]}
-                className={`flex-1 rounded-sm transition-all duration-300
-                ${isRejected && !hasReachedResponseOrInterview
-                    ? "bg-red-200"
-                    : job.status[key]
-                      ? isRejected && hasReachedResponseOrInterview
-                        ? "bg-blue-600 shadow-sm scale-y-110 opacity-75"
-                        : "bg-blue-600 shadow-sm scale-y-110"
-                      : "bg-muted"
-                  }`}
+           <div className="flex gap-1.5 h-2 w-full">
+             {statusKeys.map((key) => (
+               <div
+                 key={key}
+                 title={statusLabels[key]}
+                 className={`flex-1 rounded-sm transition-all duration-300
+                 ${isRejected && !hasReachedResponseOrInterview
+                     ? "bg-red-200"
+                     : job.status[key]
+                       ? isRejected && hasReachedResponseOrInterview
+                         ? "bg-blue-600 shadow-sm scale-y-110 opacity-75"
+                         : "bg-blue-600 shadow-sm scale-y-110"
+                       : "bg-muted"
+                   }`}
+               />
+             ))}
+           </div>
+
+            <div className="flex justify-center mt-4">
+              <StatusProgressSelector
+                status={job.status}
+                onStatusChange={handleStatusChange}
+                isRejected={isRejected}
               />
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <button
-              onClick={handlePreviousStage}
-              disabled={lastActiveIndex <= 0 || (isRejected && !hasReachedResponseOrInterview)}
-              className={`p-2.5 rounded-xl border transition-all duration-200 shadow-sm
-                ${lastActiveIndex <= 0 || (isRejected && !hasReachedResponseOrInterview)
-                  ? "border-border text-muted-foreground cursor-not-allowed opacity-30"
-                  : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
-                }`}
-              title="Previous Stage"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <div className={`text-sm font-semibold tracking-wide px-4 py-2 rounded-xl min-w-[120px] text-center border border-border shadow-sm
-              ${completedCount === 5 ? "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "text-foreground"}
-            `}>
-              {currentStatusText}
             </div>
-
-            <button
-              onClick={handleNextStage}
-              disabled={lastActiveIndex >= statusKeys.length - 1 || (isRejected && !hasReachedResponseOrInterview)}
-              className={`p-2.5 rounded-xl border transition-all duration-200 shadow-sm
-                ${lastActiveIndex >= statusKeys.length - 1 || (isRejected && !hasReachedResponseOrInterview)
-                  ? "border-border text-muted-foreground cursor-not-allowed opacity-30"
-                  : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
-                }`}
-              title="Next Stage"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
         </div>
           </>
         )}
