@@ -1,3 +1,5 @@
+"use client";
+
 import { JobStatus } from "@/types";
 import { ChevronDown, Rocket } from "lucide-react";
 import {
@@ -52,25 +54,50 @@ export default function StatusProgressSelector({ status, onStatusChange, isRejec
           <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="min-w-[220px] bg-card border-border shadow-lg">
+      
+      <DropdownMenuContent align="center" className="min-w-[230px] bg-card border-border shadow-lg p-1">
         {statusKeys.map((key, index) => {
           const isActive = index <= lastActiveIndex;
+          const isLast = index === statusKeys.length - 1;
+          
           return (
             <DropdownMenuItem
               key={key}
               onClick={() => handleStatusSelect(index)}
-              className={`cursor-pointer transition-colors
-                ${isActive ? "text-foreground hover:bg-accent" : "text-muted-foreground hover:bg-accent"}
-              `}
+              className="relative cursor-pointer transition-colors focus:bg-accent py-2 px-3 overflow-visible"
             >
-              <div className="flex items-center gap-2 w-full">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0
-                  ${isActive ? "bg-blue-500" : "bg-muted"}
-                `} />
-                <span className="text-sm">{statusLabels[key]}</span>
-                {key === "contractEmail" && index === lastActiveIndex && (
-                  <Rocket className="w-3 h-3 ml-auto text-blue-500" />
-                )}
+              <div className="flex items-start gap-4 w-full">
+                {/* Stepper Visual Logic */}
+                <div className="relative flex flex-col items-center flex-shrink-0 mt-1.5">
+                  {/* Garis Vertikal */}
+                  {!isLast && (
+                    <div 
+                      className={`absolute top-2.5 w-[2px] h-[calc(100%+16px)] transition-colors duration-500
+                        ${index < lastActiveIndex ? "bg-blue-500" : "bg-muted"}
+                      `} 
+                    />
+                  )}
+                  
+                  {/* Bulatan Titik */}
+                  <div className={`relative z-10 w-2.5 h-2.5 rounded-full transition-all duration-500
+                    ${isActive 
+                      ? "bg-blue-500 ring-4 ring-blue-500/20 scale-110" 
+                      : "bg-muted border border-border"}
+                  `} />
+                </div>
+
+                {/* Teks Status */}
+                <div className="flex items-center justify-between w-full">
+                  <span className={`text-sm font-medium transition-colors duration-300 ${
+                    isActive ? "text-foreground" : "text-muted-foreground"
+                  }`}>
+                    {statusLabels[key]}
+                  </span>
+                  
+                  {key === "contractEmail" && isActive && (
+                    <Rocket className="w-3.5 h-3.5 text-blue-500 animate-bounce" />
+                  )}
+                </div>
               </div>
             </DropdownMenuItem>
           );

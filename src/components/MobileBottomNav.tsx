@@ -10,85 +10,58 @@ interface MobileBottomNavProps {
   onPlusButtonClick: () => void;
 }
 
-export default function MobileBottomNav({ activeSection, onSectionChange, onPlusButtonClick }: MobileBottomNavProps) {
+export default function MobileBottomNav({ 
+  activeSection, 
+  onSectionChange, 
+  onPlusButtonClick 
+}: MobileBottomNavProps) {
   const { t } = useLanguage();
 
-  const navItems: Array<{
-    id: SidebarSection;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { id: "dashboard", icon: BarChart3 },
-    { id: "applications", icon: Briefcase },
-    { id: "profile", icon: User },
-    { id: "settings", icon: SettingsIcon },
+  const navItems = [
+    { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
+    { id: "applications", icon: Briefcase, label: t("sidebar.applications") },
+    { id: "plus", isPlus: true }, 
+    { id: "profile", icon: User, label: t("sidebar.profile") },
+    { id: "settings", icon: SettingsIcon, label: t("sidebar.settings") },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 dark:bg-card/95 backdrop-blur-lg border-t border-border pb-safe">
-      <div className="flex items-center justify-around py-2">
-        {navItems.slice(0, 2).map((item) => {
-          const Icon = item.icon;
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden bg-background/80 dark:bg-card/80 backdrop-blur-xl border-t border-border px-2">
+      {/* Container utama dengan lebar penuh */}
+      <div className="max-w-md mx-auto flex items-center justify-between h-16 pb-safe">
+        {navItems.map((item) => {
+          // TOMBOL PLUS TENGAH
+          if (item.isPlus) {
+            return (
+              <div key="center-action" className="flex-1 flex justify-center -translate-y-4">
+                <button
+                  onClick={onPlusButtonClick}
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200"
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
+              </div>
+            );
+          }
+
+          // TOMBOL NAVIGASI
+          const Icon = item.icon as React.ComponentType<{ className?: string }>;
           const isActive = activeSection === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
-              className={`
-                flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200
-                ${isActive
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-muted-foreground hover:text-foreground"
-                }
-              `}
+              onClick={() => onSectionChange(item.id as SidebarSection)}
+              className="flex-1 flex flex-col items-center justify-center gap-1 group"
             >
-              <Icon
-                className={`
-                  w-6 h-6 transition-all duration-200
-                  ${isActive ? "scale-110" : "scale-100"}
-                `}
-              />
-              <span className={`text-[10px] font-medium ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`}>
-                {item.id === "dashboard" && t("sidebar.dashboard")}
-                {item.id === "applications" && t("sidebar.applications")}
-              </span>
-            </button>
-          );
-        })}
-
-        <button
-          onClick={onPlusButtonClick}
-          className="group flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white ring-4 ring-blue-50 dark:ring-blue-900/20 hover:ring-blue-100 transition-all"
-        >
-          <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-        </button>
-
-        {navItems.slice(2).map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSectionChange(item.id)}
-              className={`
-                flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200
-                ${isActive
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-muted-foreground hover:text-foreground"
-                }
-              `}
-            >
-              <Icon
-                className={`
-                  w-6 h-6 transition-all duration-200
-                  ${isActive ? "scale-110" : "scale-100"}
-                `}
-              />
-              <span className={`text-[10px] font-medium ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`}>
-                {item.id === "profile" && t("sidebar.profile")}
-                {item.id === "settings" && t("sidebar.settings")}
-              </span>
+              <div className={`flex flex-col items-center transition-colors duration-200 ${
+                isActive ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"
+              }`}>
+                <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
+                <span className="text-[10px] font-medium mt-0.5">
+                  {item.label}
+                </span>
+              </div>
             </button>
           );
         })}
