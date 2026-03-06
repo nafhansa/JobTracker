@@ -36,7 +36,7 @@ export default function MobileBottomNav({
               <div key="center-action" className="flex-1 flex justify-center -translate-y-4">
                 <button
                   onClick={onPlusButtonClick}
-                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200"
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200"
                 >
                   <Plus className="w-6 h-6" />
                 </button>
