@@ -107,20 +107,22 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
       {/* NAVBAR - Desktop Only */}
       <nav className="hidden md:flex fixed top-0 left-0 right-0 z-[60] border-b border-border bg-background/95 dark:bg-card/95 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 shadow-md">
-        <div className="flex items-center justify-between gap-4 max-w-full">
-          {/* Logo */}
+        <div className="flex items-center justify-between w-full mx-auto">
+          
+          {/* Sisi Kiri: Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <h1 className="font-bold text-lg md:text-xl tracking-wider md:tracking-widest text-foreground transition-colors">
               Job<span className="text-primary">Tracker</span>.
             </h1>
           </div>
 
-          {/* Right Side - Desktop only */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Sisi Kanan: All Controls & Info */}
+          <div className="flex items-center gap-3 ml-auto">
             <ThemeToggle />
             <LanguageToggle />
 
-            {/* Upgrade Button for Free Users - Desktop */}
+            <div className="h-4 w-[1px] bg-border mx-1" />
+
             {isFreeUser && (
               <Button
                 variant="outline"
@@ -133,7 +135,6 @@ export default function DashboardPage() {
               </Button>
             )}
 
-            {/* Admin Button - Desktop */}
             {isAdmin && (
               <Button
                 variant="ghost"
@@ -146,17 +147,15 @@ export default function DashboardPage() {
               </Button>
             )}
 
-            {/* Email - Desktop */}
-            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors truncate max-w-[150px]">
+            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase truncate max-w-[200px] px-2">
               {user?.email}
             </span>
 
-            {/* Logout Button - Desktop */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-foreground hover:text-primary hover:bg-accent border border-border hover:border-primary/50 transition-colors px-3 h-9"
+              className="text-foreground hover:text-destructive hover:bg-destructive/10 border border-border hover:border-destructive/50 transition-colors px-3 h-9"
             >
               <LogOut className="w-4 h-4 mr-2" />
               <span className="text-xs">{t("dashboard.logout")}</span>
