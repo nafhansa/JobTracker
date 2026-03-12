@@ -15,8 +15,21 @@ export function PWAInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const isSmallScreen = window.innerWidth < 1024;
+      return isMobileDevice || isSmallScreen;
+    };
+
+    const mobile = checkMobile();
+    setIsMobile(mobile);
+
+    if (!mobile) return;
+
     const checkInstalled = async () => {
       // Check if app is already installed
       if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -83,9 +96,10 @@ export function PWAInstallBanner() {
   const handleDismiss = () => {
     setShowBanner(false);
     localStorage.setItem("pwa-install-dismissed", "true");
+    window.dispatchEvent(new CustomEvent("pwa-banner-dismissed"));
   };
 
-  if (!showBanner || isInstalled) return null;
+  if (!showBanner || isInstalled || !isMobile) return null;
 
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
 

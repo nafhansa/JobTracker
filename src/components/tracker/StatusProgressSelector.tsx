@@ -46,7 +46,7 @@ export default function StatusProgressSelector({ status, onStatusChange, isRejec
           variant="outline"
           disabled={isDisabled}
           className={`flex items-center gap-2 min-w-[200px] justify-between px-4 h-10 rounded-lg border-border shadow-sm transition-all duration-200
-            ${completedCount === 5 ? "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800" : "text-foreground"}
+            ${completedCount === 5 ? "text-primary border-primary/30" : "text-foreground"}
             ${isDisabled ? "opacity-50 cursor-not-allowed" : "hover:border-primary/50 hover:bg-primary/5"}
           `}
         >
@@ -73,7 +73,7 @@ export default function StatusProgressSelector({ status, onStatusChange, isRejec
                   {!isLast && (
                     <div 
                       className={`absolute top-2.5 w-[2px] h-[calc(100%+16px)] transition-colors duration-500
-                        ${index < lastActiveIndex ? "bg-blue-500" : "bg-muted"}
+                        ${index < lastActiveIndex ? "bg-primary" : "bg-muted"}
                       `} 
                     />
                   )}
@@ -81,7 +81,7 @@ export default function StatusProgressSelector({ status, onStatusChange, isRejec
                   {/* Bulatan Titik */}
                   <div className={`relative z-10 w-2.5 h-2.5 rounded-full transition-all duration-500
                     ${isActive 
-                      ? "bg-blue-500 ring-4 ring-blue-500/20 scale-110" 
+                      ? "bg-primary ring-4 ring-primary/20 scale-110" 
                       : "bg-muted border border-border"}
                   `} />
                 </div>
@@ -95,7 +95,7 @@ export default function StatusProgressSelector({ status, onStatusChange, isRejec
                   </span>
                   
                   {key === "contractEmail" && isActive && (
-                    <Rocket className="w-3.5 h-3.5 text-blue-500 animate-bounce" />
+                    <Rocket className="w-3.5 h-3.5 text-primary animate-bounce" />
                   )}
                 </div>
               </div>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { LogOut, ShieldCheck, Moon, Sun, Languages, Download, Check, Smartphone, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { LogOut, ShieldCheck, Sparkles, Moon, Sun, Languages } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
+import { useTheme } from "@/lib/theme/context";
 import { logout } from "@/lib/firebase/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,42 +15,84 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+  }
+}
+
 interface SettingsSectionProps {
   isAdmin: boolean;
 }
 
-function getInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-  if (storedTheme) return storedTheme;
-  return "light";
-}
-
 export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   const router = useRouter();
-  const { user, subscription } = useAuth();
+  const { user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const [theme, setTheme] = useState<"light" | "dark">(() => getInitialTheme());
+  const { mode, toggleMode, mounted } = useTheme();
 
-  const isFreePlan = subscription?.plan === "free";
-
-  const isAdminUser = (email?: string | null) => {
-    return email === "admin@jobtracker.com" || email === "nafhan@gmail.com";
-  };
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const isSmallScreen = window.innerWidth < 1024;
+      return isMobileDevice || isSmallScreen;
+    };
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
+    setIsMobile(checkMobile());
+
+    const isIOSDevice = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    setIsIOS(isIOSDevice);
+
+    const checkInstalled = () => {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      const isIOSStandalone = navigator.standalone === true;
+      return isStandalone || isIOSStandalone;
+    };
+
+    setIsInstalled(checkInstalled());
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === "accepted") {
+      setIsInstalled(true);
+    }
+
+    setDeferredPrompt(null);
   };
 
   const handleLogout = async () => {
@@ -57,13 +100,22 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
     router.push("/login");
   };
 
-  const handleUpgrade = () => {
-    router.push("/upgrade");
-  };
-
   const handleAdmin = () => {
     router.push("/admin");
   };
+
+  if (!mounted) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="bg-card dark:bg-card border border-border rounded-xl overflow-hidden">
+          <div className="p-4 space-y-6">
+            <div className="h-20 bg-muted/30 rounded-lg animate-pulse" />
+            <div className="h-20 bg-muted/30 rounded-lg animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -75,13 +127,13 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={toggleTheme}
+                onClick={toggleMode}
                 className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-lg transition-colors"
               >
-                <span className="text-sm font-medium text-foreground">Theme</span>
+                <span className="text-sm font-medium text-foreground">Mode</span>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  {theme === "light" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                  <span className="text-xs capitalize">{theme}</span>
+                  {mode === "light" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  <span className="text-xs capitalize">{mode}</span>
                 </div>
               </button>
 
@@ -114,6 +166,45 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
               </DropdownMenu>
             </div>
           </div>
+
+          {isMobile && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                App
+              </h3>
+              <div className="space-y-3">
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Install as App</p>
+                        <p className="text-xs text-muted-foreground">Get native-like experience</p>
+                      </div>
+                    </div>
+                    {isInstalled ? (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                        <Check className="w-4 h-4" />
+                        <span className="text-xs font-medium">Installed</span>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={handleInstallClick}
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                      >
+                        <Download className="w-4 h-4" />
+                        Install
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -153,6 +244,48 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
           </div>
         </div>
       </div>
+
+      {showIOSModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowIOSModal(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-primary" />
+                Install App
+              </h3>
+              <button
+                onClick={() => setShowIOSModal(false)}
+                className="p-1 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <p className="text-muted-foreground">To install JobTracker on your iOS device:</p>
+              <ol className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">1</span>
+                  <span>Tap the <strong className="text-primary">Share</strong> button in Safari</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">2</span>
+                  <span>Scroll down and tap <strong className="text-primary">Add to Home Screen</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">3</span>
+                  <span>Tap <strong className="text-primary">Add</strong> to install JobTracker</span>
+                </li>
+              </ol>
+            </div>
+            <button
+              onClick={() => setShowIOSModal(false)}
+              className="w-full mt-6 px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

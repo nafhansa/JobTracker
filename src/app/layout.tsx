@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
 import { PaddleProvider } from "@/components/providers/PaddleProvider";
 import { LanguageProvider } from "@/lib/language/context";
+import { ThemeProvider } from "@/lib/theme/context";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -31,15 +32,17 @@ export default function RootLayout({
       </head>
       <body>
         <ErrorBoundary>
-          <LanguageProvider>
-            <AuthProvider>
-              <PaddleProvider>
-                <SplashScreen />
-                {children}
-                <PWAInstallBanner />
-              </PaddleProvider>
-            </AuthProvider>
-          </LanguageProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <PaddleProvider>
+                  <SplashScreen />
+                  {children}
+                  <PWAInstallBanner />
+                </PaddleProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

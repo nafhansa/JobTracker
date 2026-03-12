@@ -159,21 +159,21 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
   return (
     <div className="space-y-6">
       {/* Mental Booster - Interview Rate Card */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 md:p-8 shadow-xl">
+      <div className="relative overflow-hidden bg-primary rounded-2xl p-6 md:p-8 shadow-xl">
         {/* Decorative circles */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-        <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-blue-400/20 rounded-full blur-xl" />
+        <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-primary-foreground/10 rounded-full blur-xl" />
 
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-5 h-5 text-yellow-300" />
-                <h2 className="text-sm font-semibold text-blue-100 uppercase tracking-wider">
+                <h2 className="text-sm font-semibold text-primary-foreground/80 uppercase tracking-wider">
                   {t("stats.interviewRate")}
                 </h2>
               </div>
-              <p className="text-blue-200 text-xs">
+              <p className="text-primary-foreground/60 text-xs">
                 {stats.interviewCount} {t("stats.ofApplications")} {stats.totalJobs}
               </p>
             </div>
@@ -183,12 +183,12 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
           </div>
 
           <div className="flex items-baseline gap-2">
-            <span className="text-6xl md:text-7xl font-bold text-white tracking-tight">
+            <span className="text-6xl md:text-7xl font-bold text-primary-foreground tracking-tight">
               {stats.interviewRate.toFixed(1)}%
             </span>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 text-xs text-blue-200">
+          <div className="mt-4 flex items-center gap-2 text-xs text-primary-foreground/60">
             {stats.hasGrowth ? (
               <>
                 <TrendingUp className="w-4 h-4 text-green-300" />
@@ -233,7 +233,7 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
               className={`
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
                 ${timeRange === range.value
-                  ? "bg-primary text-white"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                 }
               `}
@@ -248,8 +248,8 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
             <AreaChart data={stats.chartData}>
               <defs>
                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -277,11 +277,11 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="#2563eb"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorCount)"
-                activeDot={{ r: 4, fill: "#2563eb" }}
+                activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -292,8 +292,8 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-green-600" />
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-primary" />
             </div>
             <span className="text-sm font-medium text-muted-foreground">{t("stats.totalApplications")}</span>
           </div>
@@ -302,8 +302,8 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
 
         <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-purple-600" />
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <span className="text-sm font-medium text-muted-foreground">Interviews</span>
           </div>

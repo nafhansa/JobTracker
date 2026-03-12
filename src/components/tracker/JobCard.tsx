@@ -95,9 +95,9 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     await supabaseUpdateJob(job.id!, { status: newStatus });
   };
 
-  return (
+return (
     <TooltipProvider>
-      <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-md transition-all duration-300
+      <div className={`group relative flex flex-col backdrop-blur-md border rounded-xl shadow-md transition-all duration-300 w-full
       ${isRejected && !hasReachedResponseOrInterview
           ? "bg-card border-red-200 hover:border-red-300"
           : isRejected && hasReachedResponseOrInterview
@@ -156,7 +156,7 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
               <DropdownMenuItem onClick={handleToggleReject} className="cursor-pointer hover:bg-accent">
                 {isRejected ? (
                   <>
-                    <div className="w-4 h-4 mr-2 text-blue-500 flex items-center justify-center">✓</div>
+                    <div className="w-4 h-4 mr-2 text-primary flex items-center justify-center">✓</div>
                     Mark as Active
                   </>
                 ) : (
@@ -190,8 +190,8 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
             ${isRejected && !hasReachedResponseOrInterview
                 ? "text-slate-500 bg-slate-50 border border-slate-200 grayscale"
                 : isRejected && hasReachedResponseOrInterview
-                ? "text-blue-600 bg-blue-50 border border-blue-200 opacity-75"
-                : "text-blue-700 bg-blue-50 border border-blue-200"
+                ? "text-primary bg-primary/10 border border-primary/20 opacity-75"
+                : "text-primary bg-primary/10 border border-primary/20"
               }`}>
               <Banknote className="w-3.5 h-3.5 mr-2" />
               {formattedSalary}
@@ -236,23 +236,23 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
              </div>
            </div>
 
-           <div className="flex gap-1.5 h-2 w-full">
-             {statusKeys.map((key) => (
-               <div
-                 key={key}
-                 title={statusLabels[key]}
-                 className={`flex-1 rounded-sm transition-all duration-300
-                 ${isRejected && !hasReachedResponseOrInterview
-                     ? "bg-red-200"
-                     : job.status[key]
-                       ? isRejected && hasReachedResponseOrInterview
-                         ? "bg-blue-600 shadow-sm scale-y-110 opacity-75"
-                         : "bg-blue-600 shadow-sm scale-y-110"
-                       : "bg-muted"
-                   }`}
-               />
-             ))}
-           </div>
+<div className="flex gap-1.5 h-2 w-full">
+              {statusKeys.map((key) => (
+                <div
+                  key={key}
+                  title={statusLabels[key]}
+                  className={`flex-1 rounded-sm transition-all duration-300
+                  ${isRejected && !hasReachedResponseOrInterview
+                      ? "bg-red-200"
+                      : job.status[key]
+                        ? isRejected && hasReachedResponseOrInterview
+                          ? "bg-primary shadow-sm scale-y-110 opacity-75"
+                          : "bg-primary shadow-sm scale-y-110"
+                        : "bg-muted"
+                    }`}
+                />
+              ))}
+            </div>
 
             <div className="flex justify-center mt-4">
               <StatusProgressSelector
