@@ -10,7 +10,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 
 export default function Navbar() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, mounted: langMounted } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   
   useEffect(() => {
@@ -56,19 +56,25 @@ export default function Navbar() {
           </div>
           
           {/* FIXED: Pricing button - padding lebih kecil di mobile */}
-          <Link
-            href="/pricing"
-            className={`text-xs md:text-sm font-semibold transition duration-300 px-2.5 py-1.5 md:px-6 md:py-2 rounded-lg whitespace-nowrap ${
-                isScrolled 
-                ? "hover:bg-accent hover:text-accent-foreground text-foreground" 
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
-            }`}
-          >
-            {t("nav.pricing")}
-          </Link>
+          {!langMounted ? (
+            <div className="h-6 md:h-9 w-16 md:w-20 bg-muted rounded-lg animate-pulse"></div>
+          ) : (
+            <Link
+              href="/pricing"
+              className={`text-xs md:text-sm font-semibold transition duration-300 px-2.5 py-1.5 md:px-6 md:py-2 rounded-lg whitespace-nowrap ${
+                  isScrolled 
+                  ? "hover:bg-accent hover:text-accent-foreground text-foreground" 
+                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+              }`}
+            >
+              {t("nav.pricing")}
+            </Link>
+          )}
           
           {/* FIXED: CTA button - padding lebih kecil di mobile */}
-          {user ? (
+          {!langMounted ? (
+            <div className="h-6 md:h-9 w-14 md:w-16 bg-muted rounded-lg animate-pulse"></div>
+          ) : user ? (
             <Link
               href="/dashboard"
               className={`text-xs md:text-sm font-semibold transition duration-300 px-2.5 py-1.5 md:px-6 md:py-2 rounded-lg whitespace-nowrap ${
