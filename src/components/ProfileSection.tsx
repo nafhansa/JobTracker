@@ -2,13 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Calendar, CreditCard, Gift, ArrowUpRight, User, ShieldCheck, AlertTriangle, Sparkles } from "lucide-react";
+import { Crown, Calendar, CreditCard, Gift, User, ShieldCheck, AlertTriangle, Sparkles, Palette, Check, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { getJobCount } from "@/lib/supabase/jobs";
 import { useLanguage } from "@/lib/language/context";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
+import { useTheme, ColorTheme, themeLabels } from "@/lib/theme/context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const colorThemes: ColorTheme[] = ["default", "aurora", "sakura", "meadow", "ocean", "lavender", "warm-sand"];
 
 function parseFirebaseDate(dateValue: unknown): Date | null {
   if (!dateValue) return null;
@@ -50,6 +59,7 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
   const router = useRouter();
   const { t } = useLanguage();
   const { subscription, updatedAt, user, isPro, loading } = useAuth();
+  const { colorTheme, mode, setColorTheme, toggleMode, mounted } = useTheme();
   const [jobCount, setJobCount] = useState<number | null>(null);
 
   const isAdmin = isAdminProp || isAdminUser(user?.email || "");
@@ -118,17 +128,17 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
   const usageColor = usagePercent >= 100
     ? "bg-red-500"
     : usagePercent >= 80
-    ? "bg-yellow-500"
-    : "bg-blue-600";
+    ? "bg-amber-500"
+    : "bg-primary";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* User Profile Card */}
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <User className="w-7 h-7 text-white" />
-          </div>
+<div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+              <User className="w-7 h-7 text-primary-foreground" />
+            </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold text-foreground mb-1">{t("profile.userInfo")}</h2>
             <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
@@ -143,6 +153,56 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
         </div>
       </div>
 
+      {/* Appearance Card */}
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Appearance</h3>
+        <div className="space-y-3">
+          <button
+            onClick={toggleMode}
+            className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-xl transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                {mode === "light" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </div>
+              <span className="text-sm font-medium text-foreground">Mode</span>
+            </div>
+            <span className="text-xs text-muted-foreground capitalize">{mode}</span>
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-xl transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Palette className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">Color Theme</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="text-xs">{mounted ? themeLabels[colorTheme].name : "Ocean Blue"}</span>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {colorThemes.map((theme) => (
+                <DropdownMenuItem
+                  key={theme}
+                  onClick={() => setColorTheme(theme)}
+                  className="flex items-center justify-between"
+                >
+                  <span>
+                    <span className="mr-2">{themeLabels[theme].emoji}</span>
+                    {themeLabels[theme].name}
+                  </span>
+                  {colorTheme === theme && <Check className="w-4 h-4 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
       {/* Subscription Plan Card */}
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6 md:items-center items-start">
@@ -150,8 +210,8 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
             <div className="flex flex-col items-center">
               <div className={`p-3 rounded-xl border flex-shrink-0 ${
                 isFreePlan
-                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
-                  : "bg-gradient-to-br from-blue-600 to-indigo-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
               }`}>
                 {isFreePlan ? <Gift className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
               </div>
@@ -231,7 +291,7 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-green-600">
+            <div className="flex items-center gap-2 text-sm text-primary">
               <ShieldCheck className="w-4 h-4" />
               <span className="font-medium">{isAdmin ? "Admin Access - Unlimited Jobs" : t("profile.unlimitedAccess")}</span>
             </div>
@@ -241,30 +301,30 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
 
       {/* Pro Features Card (for free users) */}
       {isFreePlan && !isAdmin && (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 shadow-sm">
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-foreground mb-2">{t("profile.unlockPro")}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   <span>{t("profile.feature1")}</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   <span>{t("profile.feature2")}</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   <span>{t("profile.feature3")}</span>
                 </li>
               </ul>
               <Button
                 onClick={() => router.push("/upgrade")}
-                className="mt-4 w-full bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+                className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
               >
                 {t("profile.upgradeNow")}
               </Button>

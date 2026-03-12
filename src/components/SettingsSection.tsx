@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { LogOut, ShieldCheck, Moon, Sun, Languages } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { LogOut, ShieldCheck, Sparkles, Moon, Sun, Languages } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
+import { useTheme } from "@/lib/theme/context";
 import { logout } from "@/lib/firebase/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,52 +18,33 @@ interface SettingsSectionProps {
   isAdmin: boolean;
 }
 
-function getInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-  if (storedTheme) return storedTheme;
-  return "light";
-}
-
 export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   const router = useRouter();
-  const { user, subscription } = useAuth();
+  const { user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const [theme, setTheme] = useState<"light" | "dark">(() => getInitialTheme());
-
-  const isFreePlan = subscription?.plan === "free";
-
-  const isAdminUser = (email?: string | null) => {
-    return email === "admin@jobtracker.com" || email === "nafhan@gmail.com";
-  };
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-  };
+  const { mode, toggleMode, mounted } = useTheme();
 
   const handleLogout = async () => {
     await logout();
     router.push("/login");
   };
 
-  const handleUpgrade = () => {
-    router.push("/upgrade");
-  };
-
   const handleAdmin = () => {
     router.push("/admin");
   };
+
+  if (!mounted) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="bg-card dark:bg-card border border-border rounded-xl overflow-hidden">
+          <div className="p-4 space-y-6">
+            <div className="h-20 bg-muted/30 rounded-lg animate-pulse" />
+            <div className="h-20 bg-muted/30 rounded-lg animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -75,13 +56,13 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={toggleTheme}
+                onClick={toggleMode}
                 className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-accent rounded-lg transition-colors"
               >
-                <span className="text-sm font-medium text-foreground">Theme</span>
+                <span className="text-sm font-medium text-foreground">Mode</span>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  {theme === "light" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                  <span className="text-xs capitalize">{theme}</span>
+                  {mode === "light" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  <span className="text-xs capitalize">{mode}</span>
                 </div>
               </button>
 

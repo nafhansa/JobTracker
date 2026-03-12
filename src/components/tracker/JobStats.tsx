@@ -172,12 +172,12 @@ export default function JobStats({ jobs }: JobStatsProps) {
   }
 
   const stageLabels = {
-    applied: { label: t("filter.applied"), icon: Send, color: "bg-blue-500" },
-    emailed: { label: t("filter.emailed"), icon: MessageSquare, color: "bg-purple-500" },
-    response: { label: t("filter.response"), icon: MessageSquare, color: "bg-indigo-500" },
-    interview: { label: t("filter.interview"), icon: UserCheck, color: "bg-yellow-500" },
-    offer: { label: t("filter.offer"), icon: ScrollText, color: "bg-blue-600" },
-    rejected: { label: t("filter.rejected"), icon: XCircle, color: "bg-slate-400" },
+    applied: { label: t("filter.applied"), icon: Send, color: "bg-primary" },
+    emailed: { label: t("filter.emailed"), icon: MessageSquare, color: "bg-primary/80" },
+    response: { label: t("filter.response"), icon: MessageSquare, color: "bg-primary/70" },
+    interview: { label: t("filter.interview"), icon: UserCheck, color: "bg-primary" },
+    offer: { label: t("filter.offer"), icon: ScrollText, color: "bg-primary" },
+    rejected: { label: t("filter.rejected"), icon: XCircle, color: "bg-muted-foreground/50" },
   };
 
   return (

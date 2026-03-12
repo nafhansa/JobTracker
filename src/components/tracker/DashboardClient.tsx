@@ -110,10 +110,10 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   ];
 
    return (
-     <div className="max-w-[90rem] mx-auto h-full flex flex-col min-h-0 px-4 sm:px-6">
+     <div className="w-full h-full flex flex-col min-h-0 px-4 sm:px-6">
 
        {/* --- FIXED TOP SECTION (Header, Search, Add, Filters) --- */}
-       <div className="flex-shrink-0 space-y-2 pb-2 border-b border-border">
+       <div className="flex-shrink-0 space-y-2 pb-2 border-b border-border max-w-[90rem] mx-auto w-full">
 
           {/* Search & Add Button */}
           <div className="flex flex-col md:flex-row justify-between items-end gap-4">
@@ -146,7 +146,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
               <Button
                 onClick={handleAddNew}
-                className="bg-primary text-white hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-blue-500/30 transition-all animate-ring-glow"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-primary/30 transition-all animate-ring-glow"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {t("add.button")}
@@ -320,11 +320,10 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               <JobStats jobs={jobs} />
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-
-            {/* Job Cards List */}
-            {paginatedJobs.length === 0 ? (
-              <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center md:col-span-2 xl:col-span-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             {/* Job Cards List */}
+             {paginatedJobs.length === 0 ? (
+               <div className="border-2 border-dashed border-border bg-muted/30 rounded-xl p-12 text-center col-span-full">
                 <div className="flex justify-center mb-4">
                   <div className="p-4 bg-primary/10 rounded-full text-primary">
                     <Sparkles className="w-8 h-8" />
@@ -351,9 +350,9 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
 
           </div>
 
-          {/* Limit Indicator */}
-          {isFreeUser && (
-            <div className="mt-6 md:col-span-2 xl:col-span-3">
+{/* Limit Indicator */}
+           {isFreeUser && (
+             <div className="mt-6 col-span-full">
               <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-foreground">{t("form.freeUsage")}</span>

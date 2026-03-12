@@ -185,21 +185,21 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         
         {/* Interview Rate */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden">
+        <div className="bg-primary rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden">
           <div className="flex items-center gap-2 opacity-90">
-            <TrendingUp className="w-4 h-4 text-white" />
-            <span className="text-[15px] font-bold text-white uppercase tracking-widest">Interview Rate</span>
+            <TrendingUp className="w-4 h-4 text-primary-foreground" />
+            <span className="text-[15px] font-bold text-primary-foreground uppercase tracking-widest">Interview Rate</span>
           </div>
           
-          <span className="text-5xl font-bold text-white tracking-tighter">
+          <span className="text-5xl font-bold text-primary-foreground tracking-tighter">
             {stats.interviewRate.toFixed(1)}%
           </span>
 
           <div className="flex items-center justify-between">
-            <div className="text-[10px] text-blue-100 font-medium px-2 py-0.5 rounded-full">
+            <div className="text-[10px] text-primary-foreground/70 font-medium px-2 py-0.5 rounded-full">
               {stats.interviewCount}/{stats.totalJobs} Apps
             </div>
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary-foreground/10 rounded-full blur-2xl" />
           </div>
         </div>
 
@@ -285,9 +285,9 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  <linearGradient id="colorCountDashboard" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid 
@@ -311,7 +311,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                   className="text-[10px] font-medium fill-muted-foreground"
                 />
                 <Tooltip
-                  cursor={{ stroke: '#2563eb', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
                   contentStyle={{
                     backgroundColor: "var(--background)",
                     border: "1px solid var(--border)",
@@ -319,17 +319,17 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     fontSize: "12px"
                   }}
-                  itemStyle={{ color: "#2563eb", fontWeight: "bold" }}
+                  itemStyle={{ color: "hsl(var(--primary))", fontWeight: "bold" }}
                   labelStyle={{ marginBottom: "4px", fontWeight: "bold" }}
                 />
                 <Area
-                  type="monotone" // Membuat kurva melengkung halus (smooth)
+                  type="monotone"
                   dataKey="count"
-                  stroke="#2563eb"
+                  stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   fillOpacity={1}
-                  fill="url(#colorCount)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: "#2563eb" }}
+                  fill="url(#colorCountDashboard)"
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--primary))" }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -364,11 +364,11 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                   key={job.id}
                   className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl"
                 >
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+<div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Briefcase className="w-5 h-5 text-primary" />
+                      </div>
                     </div>
-                  </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-foreground text-sm mb-1 truncate">
                       {job.jobTitle}

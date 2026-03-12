@@ -71,8 +71,8 @@ function PaymentFinishContent() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
         <div className="max-w-md w-full text-center space-y-8">
           {isVerifying ? (
-            <div className="w-20 h-20 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+            <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
           ) : (
             <div className="w-20 h-20 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center">

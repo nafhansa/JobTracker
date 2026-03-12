@@ -284,13 +284,13 @@ export default function BillingPage() {
 
                 {/* Upgrade CTA for Free Plan */}
                 {isFreePlan && (
-                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+                  <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg shadow-sm">
                     <p className="text-sm text-muted-foreground mb-4">
                       Upgrade to Pro for unlimited job tracking and advanced features!
                     </p>
                     <Button
                       onClick={() => router.push("/upgrade")}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       <ArrowUpRight className="w-4 h-4 mr-2" />
                       Upgrade to Pro
