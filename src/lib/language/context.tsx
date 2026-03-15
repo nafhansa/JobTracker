@@ -323,6 +323,18 @@ const translations: Record<Language, Record<string, string>> = {
     "card.confirmDelete": "Are you sure you want to delete this job application?",
     "card.upgradeEdit": "Upgrade to Pro to edit your job applications.\n\nWould you like to upgrade now?",
     "card.upgradeDelete": "Upgrade to Pro to delete your job applications.\n\nWould you like to upgrade now?",
+    
+    // Feedback
+    "feedback.title": "Feedback",
+    "feedback.type": "Type",
+    "feedback.type.general": "General",
+    "feedback.type.bug": "Bug Report",
+    "feedback.type.feature": "Feature Request",
+    "feedback.rating": "Rating",
+    "feedback.message.placeholder": "Tell us what you think...",
+    "feedback.submit": "Send Feedback",
+    "feedback.success": "Thank you for your feedback!",
+    "feedback.error": "Failed to send feedback. Please try again.",
   },
   id: {
     // Navbar
@@ -588,5 +600,17 @@ const translations: Record<Language, Record<string, string>> = {
     "card.confirmDelete": "Apakah kamu yakin ingin menghapus lamaran ini?",
     "card.upgradeEdit": "Upgrade ke Pro untuk mengedit lamaran.\n\nApakah kamu ingin upgrade sekarang?",
     "card.upgradeDelete": "Upgrade ke Pro untuk menghapus lamaran.\n\nApakah kamu ingin upgrade sekarang?",
+    
+    // Feedback
+    "feedback.title": "Feedback",
+    "feedback.type": "Tipe",
+    "feedback.type.general": "Umum",
+    "feedback.type.bug": "Laporan Bug",
+    "feedback.type.feature": "Permintaan Fitur",
+    "feedback.rating": "Rating",
+    "feedback.message.placeholder": "Ceritakan pendapatmu...",
+    "feedback.submit": "Kirim Feedback",
+    "feedback.success": "Terima kasih atas feedbackmu!",
+    "feedback.error": "Gagal mengirim feedback. Silakan coba lagi.",
   },
 };

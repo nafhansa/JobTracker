@@ -84,6 +84,18 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['analytics_micro_conversions']['Row'], 'id' | 'timestamp'>;
         Update: Partial<Database['public']['Tables']['analytics_micro_conversions']['Insert']>;
       };
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          rating: number | null;
+          message: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['feedback']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['feedback']['Insert']>;
+      };
     };
   };
 };

@@ -87,3 +87,15 @@ export type SubscriptionPlan = "free" | "monthly" | "lifetime";
 
 // Free Plan Constants
 export const FREE_PLAN_JOB_LIMIT = 20;
+
+// Feedback Types
+export type FeedbackType = "general" | "bug" | "feature";
+
+export interface Feedback {
+  id?: string;
+  userId: string;
+  type: FeedbackType;
+  rating: number;
+  message: string;
+  createdAt?: string;
+}

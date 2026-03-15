@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, Briefcase, User, X, Menu } from "lucide-react";
+import { BarChart3, Briefcase, User, X, Menu, Settings } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +25,7 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
     { id: "dashboard", label: t("sidebar.dashboard"), icon: BarChart3 },
     { id: "applications", label: t("sidebar.applications"), icon: Briefcase },
     { id: "profile", label: t("sidebar.profile"), icon: User },
+    { id: "settings", label: t("sidebar.settings"), icon: Settings },
   ];
 
   return (
@@ -81,12 +82,12 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
         </nav>
 
         {/* Decorative Bottom Section */}
-        <div className="p-4 border-t border-border bg-muted/30">
+        {/* <div className="p-4 border-t border-border bg-muted/30">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span>{t("sidebar.connected")}</span>
           </div>
-        </div>
+        </div> */}
       </aside>
     </>
   );

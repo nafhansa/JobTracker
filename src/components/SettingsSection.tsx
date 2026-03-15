@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import FeedbackSection from "@/components/FeedbackSection";
 
 declare global {
   interface Navigator {
@@ -227,6 +228,8 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
               </Button>
             </div>
           </div>
+
+          <FeedbackSection />
 
           <div>
             <div className="space-y-3">
