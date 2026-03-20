@@ -129,6 +129,7 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
 
               {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
               <Button
+                data-tutorial="add-button"
                 onClick={() => onAddJob?.()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-primary/30 transition-all animate-ring-glow"
               >
@@ -204,7 +205,7 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
           </div>
 
           {/* Filter Tabs - Desktop (All tabs visible) */}
-          <div className="hidden md:flex flex-wrap gap-2 pb-2 overflow-x-auto">
+          <div data-tutorial="pipeline-filters" className="hidden md:flex flex-wrap gap-2 pb-2 overflow-x-auto">
             {tabs.map((tab) => {
               const isActive = filterStatus === tab.id;
               const count = jobs.filter(j =>

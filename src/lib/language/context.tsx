@@ -323,6 +323,29 @@ const translations: Record<Language, Record<string, string>> = {
     "card.confirmDelete": "Are you sure you want to delete this job application?",
     "card.upgradeEdit": "Upgrade to Pro to edit your job applications.\n\nWould you like to upgrade now?",
     "card.upgradeDelete": "Upgrade to Pro to delete your job applications.\n\nWould you like to upgrade now?",
+    
+    // Tutorial
+    "tutorial.welcome.title": "Welcome to JobTracker!",
+    "tutorial.welcome.desc": "Start tracking your job applications with ease. Let's take a quick tour.",
+    "tutorial.welcome.start": "Start Tour",
+    "tutorial.welcome.skip": "Skip",
+    "tutorial.addButton.title": "Add Application",
+    "tutorial.addButton.desc": "Click this button to track a new job application. Fill in the details and monitor your progress.",
+    "tutorial.pipeline.title": "Pipeline Status",
+    "tutorial.pipeline.desc": "Filter your applications by status: Applied, Responded, Interview, or Offer. Stay organized!",
+    "tutorial.next": "Next",
+    "tutorial.skip": "Skip",
+    "tutorial.complete.title": "You're all set!",
+    "tutorial.complete.desc": "Start tracking your job applications. Good luck with your job search!",
+    "tutorial.complete.cta": "Let's Go",
+    
+    // Milestone Toasts
+    "milestone.streak": "Day {n} streak! Active job seekers get interviews faster.",
+    "milestone.apps15": "15 applications tracked! Keep the momentum!",
+    "milestone.apps30": "30 applications! You're on the right track!",
+    "milestone.apps50": "50 applications! Amazing dedication!",
+    "milestone.apps70": "70 applications! Consistency is key!",
+    "milestone.apps100": "100 applications! Never give up!",
   },
   id: {
     // Navbar
@@ -588,5 +611,28 @@ const translations: Record<Language, Record<string, string>> = {
     "card.confirmDelete": "Apakah kamu yakin ingin menghapus lamaran ini?",
     "card.upgradeEdit": "Upgrade ke Pro untuk mengedit lamaran.\n\nApakah kamu ingin upgrade sekarang?",
     "card.upgradeDelete": "Upgrade ke Pro untuk menghapus lamaran.\n\nApakah kamu ingin upgrade sekarang?",
+    
+    // Tutorial
+    "tutorial.welcome.title": "Selamat Datang di JobTracker!",
+    "tutorial.welcome.desc": "Mulai tracking lamaran kerjamu dengan mudah. Yuk, kenali fitur-fiturnya.",
+    "tutorial.welcome.start": "Mulai Tour",
+    "tutorial.welcome.skip": "Lewati",
+    "tutorial.addButton.title": "Tambah Lamaran",
+    "tutorial.addButton.desc": "Klik tombol ini untuk mencatat lamaran baru. Isi detailnya dan pantau progresmu.",
+    "tutorial.pipeline.title": "Status Pipeline",
+    "tutorial.pipeline.desc": "Filter lamaran berdasarkan status: Dilamar, Direspon, Wawancara, atau Penawaran. Tetap terorganisir!",
+    "tutorial.next": "Lanjut",
+    "tutorial.skip": "Lewati",
+    "tutorial.complete.title": "Kamu siap mulai!",
+    "tutorial.complete.desc": "Mulai catat lamaran kerjamu. Semoga sukses dalam pencarian kerja!",
+    "tutorial.complete.cta": "Mulai Sekarang",
+    
+    // Milestone Toasts
+    "milestone.streak": "Streak {n} hari! Pencari kerja aktif lebih cepat dapat interview.",
+    "milestone.apps15": "15 lamaran tercatat! Pertahankan momentum!",
+    "milestone.apps30": "30 lamaran! Kamu di jalur yang tepat!",
+    "milestone.apps50": "50 lamaran! Dedikasi yang luar biasa!",
+    "milestone.apps70": "70 lamaran! Konsistensi adalah kunci!",
+    "milestone.apps100": "100 lamaran! Semangat pantang menyerah!",
   },
 };

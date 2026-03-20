@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme/context";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/ui/sonner";
 import type { Viewport } from "next";
 
 export const metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
                   <SplashScreen />
                   {children}
                   <PWAInstallBanner />
+                  <Toaster />
                 </PaddleProvider>
               </AuthProvider>
             </LanguageProvider>

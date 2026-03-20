@@ -19,6 +19,7 @@ import GmailConnect from "@/components/GmailConnect";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
+import { clearTutorialState } from "@/lib/tutorial/context";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -88,6 +89,9 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleLogout = async () => {
+    if (user?.uid) {
+      clearTutorialState(user.uid);
+    }
     await logout();
     router.push("/login");
   };

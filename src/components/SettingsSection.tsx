@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { clearTutorialState } from "@/lib/tutorial/context";
 
 declare global {
   interface Navigator {
@@ -96,6 +97,9 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   };
 
   const handleLogout = async () => {
+    if (user?.uid) {
+      clearTutorialState(user.uid);
+    }
     await logout();
     router.push("/login");
   };
