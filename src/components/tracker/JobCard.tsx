@@ -54,11 +54,29 @@ export default function JobCard({ job, onEdit }: JobCardProps) {
     contractEmail: "Contract Offer 🚀",
   };
   const hasReachedResponseOrInterview = job.status.cvResponded || job.status.interviewEmail;
-  const formattedSalary = new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(job.potentialSalary || 0);
+  
+  const formatSalary = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getSalaryDisplay = () => {
+    if (job.salaryType === 'range' && job.potentialSalaryMin && job.potentialSalaryMax) {
+      return `${formatSalary(job.potentialSalaryMin)} — ${formatSalary(job.potentialSalaryMax)}`;
+    }
+    if (job.salaryType === 'exact' && job.potentialSalaryMin) {
+      return formatSalary(job.potentialSalaryMin);
+    }
+    if (job.potentialSalary) {
+      return formatSalary(job.potentialSalary);
+    }
+    return null;
+  };
+
+  const salaryDisplay = getSalaryDisplay();
 
   const handleDelete = async () => {
     if (!confirm("Delete this application permanently?")) return;
@@ -185,7 +203,7 @@ return (
           <>
             {/* Body Information */}
             <div className="px-5 pb-4 space-y-4 flex-1 relative z-10">
-          {job.potentialSalary ? (
+          {salaryDisplay ? (
             <div className={`inline-flex items-center text-xs font-semibold tracking-wide px-3 py-1.5 rounded-full shadow-sm
             ${isRejected && !hasReachedResponseOrInterview
                 ? "text-slate-500 bg-slate-50 border border-slate-200 grayscale"
@@ -194,7 +212,7 @@ return (
                 : "text-primary bg-primary/10 border border-primary/20"
               }`}>
               <Banknote className="w-3.5 h-3.5 mr-2" />
-              {formattedSalary}
+              {salaryDisplay}
             </div>
           ) : (
             <div className="h-8"></div>

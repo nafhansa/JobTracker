@@ -17,6 +17,9 @@ export type Database = {
           job_type: string | null;
           location: string | null;
           potential_salary: number | null;
+          potential_salary_min: number | null;
+          potential_salary_max: number | null;
+          salary_type: string | null;
           currency: string;
           status_applied: boolean;
           status_emailed: boolean;

@@ -7,6 +7,8 @@ export interface JobStatus {
   rejected?: boolean;
 }
 
+export type SalaryType = 'exact' | 'range' | 'unspecified';
+
 export interface JobApplication {
   id?: string;
   userId: string;
@@ -15,9 +17,12 @@ export interface JobApplication {
   industry: string;
   recruiterEmail?: string;
   applicationUrl?: string;
-  jobType?: string; // Full Time, Part Time, Contract, Internship, Freelance, etc.
-  location?: string; // Remote/WFH, On-site/WFO, Hybrid
+  jobType?: string;
+  location?: string;
   potentialSalary?: number;
+  potentialSalaryMin?: number;
+  potentialSalaryMax?: number;
+  salaryType?: SalaryType;
   currency: string;
   status: JobStatus;
   createdAt: number;

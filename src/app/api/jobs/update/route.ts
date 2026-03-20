@@ -29,6 +29,9 @@ export async function POST(req: Request) {
     if (data.jobType !== undefined) updateData.job_type = data.jobType || null;
     if (data.location !== undefined) updateData.location = data.location || null;
     if (data.potentialSalary !== undefined) updateData.potential_salary = data.potentialSalary || null;
+    if (data.potentialSalaryMin !== undefined) updateData.potential_salary_min = data.potentialSalaryMin || null;
+    if (data.potentialSalaryMax !== undefined) updateData.potential_salary_max = data.potentialSalaryMax || null;
+    if (data.salaryType !== undefined) updateData.salary_type = data.salaryType || null;
     if (data.currency) updateData.currency = data.currency;
 
     // Map status object
