@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { WelcomeModal } from "./WelcomeModal";
 import { SpotlightTooltip, PipelineVisual } from "./SpotlightTooltip";
 import { useTutorial } from "@/lib/tutorial/context";
 import { useLanguage } from "@/lib/language/context";
-import { MILESTONE_VALUES } from "@/lib/tutorial/types";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
 interface TutorialManagerProps {
-  jobCount: number;
-  streak: number;
   onNavigateToApplications?: () => void;
 }
 
@@ -110,13 +107,11 @@ export function triggerTutorialCompleteCelebration() {
   }
 }
 
-export function TutorialManager({ jobCount, streak, onNavigateToApplications }: TutorialManagerProps) {
-  const { isNewUser, currentStep, isTutorialActive, showMilestoneToast } = useTutorial();
+export function TutorialManager({ onNavigateToApplications }: TutorialManagerProps) {
+  const { isNewUser, currentStep, isTutorialActive } = useTutorial();
   const { t } = useLanguage();
   const [isDesktop, setIsDesktop] = useState(false);
   const [isNavigated, setIsNavigated] = useState(false);
-
-  const milestoneValues = useMemo(() => Object.values(MILESTONE_VALUES), []);
 
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
@@ -124,19 +119,6 @@ export function TutorialManager({ jobCount, streak, onNavigateToApplications }: 
     window.addEventListener("resize", checkDesktop);
     return () => window.removeEventListener("resize", checkDesktop);
   }, []);
-
-  useEffect(() => {
-    if (milestoneValues.includes(jobCount)) {
-      const milestoneType = `apps${jobCount}` as keyof typeof MILESTONE_VALUES;
-      showMilestoneToast(milestoneType as "apps15" | "apps30" | "apps50" | "apps70" | "apps100");
-    }
-  }, [jobCount, milestoneValues, showMilestoneToast]);
-
-  useEffect(() => {
-    if (streak >= 1) {
-      showMilestoneToast("streak", streak);
-    }
-  }, [streak, showMilestoneToast]);
 
   useEffect(() => {
     if (isTutorialActive && isNewUser && currentStep === 'addButton' && !isNavigated) {

@@ -1,15 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import { toast } from "sonner";
 import { User } from "firebase/auth";
 import {
   TutorialState,
   TutorialContextValue,
   TutorialStep,
-  MilestoneType,
   DEFAULT_TUTORIAL_STATE,
-  MILESTONE_VALUES,
 } from "./types";
 
 const TutorialContext = createContext<TutorialContextValue | null>(null);
@@ -120,54 +117,6 @@ export function TutorialProvider({ children, user, jobCount, onTutorialComplete 
     onTutorialComplete?.();
   }, [state, saveState, onTutorialComplete]);
 
-  const showMilestoneToast = useCallback((type: MilestoneType, value?: number) => {
-    if (!user?.uid) return;
-
-    const today = new Date().toISOString().split('T')[0];
-
-    if (type === 'streak') {
-      if (state.lastStreakToastDate === today) return;
-      
-      const message = value && value > 1 
-        ? `🔥 Streak ${value} hari! Pencari kerja aktif lebih cepat dapat interview.`
-        : `🔥 Streak dimulai! Konsistensi adalah kunci sukses.`;
-      
-      toast.success(message, {
-        style: {
-          background: 'hsl(var(--card))',
-          color: 'hsl(var(--foreground))',
-          border: '1px solid hsl(var(--border))',
-        },
-      });
-
-      saveState({ ...state, lastStreakToastDate: today });
-    } else {
-      const milestoneValue = MILESTONE_VALUES[type];
-      if (state.milestonesShown.includes(milestoneValue)) return;
-
-      const messages: Record<Exclude<MilestoneType, 'streak'>, string> = {
-        apps15: '🎉 15 lamaran tercatat! Pertahankan momentum!',
-        apps30: '🎉 30 lamaran! Kamu di jalur yang tepat!',
-        apps50: '🎉 50 lamaran! Dedikasi yang luar biasa!',
-        apps70: '🎉 70 lamaran! Konsistensi adalah kunci!',
-        apps100: '🎉 100 lamaran! Semangat pantang menyerah!',
-      };
-
-      toast.success(messages[type], {
-        style: {
-          background: 'hsl(var(--card))',
-          color: 'hsl(var(--foreground))',
-          border: '1px solid hsl(var(--border))',
-        },
-      });
-
-      saveState({
-        ...state,
-        milestonesShown: [...state.milestonesShown, milestoneValue],
-      });
-    }
-  }, [user?.uid, state, saveState]);
-
   const contextValue: TutorialContextValue = useMemo(() => ({
     isNewUser,
     currentStep,
@@ -176,8 +125,7 @@ export function TutorialProvider({ children, user, jobCount, onTutorialComplete 
     nextStep,
     skipTutorial,
     completeTutorial,
-    showMilestoneToast,
-  }), [isNewUser, currentStep, isTutorialActive, startTutorial, nextStep, skipTutorial, completeTutorial, showMilestoneToast]);
+  }), [isNewUser, currentStep, isTutorialActive, startTutorial, nextStep, skipTutorial, completeTutorial]);
 
   return (
     <TutorialContext.Provider value={contextValue}>

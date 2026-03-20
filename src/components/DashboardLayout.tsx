@@ -1,25 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 import { JobApplication } from "@/types";
-import { Plus, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Sidebar, { SidebarSection } from "@/components/Sidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import DashboardSection from "@/components/DashboardSection";
 import DashboardClient from "@/components/tracker/DashboardClient";
 import ProfileSection from "@/components/ProfileSection";
 import SettingsSection from "@/components/SettingsSection";
-import GmailConnect from "@/components/GmailConnect";
 import JobFormModal from "@/components/forms/AddJobModal";
-import { getPlanLimits, isAdminUser } from "@/lib/supabase/subscriptions";
+import { isAdminUser } from "@/lib/supabase/subscriptions";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
-import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { TutorialProvider } from "@/lib/tutorial/context";
 import { TutorialManager } from "@/components/tutorial/TutorialManager";
-import { getUserStreaks } from "@/lib/supabase/streaks";
 import { triggerTutorialCompleteCelebration } from "@/components/tutorial/TutorialManager";
 
 interface DashboardLayoutProps {
@@ -29,24 +23,11 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutProps) {
-  const router = useRouter();
   const { t } = useLanguage();
-  const { user, subscription, createdAt } = useAuth();
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<SidebarSection>("dashboard");
-  const [streak, setStreak] = useState(0);
 
   const isAdmin = isAdminUser(user?.email || "");
-  const isPro = subscription?.plan !== "free";
-  const isSubscribed = isAdmin || isPro;
-  const isFreeUser = plan === "free" && !isAdmin;
-
-  useEffect(() => {
-    if (user) {
-      getUserStreaks(user.uid)
-        .then((data) => setStreak(data.current))
-        .catch(() => setStreak(0));
-    }
-  }, [user]);
 
   // Shared modal state for Add Job
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,7 +169,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           isAdmin={false}
         />
       </div>
-      <TutorialManager jobCount={jobs.length} streak={streak} onNavigateToApplications={handleNavigateToApplications} />
+      <TutorialManager onNavigateToApplications={handleNavigateToApplications} />
     </TutorialProvider>
   );
 }

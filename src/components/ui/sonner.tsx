@@ -11,6 +11,7 @@ export function Toaster({ ...props }: ToasterProps) {
   return (
     <Sonner
       theme={mode}
+      position="bottom-center"
       className="toaster group"
       toastOptions={{
         classNames: {
