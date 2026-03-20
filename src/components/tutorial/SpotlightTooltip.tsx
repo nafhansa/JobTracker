@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback, ReactNode } from "react";
+import { useEffect, useState, useCallback, ReactNode, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { useTutorial } from "@/lib/tutorial/context";
 import { useLanguage } from "@/lib/language/context";
 import { TutorialStep } from "@/lib/tutorial/types";
 import { ArrowRight, X, Send, MessageSquare, UserCheck, ScrollText, ArrowRight as ArrowRightIcon } from "lucide-react";
+
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: unknown[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  }) as T;
+}
 
 interface SpotlightTooltipProps {
   targetSelector: string;
@@ -63,11 +71,18 @@ export function SpotlightTooltip({
 
   const updatePosition = useCallback(() => {
     if (centered) return;
-    const target = document.querySelector(targetSelector);
-    if (target) {
-      setTargetRect(target.getBoundingClientRect());
-    }
+    requestAnimationFrame(() => {
+      const target = document.querySelector(targetSelector);
+      if (target) {
+        setTargetRect(target.getBoundingClientRect());
+      }
+    });
   }, [targetSelector, centered]);
+
+  const debouncedUpdatePosition = useMemo(
+    () => debounce(updatePosition, 100),
+    [updatePosition]
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -85,12 +100,14 @@ export function SpotlightTooltip({
       const retryInterval = setInterval(() => {
         const target = document.querySelector(targetSelector);
         if (target) {
-          setTargetRect(target.getBoundingClientRect());
+          requestAnimationFrame(() => {
+            setTargetRect(target.getBoundingClientRect());
+          });
           clearInterval(retryInterval);
         }
-      }, 100);
+      }, 300);
       
-      const handleResize = () => updatePosition();
+      const handleResize = () => debouncedUpdatePosition();
       window.addEventListener("resize", handleResize);
       window.addEventListener("scroll", handleResize, true);
       
@@ -100,7 +117,7 @@ export function SpotlightTooltip({
         window.removeEventListener("scroll", handleResize, true);
       };
     }
-  }, [isActive, updatePosition, targetSelector, centered]);
+  }, [isActive, updatePosition, debouncedUpdatePosition, targetSelector, centered]);
 
   if (!mounted || !isActive) return null;
   if (!centered && !targetRect) return null;

@@ -129,7 +129,7 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
 
               {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
               <Button
-                data-tutorial="add-button"
+                data-tutorial="add-button-desktop"
                 onClick={() => onAddJob?.()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-primary/30 transition-all animate-ring-glow"
               >

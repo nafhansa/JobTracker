@@ -113,8 +113,17 @@ export function triggerTutorialCompleteCelebration() {
 export function TutorialManager({ jobCount, streak, onNavigateToApplications }: TutorialManagerProps) {
   const { isNewUser, currentStep, isTutorialActive, showMilestoneToast } = useTutorial();
   const { t } = useLanguage();
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isNavigated, setIsNavigated] = useState(false);
 
   const milestoneValues = useMemo(() => Object.values(MILESTONE_VALUES), []);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   useEffect(() => {
     if (milestoneValues.includes(jobCount)) {
@@ -130,19 +139,34 @@ export function TutorialManager({ jobCount, streak, onNavigateToApplications }: 
   }, [streak, showMilestoneToast]);
 
   useEffect(() => {
-    if (isTutorialActive && isNewUser && (currentStep === 'addButton' || currentStep === 'pipeline')) {
+    if (isTutorialActive && isNewUser && currentStep === 'addButton' && !isNavigated) {
+      const timer = setTimeout(() => {
+        onNavigateToApplications?.();
+        setIsNavigated(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+    if (isTutorialActive && isNewUser && currentStep === 'pipeline') {
       onNavigateToApplications?.();
     }
-  }, [isTutorialActive, isNewUser, currentStep, onNavigateToApplications]);
+  }, [isTutorialActive, isNewUser, currentStep, onNavigateToApplications, isNavigated]);
+
+  useEffect(() => {
+    if (!isTutorialActive || currentStep !== 'addButton') {
+      setIsNavigated(false);
+    }
+  }, [isTutorialActive, currentStep]);
+
+  const addButtonSelector = isDesktop ? "[data-tutorial='add-button-desktop']" : "[data-tutorial='add-button-mobile']";
 
   return (
     <>
       <WelcomeModal />
       <CelebrationModal />
       
-      {isTutorialActive && isNewUser && currentStep === 'addButton' && (
+      {isTutorialActive && isNewUser && currentStep === 'addButton' && isNavigated && (
         <SpotlightTooltip
-          targetSelector="[data-tutorial='add-button']"
+          targetSelector={addButtonSelector}
           step="addButton"
           title={t("tutorial.addButton.title")}
           description={t("tutorial.addButton.desc")}

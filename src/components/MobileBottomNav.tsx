@@ -35,20 +35,20 @@ export default function MobileBottomNav({
           // TOMBOL PLUS TENGAH
 if (item.isPlus) {
             return (
-               <div key="center-action" className="flex-1 flex justify-center -translate-y-4">
-                 <button
-                   data-tutorial="add-button"
-                   onClick={onPlusButtonClick}
-                   disabled={isPlusLoading}
-                   className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
-                 >
-                   {isPlusLoading ? (
-                     <Loader2 className="w-6 h-6 animate-spin" />
-                   ) : (
-                     <Plus className="w-6 h-6" />
-                   )}
-                 </button>
-               </div>
+<div key="center-action" className="flex-1 flex justify-center -translate-y-4">
+                  <button
+                    data-tutorial="add-button-mobile"
+                    onClick={onPlusButtonClick}
+                    disabled={isPlusLoading}
+                    className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
+                  >
+                    {isPlusLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <Plus className="w-6 h-6" />
+                    )}
+                  </button>
+                </div>
              );
            }
 
