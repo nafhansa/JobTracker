@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Download, X, Smartphone, Check } from "lucide-react";
 
 declare global {
@@ -48,12 +49,15 @@ function setStorage(key: string, val: string): void {
 }
 
 export function PWAInstallPrompt() {
+  const pathname = usePathname();
   const [mode, setMode] = useState<DisplayMode>("hidden");
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
   const deferredPrompt = useRef<Event | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useRef(false);
+
+  const hiddenPaths = ["/login", "/signup", "/auth"];
 
   useEffect(() => {
     isMobile.current = isMobileDevice();
@@ -142,6 +146,8 @@ export function PWAInstallPrompt() {
     setStorage(KEY_FLOAT_HIDDEN, "true");
     setMode("hidden");
   };
+
+  if (hiddenPaths.some((path) => pathname.startsWith(path))) return null;
 
   if (!isMobile.current) return null;
 

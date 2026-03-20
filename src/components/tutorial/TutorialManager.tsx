@@ -152,7 +152,7 @@ export function TutorialManager({ onNavigateToApplications }: TutorialManagerPro
           step="addButton"
           title={t("tutorial.addButton.title")}
           description={t("tutorial.addButton.desc")}
-          position="bottom"
+          position={isDesktop ? "bottom" : "top"}
         />
       )}
 
