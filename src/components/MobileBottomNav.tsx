@@ -40,7 +40,7 @@ if (item.isPlus) {
                     data-tutorial="add-button-mobile"
                     onClick={onPlusButtonClick}
                     disabled={isPlusLoading}
-                    className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
+                    className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
                   >
                     {isPlusLoading ? (
                       <Loader2 className="w-6 h-6 animate-spin" />
@@ -63,7 +63,7 @@ if (item.isPlus) {
               className="flex-1 flex flex-col items-center justify-center gap-1 group"
             >
               <div className={`flex flex-col items-center transition-colors duration-200 ${
-                isActive ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"
+                isActive ? "text-primary" : "text-muted-foreground"
               }`}>
                 <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
                 <span className="text-[10px] font-medium mt-0.5">
