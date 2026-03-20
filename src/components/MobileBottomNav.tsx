@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon } from "lucide-react";
+import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
 
@@ -8,12 +8,14 @@ interface MobileBottomNavProps {
   activeSection: SidebarSection;
   onSectionChange: (section: SidebarSection) => void;
   onPlusButtonClick: () => void;
+  isPlusLoading?: boolean;
 }
 
 export default function MobileBottomNav({ 
   activeSection, 
   onSectionChange, 
-  onPlusButtonClick 
+  onPlusButtonClick,
+  isPlusLoading = false
 }: MobileBottomNavProps) {
   const { t } = useLanguage();
 
@@ -31,18 +33,24 @@ export default function MobileBottomNav({
       <div className="max-w-md mx-auto flex items-center justify-between h-16 pb-safe">
         {navItems.map((item) => {
           // TOMBOL PLUS TENGAH
-          if (item.isPlus) {
+if (item.isPlus) {
             return (
-              <div key="center-action" className="flex-1 flex justify-center -translate-y-4">
-                <button
-                  onClick={onPlusButtonClick}
-                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200"
-                >
-                  <Plus className="w-6 h-6" />
-                </button>
-              </div>
-            );
-          }
+<div key="center-action" className="flex-1 flex justify-center -translate-y-4">
+                  <button
+                    data-tutorial="add-button-mobile"
+                    onClick={onPlusButtonClick}
+                    disabled={isPlusLoading}
+                    className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
+                  >
+                    {isPlusLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <Plus className="w-6 h-6" />
+                    )}
+                  </button>
+                </div>
+             );
+           }
 
           // TOMBOL NAVIGASI
           const Icon = item.icon as React.ComponentType<{ className?: string }>;
@@ -55,7 +63,7 @@ export default function MobileBottomNav({
               className="flex-1 flex flex-col items-center justify-center gap-1 group"
             >
               <div className={`flex flex-col items-center transition-colors duration-200 ${
-                isActive ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"
+                isActive ? "text-primary" : "text-muted-foreground"
               }`}>
                 <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
                 <span className="text-[10px] font-medium mt-0.5">

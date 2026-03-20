@@ -7,6 +7,8 @@ export interface JobStatus {
   rejected?: boolean;
 }
 
+export type SalaryType = 'exact' | 'range' | 'unspecified';
+
 export interface JobApplication {
   id?: string;
   userId: string;
@@ -15,9 +17,12 @@ export interface JobApplication {
   industry: string;
   recruiterEmail?: string;
   applicationUrl?: string;
-  jobType?: string; // Full Time, Part Time, Contract, Internship, Freelance, etc.
-  location?: string; // Remote/WFH, On-site/WFO, Hybrid
+  jobType?: string;
+  location?: string;
   potentialSalary?: number;
+  potentialSalaryMin?: number;
+  potentialSalaryMax?: number;
+  salaryType?: SalaryType;
   currency: string;
   status: JobStatus;
   createdAt: number;
@@ -86,4 +91,16 @@ export interface AnalyticsStats {
 export type SubscriptionPlan = "free" | "monthly" | "lifetime";
 
 // Free Plan Constants
-export const FREE_PLAN_JOB_LIMIT = 20;
+export const FREE_PLAN_JOB_LIMIT = 10;
+
+// Feedback Types
+export type FeedbackType = "general" | "bug" | "feature";
+
+export interface Feedback {
+  id?: string;
+  userId: string;
+  type: FeedbackType;
+  rating: number;
+  message: string;
+  createdAt?: string;
+}

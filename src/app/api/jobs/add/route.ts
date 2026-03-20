@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("Received job data:", body); // Debug log
     
-    const { userId, jobTitle, company, industry, recruiterEmail, applicationUrl, jobType, location, potentialSalary, currency, status } = body;
+    const { userId, jobTitle, company, industry, recruiterEmail, applicationUrl, jobType, location, potentialSalary, potentialSalaryMin, potentialSalaryMax, salaryType, currency, status } = body;
 
     // Debug: Check what we received
     if (!userId || !jobTitle || !company) {
@@ -66,6 +66,9 @@ export async function POST(req: Request) {
         job_type: jobType || null,
         location: location || null,
         potential_salary: potentialSalary || null,
+        potential_salary_min: potentialSalaryMin || null,
+        potential_salary_max: potentialSalaryMax || null,
+        salary_type: salaryType || 'exact',
         currency: currency || 'IDR',
         status_applied: status?.applied || false,
         status_emailed: status?.emailed || false,

@@ -165,7 +165,7 @@ export const getPlanLimits = (plan: string | null | undefined, isAdmin = false):
     return Infinity;
   }
   if (!plan || plan === 'free') {
-    return 20; // FREE_PLAN_JOB_LIMIT
+    return 10; // FREE_PLAN_JOB_LIMIT
   }
   // Pro plans have unlimited
   return Infinity;

@@ -9,6 +9,7 @@ import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useEffect } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
+import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 
 export default function LoginPage() {
   const router = useRouter(); 
@@ -72,6 +73,7 @@ export default function LoginPage() {
   };
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground relative overflow-hidden">
+      <ResetThemeToDefault />
       <div className="relative z-10 w-full max-w-md px-6">
         
         <div className="mb-8">

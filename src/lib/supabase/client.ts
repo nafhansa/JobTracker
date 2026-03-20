@@ -17,6 +17,9 @@ export type Database = {
           job_type: string | null;
           location: string | null;
           potential_salary: number | null;
+          potential_salary_min: number | null;
+          potential_salary_max: number | null;
+          salary_type: string | null;
           currency: string;
           status_applied: boolean;
           status_emailed: boolean;
@@ -83,6 +86,18 @@ export type Database = {
         };
         Insert: Omit<Database['public']['Tables']['analytics_micro_conversions']['Row'], 'id' | 'timestamp'>;
         Update: Partial<Database['public']['Tables']['analytics_micro_conversions']['Insert']>;
+      };
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          rating: number | null;
+          message: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['feedback']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['feedback']['Insert']>;
       };
     };
   };

@@ -14,6 +14,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { clearTutorialState } from "@/lib/tutorial/context";
+import FeedbackSection from "@/components/FeedbackSection";
 
 declare global {
   interface Navigator {
@@ -96,6 +98,9 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   };
 
   const handleLogout = async () => {
+    if (user?.uid) {
+      clearTutorialState(user.uid);
+    }
     await logout();
     router.push("/login");
   };
@@ -227,6 +232,8 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
               </Button>
             </div>
           </div>
+
+          <FeedbackSection />
 
           <div>
             <div className="space-y-3">
