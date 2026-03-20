@@ -9,6 +9,7 @@ import { ArrowRight, Star, Check, X, Clock, Zap, Download, Share2 } from "lucide
 import Navbar from "../components/Navbar";
 import SocialProof from "../components/SocialProof";
 import FAQSection from "../components/FAQSection";
+import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useLanguage } from "@/lib/language/context";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -271,6 +272,7 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
+      <ResetThemeToDefault />
       <Navbar />
 
       <main className="flex-1 relative z-10 flex flex-col items-center">

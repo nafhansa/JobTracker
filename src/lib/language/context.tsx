@@ -346,6 +346,18 @@ const translations: Record<Language, Record<string, string>> = {
     "milestone.apps50": "50 applications! Amazing dedication!",
     "milestone.apps70": "70 applications! Consistency is key!",
     "milestone.apps100": "100 applications! Never give up!",
+    
+    // Feedback
+    "feedback.title": "Feedback",
+    "feedback.type": "Type",
+    "feedback.type.general": "General",
+    "feedback.type.bug": "Bug Report",
+    "feedback.type.feature": "Feature Request",
+    "feedback.rating": "Rating",
+    "feedback.message.placeholder": "Tell us what you think...",
+    "feedback.submit": "Send Feedback",
+    "feedback.success": "Thank you for your feedback!",
+    "feedback.error": "Failed to send feedback. Please try again.",
   },
   id: {
     // Navbar
@@ -634,5 +646,17 @@ const translations: Record<Language, Record<string, string>> = {
     "milestone.apps50": "50 lamaran! Dedikasi yang luar biasa!",
     "milestone.apps70": "70 lamaran! Konsistensi adalah kunci!",
     "milestone.apps100": "100 lamaran! Semangat pantang menyerah!",
+    
+    // Feedback
+    "feedback.title": "Feedback",
+    "feedback.type": "Tipe",
+    "feedback.type.general": "Umum",
+    "feedback.type.bug": "Laporan Bug",
+    "feedback.type.feature": "Permintaan Fitur",
+    "feedback.rating": "Rating",
+    "feedback.message.placeholder": "Ceritakan pendapatmu...",
+    "feedback.submit": "Kirim Feedback",
+    "feedback.success": "Terima kasih atas feedbackmu!",
+    "feedback.error": "Gagal mengirim feedback. Silakan coba lagi.",
   },
 };

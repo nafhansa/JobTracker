@@ -129,10 +129,10 @@ export default function DashboardPage() {
 
             {isFreeUser && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => router.push("/upgrade")}
-                className="bg-blue-600 text-white hover:bg-blue-700 border-none transition-all px-4 h-9 font-bold shadow-lg shadow-blue-500/20"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all px-4 h-9 font-bold shadow-lg"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 <span className="text-xs font-bold uppercase tracking-wider">Upgrade</span>

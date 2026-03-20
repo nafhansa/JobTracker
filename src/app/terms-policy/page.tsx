@@ -1,6 +1,7 @@
 // /home/nafhan/Documents/projek/job/src/app/terms-policy/page.tsx
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 
 export default function TermsPolicyPage() {
   const lastUpdated = "January 6, 2026";
@@ -16,6 +17,7 @@ export default function TermsPolicyPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/10 selection:text-primary overflow-x-hidden">
+      <ResetThemeToDefault />
       <Navbar />
 
       {/* --- Background Effects --- */}

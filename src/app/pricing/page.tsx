@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/language/context";
 import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { TwitterShareModal } from "@/components/TwitterShareModal";
+import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 import { useState, useEffect } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { detectLocation } from "@/lib/utils/location";
@@ -58,6 +59,7 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
+      <ResetThemeToDefault />
       <Navbar />
 
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">

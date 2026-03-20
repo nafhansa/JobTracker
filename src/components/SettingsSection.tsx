@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { clearTutorialState } from "@/lib/tutorial/context";
+import FeedbackSection from "@/components/FeedbackSection";
 
 declare global {
   interface Navigator {
@@ -231,6 +232,8 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
               </Button>
             </div>
           </div>
+
+          <FeedbackSection />
 
           <div>
             <div className="space-y-3">
