@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { JobApplication, JobStatus } from "@/types";
 import JobCard from "@/components/tracker/JobCard";
-import JobFormModal from "@/components/forms/AddJobModal";
 import JobStats from "@/components/tracker/JobStats";
 import { Search, Sparkles, Briefcase, Send, MessageSquare, UserCheck, ScrollText, XCircle, Plus, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,9 +21,11 @@ interface DashboardClientProps {
   initialJobs: JobApplication[];
   userId: string;
   plan?: string;
+  onAddJob?: () => void;
+  onEditJob?: (job: JobApplication) => void;
 }
 
-export default function DashboardClient({ initialJobs, userId, plan }: DashboardClientProps) {
+export default function DashboardClient({ initialJobs, userId, plan, onAddJob, onEditJob }: DashboardClientProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -40,23 +41,6 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
   const planLimit = getPlanLimits(plan, isAdmin);
   const isFreeUser = plan === "free" && !isAdmin;
   const usageText = isFreeUser ? `${jobs.length}/${planLimit}` : t("common.unlimited"); 
-
-  // --- STATE MODAL & EDIT ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
-
-  // Fungsi buka modal Add
-  const handleAddNew = () => {
-    setEditingJob(null); // Reset mode jadi Add
-    setIsModalOpen(true);
-  };
-
-  // Fungsi buka modal Edit (dipanggil dari JobCard)
-  const handleEditJob = (job: JobApplication) => {
-    setEditingJob(job); // Set data yg mau diedit
-    setIsModalOpen(true);
-  };
-  // --------------------------
 
   const getJobStage = (status: JobStatus) => {
     // Prioritize actual stage over rejected status
@@ -145,7 +129,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
 
               {/* --- TOMBOL ADD MANUAL (Panggil handleAddNew) --- */}
               <Button
-                onClick={handleAddNew}
+                onClick={() => onAddJob?.()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wide shadow-lg shadow-primary/30 transition-all animate-ring-glow"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -337,15 +321,15 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
                 </p>
               </div>
             ) : (
-              paginatedJobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  onEdit={handleEditJob}
-                  isFreeUser={isFreeUser}
-                  isAdmin={isAdmin}
-                />
-              ))
+paginatedJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    onEdit={(job) => onEditJob?.(job)}
+                    isFreeUser={isFreeUser}
+                    isAdmin={isAdmin}
+                  />
+                ))
             )}
 
           </div>
@@ -370,19 +354,7 @@ export default function DashboardClient({ initialJobs, userId, plan }: Dashboard
               </div>
             </div>
           )}
-        </div>
-
-       {/* --- MODAL --- */}
-       <JobFormModal
-         userId={userId}
-         isOpen={isModalOpen}
-         onOpenChange={setIsModalOpen}
-         jobToEdit={editingJob}
-         plan={plan}
-         currentJobCount={jobs.length}
-         isAdmin={isAdmin}
-       />
-
     </div>
-  );
+  </div>
+   );
 }

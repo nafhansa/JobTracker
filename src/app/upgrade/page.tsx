@@ -143,7 +143,7 @@ function PricingCards({ user }: { user: any }) {
               period="forever"
               description="Your current plan"
               features={[
-                "Track up to 5 Applications",
+                "Track up to 10 Applications",
                 "Basic Kanban Board",
                 "Basic Filters",
                 "View & Track Status",

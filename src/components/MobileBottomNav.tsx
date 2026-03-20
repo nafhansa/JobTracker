@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon } from "lucide-react";
+import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
 
@@ -8,12 +8,14 @@ interface MobileBottomNavProps {
   activeSection: SidebarSection;
   onSectionChange: (section: SidebarSection) => void;
   onPlusButtonClick: () => void;
+  isPlusLoading?: boolean;
 }
 
 export default function MobileBottomNav({ 
   activeSection, 
   onSectionChange, 
-  onPlusButtonClick 
+  onPlusButtonClick,
+  isPlusLoading = false
 }: MobileBottomNavProps) {
   const { t } = useLanguage();
 
@@ -36,9 +38,14 @@ export default function MobileBottomNav({
               <div key="center-action" className="flex-1 flex justify-center -translate-y-4">
                 <button
                   onClick={onPlusButtonClick}
-                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200"
+                  disabled={isPlusLoading}
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-[0_0_0_1px_rgb(37_99_235_/_0.1),0_1px_3px_0_rgb(37_99_235_/_0.3),0_8px_20px_-4px_rgb(37_99_235_/_0.5)] ring-4 ring-background dark:ring-card active:scale-90 transition-all duration-200 disabled:opacity-80"
                 >
-                  <Plus className="w-6 h-6" />
+                  {isPlusLoading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <Plus className="w-6 h-6" />
+                  )}
                 </button>
               </div>
             );

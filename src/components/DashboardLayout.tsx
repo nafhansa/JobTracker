@@ -39,6 +39,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   // Shared modal state for Add Job
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
+  const [isPlusLoading, setIsPlusLoading] = useState(false);
 
   const handleAddNew = () => {
     setEditingJob(null);
@@ -46,9 +47,14 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   };
 
   const handlePlusButtonClick = () => {
+    setIsPlusLoading(true);
     setActiveSection("applications");
     setEditingJob(null);
-    setIsModalOpen(true);
+    
+    requestAnimationFrame(() => {
+      setIsModalOpen(true);
+      setIsPlusLoading(false);
+    });
   };
 
   const handleEditJob = (job: JobApplication) => {
@@ -71,6 +77,8 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
               initialJobs={jobs}
               userId={userId}
               plan={plan}
+              onAddJob={handleAddNew}
+              onEditJob={handleEditJob}
             />
           </>
         );
@@ -150,7 +158,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} />
+      <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} isPlusLoading={isPlusLoading} />
 
       {/* PWA Floating Install Button */}
       <PWAFloatingButton />
