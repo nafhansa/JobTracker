@@ -80,7 +80,7 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
   }, [filteredJobs, currentPage, itemsPerPage]);
 
   // Reset to page 1 when filters or search change
-  useMemo(() => {
+  React.useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus, searchQuery]);
 

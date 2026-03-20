@@ -53,16 +53,17 @@ export function PWAInstallPrompt() {
   const [mode, setMode] = useState<DisplayMode>("hidden");
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const deferredPrompt = useRef<Event | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMobile = useRef(false);
 
   const hiddenPaths = ["/login", "/signup", "/auth"];
 
   useEffect(() => {
-    isMobile.current = isMobileDevice();
+    const mobile = isMobileDevice();
+    setIsMobile(mobile);
 
-    if (!isMobile.current || isAlreadyInstalled()) return;
+    if (!mobile || isAlreadyInstalled()) return;
 
     const ios = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
     setIsIOS(ios);
@@ -149,7 +150,7 @@ export function PWAInstallPrompt() {
 
   if (hiddenPaths.some((path) => pathname.startsWith(path))) return null;
 
-  if (!isMobile.current) return null;
+  if (!isMobile) return null;
 
   if (mode === "hidden" && !showIOSModal) return null;
 

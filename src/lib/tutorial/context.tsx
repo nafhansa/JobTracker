@@ -59,7 +59,7 @@ export function TutorialProvider({ children, user, jobCount, onTutorialComplete 
       localStorage.setItem(STORAGE_KEY(user.uid), JSON.stringify(newState));
       setState(newState);
     }
-  }, [user?.uid]);
+  }, [user]);
 
   const currentStep: TutorialStep = useMemo(() => {
     if (state.welcomeCompleted && state.addAppStepCompleted && state.pipelineStepCompleted) {
