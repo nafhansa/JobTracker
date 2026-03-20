@@ -108,7 +108,7 @@ export function SpotlightTooltip({
   const tooltipWidth = centered 
     ? Math.min(360, window.innerWidth - 32)
     : Math.min(320, window.innerWidth - 32);
-  const padding = 16;
+  const padding = 24;
   const tooltipEstimatedHeight = centered ? 280 : 180;
 
   const clampLeft = (left: number) => {

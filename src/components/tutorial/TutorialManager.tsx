@@ -130,7 +130,7 @@ export function TutorialManager({ jobCount, streak, onNavigateToApplications }: 
   }, [streak, showMilestoneToast]);
 
   useEffect(() => {
-    if (isTutorialActive && isNewUser && currentStep === 'pipeline') {
+    if (isTutorialActive && isNewUser && (currentStep === 'addButton' || currentStep === 'pipeline')) {
       onNavigateToApplications?.();
     }
   }, [isTutorialActive, isNewUser, currentStep, onNavigateToApplications]);
@@ -146,7 +146,7 @@ export function TutorialManager({ jobCount, streak, onNavigateToApplications }: 
           step="addButton"
           title={t("tutorial.addButton.title")}
           description={t("tutorial.addButton.desc")}
-          position="top"
+          position="bottom"
         />
       )}
 
