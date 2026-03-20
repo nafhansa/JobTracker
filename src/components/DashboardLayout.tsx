@@ -166,7 +166,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           jobToEdit={editingJob}
           plan={plan}
           currentJobCount={jobs.length}
-          isAdmin={false}
+          isAdmin={isAdmin}
         />
       </div>
       <TutorialManager onNavigateToApplications={handleNavigateToApplications} />

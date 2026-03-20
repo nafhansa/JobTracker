@@ -33,7 +33,7 @@ interface JobCardProps {
   isAdmin?: boolean;
 }
 
-export default function JobCard({ job, onEdit }: JobCardProps) {
+export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardProps) {
   const [isExpanded, setIsExpanded] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth >= 768;
