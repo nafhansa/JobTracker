@@ -13,7 +13,6 @@ import ProfileSection from "@/components/ProfileSection";
 import SettingsSection from "@/components/SettingsSection";
 import GmailConnect from "@/components/GmailConnect";
 import JobFormModal from "@/components/forms/AddJobModal";
-import PWAFloatingButton from "@/components/PWAFloatingButton";
 import { getPlanLimits, isAdminUser } from "@/lib/supabase/subscriptions";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
@@ -177,9 +176,6 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
 
         {/* Mobile Bottom Navigation */}
         <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} isPlusLoading={isPlusLoading} />
-
-        {/* PWA Floating Install Button */}
-        <PWAFloatingButton />
 
         {/* Shared Job Form Modal */}
         <JobFormModal

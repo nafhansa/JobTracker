@@ -4,7 +4,7 @@ import { AuthProvider } from "@/lib/firebase/auth-context";
 import { PaddleProvider } from "@/components/providers/PaddleProvider";
 import { LanguageProvider } from "@/lib/language/context";
 import { ThemeProvider } from "@/lib/theme/context";
-import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,7 +39,7 @@ export default function RootLayout({
                 <PaddleProvider>
                   <SplashScreen />
                   {children}
-                  <PWAInstallBanner />
+                  <PWAInstallPrompt />
                   <Toaster />
                 </PaddleProvider>
               </AuthProvider>
