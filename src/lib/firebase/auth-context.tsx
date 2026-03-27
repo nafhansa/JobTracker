@@ -19,7 +19,10 @@ interface AuthContextType {
   isPro: boolean;
   updatedAt?: Date | string | null;
   createdAt?: Date | string | null;
+  onboardingCompleted: boolean | null;
+  userLanguage: 'id' | 'en';
   reloadSubscription: () => Promise<void>;
+  checkOnboardingStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,7 +32,10 @@ const AuthContext = createContext<AuthContextType>({
   isPro: false,
   updatedAt: null,
   createdAt: null,
+  onboardingCompleted: null,
+  userLanguage: 'id',
   reloadSubscription: async () => {},
+  checkOnboardingStatus: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -37,8 +43,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | string | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [userLanguage, setUserLanguage] = useState<'id' | 'en'>('id');
 
   const isPro = checkIsPro(subscription);
+
+  const checkOnboardingStatus = async () => {
+    const currentUser = user || auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+      const res = await fetch(`/api/onboarding?userId=${currentUser.uid}`);
+      const data = await res.json();
+      setOnboardingCompleted(data.completed);
+      setUserLanguage(data.language || 'id');
+    } catch (error) {
+      console.error("Error checking onboarding:", error);
+    }
+  };
 
   const reloadSubscription = async () => {
     if (!user) {
@@ -187,7 +209,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, subscription, isPro, updatedAt, reloadSubscription }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      subscription, 
+      isPro, 
+      updatedAt, 
+      onboardingCompleted, 
+      userLanguage,
+      reloadSubscription,
+      checkOnboardingStatus 
+    }}>
       {children}
     </AuthContext.Provider>
   );
