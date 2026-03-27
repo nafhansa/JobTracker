@@ -16,9 +16,20 @@ export default function LoginPage() {
   
   // Check if user is already logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        router.push("/dashboard");
+        try {
+          const res = await fetch(`/api/onboarding?userId=${user.uid}`);
+          const data = await res.json();
+          if (!data.completed) {
+            router.push("/onboarding/language");
+          } else {
+            router.push("/dashboard");
+          }
+        } catch (error) {
+          console.error("Error checking onboarding:", error);
+          router.push("/dashboard");
+        }
       }
     });
     return () => unsubscribe();
@@ -31,8 +42,10 @@ export default function LoginPage() {
 
       const user = await loginWithGoogle();
       if (user) {
-        // Track login attempt AFTER successful login (so we have email)
         try {
+          const onboardingRes = await fetch(`/api/onboarding?userId=${user.uid}`);
+          const onboardingData = await onboardingRes.json();
+
           await fetch("/api/analytics/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -44,12 +57,7 @@ export default function LoginPage() {
               deviceInfo,
             }),
           });
-        } catch (error) {
-          console.error("Failed to track login attempt:", error);
-        }
 
-        // Track dashboard visit after successful login
-        try {
           await fetch("/api/analytics/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -61,11 +69,17 @@ export default function LoginPage() {
               deviceInfo,
             }),
           });
+
+          if (!onboardingData.completed) {
+            router.push("/onboarding/language");
+          } else {
+            router.push("/dashboard");
+          }
         } catch (error) {
-          console.error("Failed to track dashboard visit:", error);
+          console.error("Error checking onboarding:", error);
+          router.push("/dashboard");
         }
       }
-      router.push("/dashboard"); 
     } catch (error) {
       console.error(error);
       alert("Gagal login bro"); 

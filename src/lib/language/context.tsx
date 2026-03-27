@@ -1,12 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { auth } from "@/lib/firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
 
 type Language = "en" | "id";
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  setLanguageWithSync: (lang: Language) => Promise<void>;
   t: (key: string) => string;
   mounted: boolean;
 }
@@ -15,7 +18,6 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Only run on client-side
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem("language") as Language;
       if (stored === "en" || stored === "id") {
@@ -25,25 +27,60 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return "en";
   });
   const [mounted, setMounted] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // This pattern is safe for client-only rendering flags
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUserId(user?.uid || null);
+      
+      if (user) {
+        fetch(`/api/onboarding?userId=${user.uid}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.language && (data.language === 'en' || data.language === 'id')) {
+              setLanguageState(data.language);
+              localStorage.setItem("language", data.language);
+            }
+          })
+          .catch(err => console.error("Error fetching language:", err));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem("language", lang);
-  };
+  }, []);
 
-  const t = (key: string): string => {
+  const setLanguageWithSync = useCallback(async (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("language", lang);
+    
+    if (userId) {
+      try {
+        await fetch("/api/users/language", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, language: lang }),
+        });
+      } catch (error) {
+        console.error("Error syncing language to DB:", error);
+      }
+    }
+  }, [userId]);
+
+  const t = useCallback((key: string): string => {
     if (!mounted) return key;
     return translations[language][key] || key;
-  };
+  }, [mounted, language]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, mounted }}>
+    <LanguageContext.Provider value={{ language, setLanguage, setLanguageWithSync, t, mounted }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -370,6 +407,37 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.submit": "Send Feedback",
     "feedback.success": "Thank you for your feedback!",
     "feedback.error": "Failed to send feedback. Please try again.",
+    
+    // Onboarding
+    "onboarding.step": "Step {{current}}/{{total}}",
+    "onboarding.back": "Back",
+    "onboarding.next": "Next",
+    "onboarding.finish": "Start Tracking",
+    "onboarding.skip": "Skip for now",
+    
+    "onboarding.q1.title": "Where are you in your job search?",
+    "onboarding.q1.just_started": "Just started looking",
+    "onboarding.q1.applied_some": "Applied to some places",
+    "onboarding.q1.actively_interviewing": "Actively interviewing",
+    "onboarding.q1.employed_looking": "Employed but looking to switch",
+    
+    "onboarding.q2.title": "What roles are you targeting?",
+    "onboarding.q2.search_placeholder": "Search roles...",
+    "onboarding.q2.other": "Other",
+    "onboarding.q2.custom_placeholder": "Enter custom role",
+    
+    "onboarding.q3.title": "Where do you prefer to work?",
+    "onboarding.q3.remote": "Remote / WFH",
+    "onboarding.q3.onsite": "On-site / WFO",
+    "onboarding.q3.hybrid": "Hybrid",
+    "onboarding.q3.flexible": "Flexible (no preference)",
+    
+    "onboarding.q4.title": "What's your current experience level?",
+    "onboarding.q4.no_experience": "No experience yet",
+    "onboarding.q4.internship": "Internship experience only",
+    "onboarding.q4.less_1_year": "Less than 1 year",
+    "onboarding.q4.one_to_three": "1-3 years",
+    "onboarding.q4.three_plus": "3+ years",
   },
   id: {
     // Navbar
@@ -682,5 +750,36 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.submit": "Kirim Feedback",
     "feedback.success": "Terima kasih atas feedbackmu!",
     "feedback.error": "Gagal mengirim feedback. Silakan coba lagi.",
+    
+    // Onboarding
+    "onboarding.step": "Langkah {{current}}/{{total}}",
+    "onboarding.back": "Kembali",
+    "onboarding.next": "Lanjut",
+    "onboarding.finish": "Mulai Tracking",
+    "onboarding.skip": "Lewati dulu",
+    
+    "onboarding.q1.title": "Kamu lagi di tahap mana dalam pencarian kerja?",
+    "onboarding.q1.just_started": "Baru mulai cari",
+    "onboarding.q1.applied_some": "Udah apply ke beberapa tempat",
+    "onboarding.q1.actively_interviewing": "Lagi aktif interview",
+    "onboarding.q1.employed_looking": "Mau pindah kerja (masih employed)",
+    
+    "onboarding.q2.title": "Role atau bidang apa yang kamu incar?",
+    "onboarding.q2.search_placeholder": "Cari role...",
+    "onboarding.q2.other": "Lainnya",
+    "onboarding.q2.custom_placeholder": "Masukkan role lainnya",
+    
+    "onboarding.q3.title": "Kamu lebih pilih kerja di mana?",
+    "onboarding.q3.remote": "Remote / WFH",
+    "onboarding.q3.onsite": "On-site / WFO",
+    "onboarding.q3.hybrid": "Hybrid",
+    "onboarding.q3.flexible": "Fleksibel (tidak ada preferensi)",
+    
+    "onboarding.q4.title": "Pengalaman kerja kamu saat ini?",
+    "onboarding.q4.no_experience": "Belum pernah sama sekali",
+    "onboarding.q4.internship": "Baru pernah magang",
+    "onboarding.q4.less_1_year": "Kurang dari 1 tahun",
+    "onboarding.q4.one_to_three": "1-3 tahun",
+    "onboarding.q4.three_plus": "3+ tahun",
   },
 };

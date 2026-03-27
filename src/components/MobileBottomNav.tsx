@@ -3,6 +3,7 @@
 import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2 } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
+import DashboardClient from "./tracker/DashboardClient";
 
 interface MobileBottomNavProps {
   activeSection: SidebarSection;
