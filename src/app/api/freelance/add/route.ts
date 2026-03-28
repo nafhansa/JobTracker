@@ -26,8 +26,8 @@ export async function POST(req: Request) {
 
     const jobId = generateId();
 
-    const { data, error } = await supabaseAdmin
-      .from('freelance_jobs' as any)
+    const { data, error } = await (supabaseAdmin as any)
+      .from('freelance_jobs')
       .insert({
         id: jobId,
         user_id: userId,

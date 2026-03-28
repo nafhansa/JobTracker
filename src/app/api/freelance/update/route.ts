@@ -27,8 +27,8 @@ export async function POST(req: Request) {
     if (data.durationDays !== undefined) updateData.duration_days = data.durationDays;
     if (data.status !== undefined) updateData.status = data.status;
 
-    const { error } = await supabaseAdmin
-      .from('freelance_jobs' as any)
+    const { error } = await (supabaseAdmin as any)
+      .from('freelance_jobs')
       .update(updateData)
       .eq('id', jobId);
 
