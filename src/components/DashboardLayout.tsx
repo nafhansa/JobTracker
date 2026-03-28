@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { JobApplication } from "@/types";
 import Sidebar, { SidebarSection } from "@/components/Sidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -19,6 +19,7 @@ import { useLanguage } from "@/lib/language/context";
 import { TutorialProvider } from "@/lib/tutorial/context";
 import { TutorialManager } from "@/components/tutorial/TutorialManager";
 import { triggerTutorialCompleteCelebration } from "@/components/tutorial/TutorialManager";
+import { getFreelanceJobCount } from "@/lib/supabase/freelance-jobs";
 
 interface DashboardLayoutProps {
   jobs: JobApplication[];
@@ -31,11 +32,19 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   const { user } = useAuth();
   const [trackerMode, setTrackerMode] = useState<TrackerMode>("job");
   const [activeSection, setActiveSection] = useState<SidebarSection>("dashboard");
+  const [clientCount, setClientCount] = useState(0);
 
   const isAdmin = isAdminUser(user?.email || "");
   
   const jobCount = jobs.length;
-  const clientCount = 8;
+
+  useEffect(() => {
+    if (userId) {
+      getFreelanceJobCount(userId)
+        .then(setClientCount)
+        .catch(console.error);
+    }
+  }, [userId]);
 
   const handleTrackerModeChange = (mode: TrackerMode) => {
     setTrackerMode(mode);

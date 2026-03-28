@@ -26,6 +26,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { addFreelanceJob, updateFreelanceJob } from "@/lib/supabase/freelance-jobs";
 
 interface AddFreelanceModalProps {
   userId: string;
@@ -287,25 +288,54 @@ export default function AddFreelanceModal({ userId, isOpen, onOpenChange, jobToE
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Submit:", {
-      ...formData,
-      serviceType: resolvedServiceType,
-      product: resolvedProduct,
-      userId,
-      potentialPrice: Number(formData.potentialPrice),
-      actualPrice: Number(formData.actualPrice) || undefined,
-      durationDays:
+    
+    try {
+      const durationDays =
         formData.startDate && formData.endDate
           ? Math.ceil(
               (new Date(formData.endDate).getTime() - new Date(formData.startDate).getTime()) /
                 (1000 * 60 * 60 * 24)
             )
-          : undefined,
-    });
-    setLoading(false);
-    onOpenChange(false);
-    resetForm();
+          : undefined;
+
+      if (isEditMode && jobToEdit?.id) {
+        await updateFreelanceJob(jobToEdit.id, {
+          clientName: formData.clientName,
+          clientContact: formData.clientContact,
+          serviceType: resolvedServiceType,
+          product: resolvedProduct,
+          potentialPrice: Number(formData.potentialPrice) || 0,
+          actualPrice: Number(formData.actualPrice) || undefined,
+          currency: "IDR",
+          startDate: formData.startDate || undefined,
+          endDate: formData.endDate || undefined,
+          durationDays,
+          status: formData.status,
+        });
+      } else {
+        await addFreelanceJob({
+          userId,
+          clientName: formData.clientName,
+          clientContact: formData.clientContact,
+          serviceType: resolvedServiceType,
+          product: resolvedProduct,
+          potentialPrice: Number(formData.potentialPrice) || 0,
+          actualPrice: Number(formData.actualPrice) || undefined,
+          currency: "IDR",
+          startDate: formData.startDate || undefined,
+          endDate: formData.endDate || undefined,
+          durationDays,
+          status: formData.status,
+        });
+      }
+      
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to submit:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FreelanceJob } from "@/types";
 import FreelanceStats from "./FreelanceStats";
 import FreelanceJobCard from "./FreelanceJobCard";
@@ -10,142 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import { useLanguage } from "@/lib/language/context";
-
-const DUMMY_JOBS: FreelanceJob[] = [
-  {
-    id: "1",
-    userId: "demo",
-    clientName: "Tokopedia",
-    clientContact: "client@tokopedia.com",
-    serviceType: "Web Development",
-    product: "Landing Page",
-    potentialPrice: 25000000,
-    actualPrice: 25000000,
-    currency: "IDR",
-    startDate: "2024-01-15",
-    endDate: "2024-03-30",
-    durationDays: 75,
-    status: "ongoing",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "2",
-    userId: "demo",
-    clientName: "Gojek",
-    clientContact: "project@gojek.com",
-    serviceType: "Mobile App Development",
-    product: "Mobile App",
-    potentialPrice: 50000000,
-    actualPrice: 48000000,
-    currency: "IDR",
-    startDate: "2023-10-01",
-    endDate: "2023-12-15",
-    durationDays: 76,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "3",
-    userId: "demo",
-    clientName: "Bukalapak",
-    clientContact: "+62 812-3456-7890",
-    serviceType: "UI/UX Design",
-    product: "E-commerce Website",
-    potentialPrice: 35000000,
-    currency: "IDR",
-    startDate: "2024-02-01",
-    endDate: "2024-04-15",
-    durationDays: 74,
-    status: "ongoing",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "4",
-    userId: "demo",
-    clientName: "Traveloka",
-    clientContact: "design@traveloka.com",
-    serviceType: "UI/UX Design",
-    product: "Brand Identity",
-    potentialPrice: 15000000,
-    actualPrice: 15000000,
-    currency: "IDR",
-    startDate: "2023-08-01",
-    endDate: "2023-09-30",
-    durationDays: 60,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "5",
-    userId: "demo",
-    clientName: "Shopee",
-    clientContact: "vendor@shopee.com",
-    serviceType: "Content Writing",
-    product: "Social Media Content",
-    potentialPrice: 8000000,
-    currency: "IDR",
-    startDate: "2024-01-01",
-    endDate: "2024-01-31",
-    durationDays: 31,
-    status: "cancelled",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "6",
-    userId: "demo",
-    clientName: "OVO",
-    clientContact: "tech@ovo.id",
-    serviceType: "Consulting",
-    product: "Mobile App",
-    potentialPrice: 20000000,
-    actualPrice: 22000000,
-    currency: "IDR",
-    startDate: "2023-11-01",
-    endDate: "2023-11-30",
-    durationDays: 30,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "7",
-    userId: "demo",
-    clientName: "Mandiri",
-    clientContact: "procurement@mandiri.co.id",
-    serviceType: "Web Development",
-    product: "E-commerce Website",
-    potentialPrice: 75000000,
-    currency: "IDR",
-    startDate: "2024-03-01",
-    endDate: "2024-06-30",
-    durationDays: 122,
-    status: "ongoing",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "8",
-    userId: "demo",
-    clientName: "BCA",
-    clientContact: "digital@bca.co.id",
-    serviceType: "Mobile App Development",
-    product: "Mobile App",
-    potentialPrice: 100000000,
-    actualPrice: 100000000,
-    currency: "IDR",
-    startDate: "2023-06-01",
-    endDate: "2023-12-31",
-    durationDays: 214,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-];
+import { subscribeToFreelanceJobs, deleteFreelanceJob } from "@/lib/supabase/freelance-jobs";
 
 interface FreelanceDashboardProps {
   userId: string;
@@ -154,12 +19,26 @@ interface FreelanceDashboardProps {
 
 export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDashboardProps) {
   const { t } = useLanguage();
-  const [jobs, setJobs] = useState<FreelanceJob[]>(DUMMY_JOBS);
+  const [jobs, setJobs] = useState<FreelanceJob[]>([]);
+  const [loading, setLoading] = useState(true);
   const isClientMode = trackerMode === "client";
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<FreelanceJob | null>(null);
+
+  useEffect(() => {
+    if (userId) {
+      setLoading(true);
+      const channel = subscribeToFreelanceJobs(userId, (data) => {
+        setJobs(data);
+        setLoading(false);
+      });
+      return () => {
+        channel.unsubscribe();
+      };
+    }
+  }, [userId]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -178,8 +57,12 @@ export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDas
     setIsModalOpen(true);
   };
 
-  const handleDelete = (job: FreelanceJob) => {
-    setJobs(jobs.filter((j) => j.id !== job.id));
+  const handleDelete = async (job: FreelanceJob) => {
+    try {
+      await deleteFreelanceJob(job.id!);
+    } catch (error) {
+      console.error("Failed to delete job:", error);
+    }
   };
 
   return (

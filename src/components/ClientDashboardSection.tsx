@@ -1,89 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DollarSign, Users, TrendingUp, Briefcase, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useLanguage } from "@/lib/language/context";
-
-const DUMMY_JOBS = [
-  {
-    id: "1",
-    userId: "demo",
-    clientName: "Tokopedia",
-    clientContact: "client@tokopedia.com",
-    serviceType: "Web Development",
-    product: "Landing Page",
-    potentialPrice: 25000000,
-    actualPrice: 25000000,
-    currency: "IDR",
-    startDate: "2024-01-15",
-    endDate: "2024-03-30",
-    durationDays: 75,
-    status: "ongoing",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "2",
-    userId: "demo",
-    clientName: "Gojek",
-    clientContact: "project@gojek.com",
-    serviceType: "Mobile App Development",
-    product: "Mobile App",
-    potentialPrice: 50000000,
-    actualPrice: 48000000,
-    currency: "IDR",
-    startDate: "2023-10-01",
-    endDate: "2023-12-15",
-    durationDays: 76,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "3",
-    userId: "demo",
-    clientName: "Bukalapak",
-    clientContact: "+62 812-3456-7890",
-    serviceType: "UI/UX Design",
-    product: "E-commerce Website",
-    potentialPrice: 35000000,
-    currency: "IDR",
-    startDate: "2024-02-01",
-    endDate: "2024-04-15",
-    durationDays: 74,
-    status: "ongoing",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: "4",
-    userId: "demo",
-    clientName: "Traveloka",
-    clientContact: "design@traveloka.com",
-    serviceType: "UI/UX Design",
-    product: "Brand Identity",
-    potentialPrice: 15000000,
-    actualPrice: 15000000,
-    currency: "IDR",
-    startDate: "2023-08-01",
-    endDate: "2023-09-30",
-    durationDays: 60,
-    status: "completed",
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-];
+import { subscribeToFreelanceJobs } from "@/lib/supabase/freelance-jobs";
+import { FreelanceJob } from "@/types";
 
 interface ClientDashboardSectionProps {
   userId?: string;
   onNavigateToClients?: () => void;
 }
 
-export default function ClientDashboardSection({ userId: _userId, onNavigateToClients }: ClientDashboardSectionProps) {
+export default function ClientDashboardSection({ userId, onNavigateToClients }: ClientDashboardSectionProps) {
   const { t } = useLanguage();
-  const [jobs] = useState(DUMMY_JOBS);
+  const [jobs, setJobs] = useState<FreelanceJob[]>([]);
+
+  useEffect(() => {
+    if (userId) {
+      const channel = subscribeToFreelanceJobs(userId, (data) => {
+        setJobs(data);
+      });
+      return () => {
+        channel.unsubscribe();
+      };
+    }
+  }, [userId]);
 
   const stats = useMemo(() => {
     const totalIncome = jobs.reduce((sum, job) => sum + (job.actualPrice || job.potentialPrice || 0), 0);
