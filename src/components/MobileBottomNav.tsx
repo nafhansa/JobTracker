@@ -1,32 +1,44 @@
 "use client";
 
-import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2 } from "lucide-react";
+import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2, Users } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
-import DashboardClient from "./tracker/DashboardClient";
+import { TrackerMode } from "@/components/TrackerModeSwitcher";
 
 interface MobileBottomNavProps {
   activeSection: SidebarSection;
   onSectionChange: (section: SidebarSection) => void;
   onPlusButtonClick: () => void;
   isPlusLoading?: boolean;
+  trackerMode: TrackerMode;
 }
 
 export default function MobileBottomNav({ 
   activeSection, 
   onSectionChange, 
   onPlusButtonClick,
-  isPlusLoading = false
+  isPlusLoading = false,
+  trackerMode
 }: MobileBottomNavProps) {
   const { t } = useLanguage();
 
-  const navItems = [
+  const jobNavItems = [
     { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
     { id: "applications", icon: Briefcase, label: t("sidebar.applications") },
     { id: "plus", isPlus: true }, 
     { id: "profile", icon: User, label: t("sidebar.profile") },
     { id: "settings", icon: SettingsIcon, label: t("sidebar.settings") },
   ];
+
+  const clientNavItems = [
+    { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
+    { id: "clients", icon: Users, label: t("sidebar.clients") },
+    { id: "plus", isPlus: true }, 
+    { id: "profile", icon: User, label: t("sidebar.profile") },
+    { id: "settings", icon: SettingsIcon, label: t("sidebar.settings") },
+  ];
+
+  const navItems = trackerMode === "job" ? jobNavItems : clientNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden bg-background/80 dark:bg-card/80 backdrop-blur-xl border-t border-border px-2">

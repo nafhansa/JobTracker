@@ -104,3 +104,23 @@ export interface Feedback {
   message: string;
   createdAt?: string;
 }
+
+export type FreelanceJobStatus = "ongoing" | "completed" | "cancelled";
+
+export interface FreelanceJob {
+  id?: string;
+  userId: string;
+  clientName: string;
+  clientContact: string;
+  serviceType: string;
+  product: string;
+  potentialPrice: number;
+  actualPrice?: number;
+  currency: string;
+  startDate?: string;
+  endDate?: string;
+  durationDays?: number;
+  status: FreelanceJobStatus;
+  createdAt: number;
+  updatedAt: number;
+}

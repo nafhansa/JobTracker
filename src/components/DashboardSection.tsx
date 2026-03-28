@@ -286,8 +286,9 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
               <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorCountDashboard" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
+                    <stop offset="50%" stopColor="var(--primary)" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid 
@@ -311,7 +312,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                   className="text-[10px] font-medium fill-muted-foreground"
                 />
                 <Tooltip
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '4 4' }}
                   contentStyle={{
                     backgroundColor: "var(--background)",
                     border: "1px solid var(--border)",
@@ -319,17 +320,17 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     fontSize: "12px"
                   }}
-                  itemStyle={{ color: "hsl(var(--primary))", fontWeight: "bold" }}
+                  itemStyle={{ color: "var(--primary)", fontWeight: "bold" }}
                   labelStyle={{ marginBottom: "4px", fontWeight: "bold" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--primary)"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorCountDashboard)"
-                  activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--primary))" }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "var(--primary)" }}
                 />
               </AreaChart>
             </ResponsiveContainer>

@@ -248,40 +248,42 @@ export default function StatsSection({ jobs }: StatsSectionProps) {
             <AreaChart data={stats.chartData}>
               <defs>
                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.6} />
+                  <stop offset="50%" stopColor="var(--primary)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
               <XAxis
                 dataKey="date"
-                className="text-xs text-muted-foreground"
-                tick={{ fontSize: 10 }}
-                tickLine={{ stroke: "#374151" }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
               />
               <YAxis
                 allowDecimals={false}
-                className="text-xs text-muted-foreground"
-                tick={{ fontSize: 10 }}
-                tickLine={{ stroke: "#374151" }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "var(--popover)",
+                  backgroundColor: "var(--background)",
                   border: "1px solid var(--border)",
-                  borderRadius: "8px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 }}
-                itemStyle={{ color: "var(--foreground)" }}
-                labelStyle={{ color: "var(--foreground)" }}
+                itemStyle={{ color: "var(--primary)", fontWeight: "bold" }}
+                labelStyle={{ color: "var(--foreground)", fontWeight: "bold" }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
+                stroke="var(--primary)"
+                strokeWidth={3}
                 fillOpacity={1}
                 fill="url(#colorCount)"
-                activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                activeDot={{ r: 6, strokeWidth: 0, fill: "var(--primary)" }}
               />
             </AreaChart>
           </ResponsiveContainer>
