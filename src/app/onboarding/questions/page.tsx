@@ -18,7 +18,7 @@ import { toast } from "sonner";
 export default function QuestionsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language: currentLanguage, setLanguage: setAppLanguage } = useLanguage();
   const {
     currentStep,
     formData,
@@ -34,18 +34,13 @@ export default function QuestionsPage() {
   const [roleResults, setRoleResults] = useState<JobRole[]>([]);
   const [searching, setSearching] = useState(false);
   const [customRoleInput, setCustomRoleInput] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
 
   useEffect(() => {
-    if (language === "id") {
-      import("@/lib/language/context").then((mod) => {
-        const ctx = mod.useLanguage();
-        if (ctx.language !== language) {
-          ctx.setLanguage(language);
-        }
-      });
+    if (language && currentLanguage !== language) {
+      setAppLanguage(language);
+      localStorage.setItem("language", language);
     }
-  }, [language]);
+  }, [language, currentLanguage, setAppLanguage]);
 
   const searchRoles = useCallback(async (query: string) => {
     if (query.length < 1) {
@@ -92,20 +87,22 @@ export default function QuestionsPage() {
   };
 
   const handleAddCustomRole = () => {
-    if (customRoleInput.trim()) {
+    const roleToAdd = customRoleInput.trim() || roleSearch.trim();
+    if (roleToAdd) {
       const exists = formData.targetRoles.some(
-        (r) => r.type === "custom" && r.name.toLowerCase() === customRoleInput.trim().toLowerCase()
+        (r) => r.type === "custom" && r.name.toLowerCase() === roleToAdd.toLowerCase()
       );
       if (!exists) {
         updateFormData({
           targetRoles: [
             ...formData.targetRoles,
-            { type: "custom", name: customRoleInput.trim() },
+            { type: "custom", name: roleToAdd },
           ],
         });
       }
       setCustomRoleInput("");
-      setShowCustomInput(false);
+      setRoleSearch("");
+      setRoleResults([]);
     }
   };
 
@@ -231,6 +228,36 @@ export default function QuestionsPage() {
               )}
             </div>
 
+            {!searching && roleSearch.length >= 1 && roleResults.length === 0 && (
+              <div className="border border-border rounded-xl bg-card p-3 sm:p-4">
+                <div className="text-muted-foreground text-xs sm:text-sm mb-2">
+                  {t("onboarding.q2.custom_placeholder")}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customRoleInput || roleSearch}
+                    onChange={(e) => setCustomRoleInput(e.target.value)}
+                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2 rounded-lg border border-border bg-card text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleAddCustomRole();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!customRoleInput) setCustomRoleInput(roleSearch);
+                      handleAddCustomRole();
+                    }}
+                    className="px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs sm:text-sm font-medium"
+                  >
+                    {t("common.add")}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {roleResults.length > 0 && (
               <div className="border border-border rounded-xl overflow-hidden bg-card max-h-40 sm:max-h-48 overflow-y-auto">
                 {roleResults.map((role) => (
@@ -267,38 +294,6 @@ export default function QuestionsPage() {
                 ))}
               </div>
             )}
-
-            <div className="pt-1.5 sm:pt-2">
-              {!showCustomInput ? (
-                <button
-                  onClick={() => setShowCustomInput(true)}
-                  className="text-primary text-xs sm:text-sm hover:underline"
-                >
-                  + {t("onboarding.q2.other")}
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customRoleInput}
-                    onChange={(e) => setCustomRoleInput(e.target.value)}
-                    placeholder={t("onboarding.q2.custom_placeholder")}
-                    className="flex-1 px-3 sm:px-4 py-2 sm:py-2 rounded-lg border border-border bg-card text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleAddCustomRole();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleAddCustomRole}
-                    className="px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs sm:text-sm font-medium"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         );
 

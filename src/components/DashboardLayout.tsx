@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { JobApplication } from "@/types";
 import Sidebar, { SidebarSection } from "@/components/Sidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -9,12 +9,17 @@ import DashboardClient from "@/components/tracker/DashboardClient";
 import ProfileSection from "@/components/ProfileSection";
 import SettingsSection from "@/components/SettingsSection";
 import JobFormModal from "@/components/forms/AddJobModal";
+import FreelanceDashboard from "@/components/freelance/FreelanceDashboard";
+import { TrackerMode } from "@/components/TrackerModeSwitcher";
+import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
+import ClientDashboardSection from "@/components/ClientDashboardSection";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import { TutorialProvider } from "@/lib/tutorial/context";
 import { TutorialManager } from "@/components/tutorial/TutorialManager";
 import { triggerTutorialCompleteCelebration } from "@/components/tutorial/TutorialManager";
+import { getFreelanceJobCount } from "@/lib/supabase/freelance-jobs";
 
 interface DashboardLayoutProps {
   jobs: JobApplication[];
@@ -25,9 +30,26 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const [trackerMode, setTrackerMode] = useState<TrackerMode>("job");
   const [activeSection, setActiveSection] = useState<SidebarSection>("dashboard");
+  const [clientCount, setClientCount] = useState(0);
 
   const isAdmin = isAdminUser(user?.email || "");
+  
+  const jobCount = jobs.length;
+
+  useEffect(() => {
+    if (userId) {
+      getFreelanceJobCount(userId)
+        .then(setClientCount)
+        .catch(console.error);
+    }
+  }, [userId]);
+
+  const handleTrackerModeChange = (mode: TrackerMode) => {
+    setTrackerMode(mode);
+    setActiveSection("dashboard");
+  };
 
   // Shared modal state for Add Job
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +88,9 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
+        if (trackerMode === "client") {
+          return <ClientDashboardSection userId={userId} />;
+        }
         return <DashboardSection jobs={jobs} userId={userId} plan={plan} onAddJob={handleAddNew} onEditJob={handleEditJob} onNavigateToApplications={handleNavigateToApplications} />;
       case "applications":
         return (
@@ -79,6 +104,10 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
             />
           </>
         );
+      case "freelance":
+        return <FreelanceDashboard userId={userId} />;
+      case "clients":
+        return <FreelanceDashboard userId={userId} trackerMode="client" />;
       case "profile":
         return <ProfileSection isAdmin={isAdmin} />;
       case "settings":
@@ -90,7 +119,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
 
   return (
     <TutorialProvider user={user} jobCount={jobs.length} onTutorialComplete={handleTutorialComplete}>
-      <div className={`flex ${activeSection === "applications" ? "h-[calc(100vh-40px)]" : "min-h-screen"} pt-0 lg:pt-20 overflow-hidden`}>
+      <div className={`flex ${activeSection === "applications" || activeSection === "clients" ? "h-[calc(100vh-40px)]" : "min-h-screen"} pt-0 lg:pt-20 overflow-hidden`}>
         {/* Sidebar - Desktop Only */}
         <div className="hidden lg:block">
           <Sidebar
@@ -98,15 +127,19 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
             onSectionChange={setActiveSection}
             isMobileOpen={false}
             onMobileClose={() => {}}
+            trackerMode={trackerMode}
+            onTrackerModeChange={handleTrackerModeChange}
+            jobCount={jobCount}
+            clientCount={clientCount}
           />
         </div>
 
         {/* Main Content */}
-        <main className={`flex-1 lg:pl-64 w-full min-h-0 ${activeSection === "applications" ? "overflow-hidden" : ""}`}>
-          <div className={`${activeSection === "applications" ? "h-full flex flex-col px-4 sm:px-6 md:px-8 lg:px-16 xl:px-18 pt-3 md:pt-4 min-h-0" : "max-w-7xl mx-auto p-4 pt-6 md:pt-6 md:p-6 pb-26 lg:pb-18"}`}>
+        <main className={`flex-1 lg:pl-64 w-full min-h-0 ${activeSection === "applications" || activeSection === "clients" ? "overflow-hidden" : ""}`}>
+          <div className={`${activeSection === "applications" || activeSection === "clients" ? "h-full flex flex-col px-4 sm:px-6 md:px-8 lg:px-16 xl:px-18 pt-6 md:pt-6 min-h-0" : "max-w-7xl mx-auto p-4 pt-6 md:pt-6 md:p-6 pb-26 lg:pb-18"}`}>
             {/* Section Header */}
             <div className="mb-0 md:mb-1.5">
-              {activeSection === "dashboard" && (
+              {activeSection === "dashboard" && trackerMode === "job" && (
                 <>
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
                     Dashboard
@@ -116,13 +149,33 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
                   </p>
                 </>
               )}
+              {activeSection === "dashboard" && trackerMode === "client" && (
+                <>
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                    {t("client.dashboard")}
+                  </h1>
+                  <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
+                    {t("client.dashboard.subtitle")}
+                  </p>
+                </>
+              )}
               {activeSection === "applications" && (
                 <>
-                  <h1 className="text-3xl md:text-4xl pt-0.5 md:pt-2 font-bold text-foreground mb-0.5 tracking-tight">
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
                     {t("dashboard.title")}
                   </h1>
                   <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                     {t("dashboard.subtitle")}
+                  </p>
+                </>
+              )}
+              {activeSection === "clients" && (
+                <>
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                    {t("sidebar.clients")}
+                  </h1>
+                  <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
+                    {t("client.subtitle")}
                   </p>
                 </>
               )}
@@ -149,14 +202,24 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
             </div>
 
             {/* Content */}
-            <div className={`${activeSection === "applications" ? "h-full flex flex-col min-h-0" : "animate-in fade-in duration-500"}`}>
+            <div className={`${activeSection === "applications" || activeSection === "clients" ? "h-full flex flex-col min-h-0" : "animate-in fade-in duration-500"}`}>
               {renderContent()}
             </div>
           </div>
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} isPlusLoading={isPlusLoading} />
+        <MobileBottomNav activeSection={activeSection} onSectionChange={setActiveSection} onPlusButtonClick={handlePlusButtonClick} isPlusLoading={isPlusLoading} trackerMode={trackerMode} />
+
+        {/* Tracker Mode Switcher - Mobile Only (Above Bottom Nav) */}
+        <div className="fixed bottom-20 left-4 z-[90] lg:hidden">
+          <TrackerModeSwitcher
+            mode={trackerMode}
+            onModeChange={handleTrackerModeChange}
+            jobCount={jobCount}
+            clientCount={clientCount}
+          />
+        </div>
 
         {/* Shared Job Form Modal */}
         <JobFormModal

@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { BarChart3, Briefcase, User, X, Menu, Settings } from "lucide-react";
+import { BarChart3, Briefcase, User, X, Settings, BriefcaseBusiness, Users } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { Button } from "@/components/ui/button";
+import { TrackerMode } from "@/components/TrackerModeSwitcher";
+import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
 
-export type SidebarSection = "dashboard" | "applications" | "profile" | "settings";
+export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "profile" | "settings";
 
 export interface SidebarProps {
   activeSection: SidebarSection;
   onSectionChange: (section: SidebarSection) => void;
   isMobileOpen: boolean;
   onMobileClose: () => void;
+  trackerMode: TrackerMode;
+  onTrackerModeChange: (mode: TrackerMode) => void;
+  jobCount?: number;
+  clientCount?: number;
 }
 
-export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, onMobileClose }: SidebarProps) {
+export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, onMobileClose, trackerMode, onTrackerModeChange, jobCount = 0, clientCount = 0 }: SidebarProps) {
   const { t } = useLanguage();
 
-  const navItems: Array<{
+  const jobNavItems: Array<{
     id: SidebarSection;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -27,6 +32,19 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
     { id: "profile", label: t("sidebar.profile"), icon: User },
     { id: "settings", label: t("sidebar.settings"), icon: Settings },
   ];
+
+  const clientNavItems: Array<{
+    id: SidebarSection;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
+    { id: "dashboard", label: t("sidebar.dashboard"), icon: BarChart3 },
+    { id: "clients", label: t("sidebar.clients"), icon: Users },
+    { id: "profile", label: t("sidebar.profile"), icon: User },
+    { id: "settings", label: t("sidebar.settings"), icon: Settings },
+  ];
+
+  const navItems = trackerMode === "job" ? jobNavItems : clientNavItems;
 
   return (
     <>
@@ -57,6 +75,17 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
           >
             <X className="w-5 h-5" />
           </Button>
+        </div>
+
+        {/* Tracker Mode Switcher */}
+        <div className="p-4 border-b border-border">
+          <TrackerModeSwitcher
+            mode={trackerMode}
+            onModeChange={onTrackerModeChange}
+            fullWidth
+            jobCount={jobCount}
+            clientCount={clientCount}
+          />
         </div>
 
         {/* Navigation Items */}
