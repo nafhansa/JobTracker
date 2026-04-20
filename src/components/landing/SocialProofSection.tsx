@@ -1,10 +1,9 @@
-'use client'; // Diperlukan jika menggunakan Next.js App Router karena ada interaksi hover
+"use client";
 
-import React from 'react';
-import { Quote, Star } from 'lucide-react';
-import { useLanguage } from '@/lib/language/context';
+import React from "react";
+import { Quote, Star } from "lucide-react";
+import { useLanguage } from "@/lib/language/context";
 
-// 1. Data Dummy yang Diperluas & Ditambah Rating
 const testimonialsData = [
   {
     name: "Arya W.",
@@ -50,10 +49,8 @@ const testimonialsData = [
   }
 ];
 
-// Duplikasi data untuk efek infinite scroll yang mulus
 const infiniteTestimonials = [...testimonialsData, ...testimonialsData];
 
-// 2. Komponen Kecil untuk Render Bintang
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex gap-0.5 mb-3">
     {[...Array(5)].map((_, i) => (
@@ -65,9 +62,9 @@ const StarRating = ({ rating }: { rating: number }) => (
   </div>
 );
 
-const SocialProof = () => {
+export default function SocialProofSection() {
   const { t } = useLanguage();
-  
+
   return (
     <section className="py-16 w-full bg-background border-y border-border overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 mb-10">
@@ -81,25 +78,18 @@ const SocialProof = () => {
         </div>
       </div>
 
-      {/* 3. Container Marquee/Carousel */}
-      {/* 'group' ditambahkan di sini agar saat di-hover, animasinya berhenti (pause) */}
       <div className="relative w-full group">
-        {/* Efek Fade di kiri kanan agar kartu terlihat muncul/hilang perlahan */}
         <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
 
-        {/* Track Animasi */}
-        {/* animate-marquee-reverse: Custom animation (lihat CSS di bawah) */}
-        {/* group-hover:paused : Fitur UX penting, biar user bisa baca kalo dihover */}
         <div className="flex w-max gap-6 animate-marquee-reverse group-hover:paused">
           {infiniteTestimonials.map((item, idx) => (
-            <div 
-              key={idx} 
-              // Ukuran kartu fix (w-[350px]) agar rapi saat berjalan
+            <div
+              key={idx}
               className="w-[350px] flex-shrink-0 bg-card p-6 rounded-xl border border-border shadow-sm relative select-none"
             >
                <Quote className="absolute top-6 right-6 w-8 h-8 text-primary/10" />
-              
+
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
                   {item.initials}
@@ -110,9 +100,8 @@ const SocialProof = () => {
                 </div>
               </div>
 
-              {/* Tambahkan Rating */}
               <StarRating rating={item.rating} />
-              
+
               <p className="text-muted-foreground text-sm leading-relaxed italic line-clamp-3">
                 &quot;{item.content}&quot;
               </p>
@@ -122,6 +111,4 @@ const SocialProof = () => {
       </div>
     </section>
   );
-};
-
-export default SocialProof;
+}

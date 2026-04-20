@@ -111,6 +111,9 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.cta.primary": "Get Started Now",
     "hero.cta.secondary": "View Pricing",
     
+    // Phone Tracker Section
+    "phone.title": "How It Looks on Your Phone",
+    
     // Early Bird Section
     "early.badge": "Early Bird Special",
     "early.title": "Limited Time: Lifetime Access Only Rp51.988",
@@ -486,6 +489,9 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.description.2": "dashboard canggih",
     "hero.cta.primary": "Mulai Sekarang",
     "hero.cta.secondary": "Lihat Harga",
+    
+    // Phone Tracker Section
+    "phone.title": "Tampilan di HP Kaya Gimana?",
     
     // Early Bird Section
     "early.badge": "Promo Early Bird",

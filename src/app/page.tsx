@@ -1,18 +1,20 @@
-// /home/nafhan/Documents/projek/job/src/app/page.tsx
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Star, Check, X, Clock, Zap, Download, Share2 } from "lucide-react";
-import Navbar from "../components/Navbar";
-import SocialProof from "../components/SocialProof";
-import FAQSection from "../components/FAQSection";
+import Navbar from "@/components/Navbar";
 import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useLanguage } from "@/lib/language/context";
 import { useAuth } from "@/lib/firebase/auth-context";
+import HeroSection from "@/components/landing/HeroSection";
+import MorphSection from "@/components/landing/MorphSection";
+import EarlyBirdSection from "@/components/landing/EarlyBirdSection";
+import ComparisonSection from "@/components/landing/ComparisonSection";
+import SocialProofSection from "@/components/landing/SocialProofSection";
+import FAQSection from "@/components/landing/FAQSection";
+import FooterSection from "@/components/landing/FooterSection";
+import IOSInstallModal from "@/components/landing/IOSInstallModal";
 
 export default function LandingPage() {
   const { t } = useLanguage();
@@ -22,34 +24,21 @@ export default function LandingPage() {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
-  const [ctaVariant, setCtaVariant] = useState<"A" | "B" | "C">("A");
   const [startTime] = useState(() => Date.now());
   const scrollDepthRef = useRef<number>(0);
   const [pwaRedirecting, setPwaRedirecting] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // Set mounted state (client-side only)
-  useEffect(() => {
-    setMounted(true);
-    
-    // Set random CTA variant on client-side only
-    const variants: ("A" | "B" | "C")[] = ["A", "B", "C"];
-    const randomIndex = Math.floor(Math.random() * variants.length);
-    setCtaVariant(variants[randomIndex]);
-  }, []);
-
-  // Track page visit
   useEffect(() => {
     const trackVisit = async () => {
       try {
         const sessionId = getOrCreateSessionId();
         const deviceInfo = getDeviceInfo();
-        
+
         await fetch("/api/analytics/track", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            type: "visit", 
+          body: JSON.stringify({
+            type: "visit",
             page: "home",
             sessionId,
             deviceInfo,
@@ -62,7 +51,6 @@ export default function LandingPage() {
     trackVisit();
   }, []);
 
-  // PWA detection and redirect logic
   useEffect(() => {
     const checkPWA = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -78,7 +66,6 @@ export default function LandingPage() {
 
     if (!detectedPWA) return;
 
-    // Set redirecting state
     setPwaRedirecting(true);
 
     if (!authLoading) {
@@ -90,7 +77,6 @@ export default function LandingPage() {
     }
   }, [authLoading, user, router]);
 
-  // Handle redirect when auth state is ready
   useEffect(() => {
     if (pwaRedirecting && !authLoading) {
       if (user) {
@@ -101,7 +87,6 @@ export default function LandingPage() {
     }
   }, [pwaRedirecting, authLoading, user, router]);
 
-  // PWA Install detection
   useEffect(() => {
     const checkIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
     setIsIOS(checkIOS);
@@ -140,7 +125,6 @@ export default function LandingPage() {
     }
   };
 
-  // Track micro-conversions
   const trackMicroConversion = useCallback(async (type: string, value?: number) => {
     try {
       const sessionId = getOrCreateSessionId();
@@ -159,18 +143,16 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Track scroll depth
   useEffect(() => {
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.scrollY;
       const scrollDepth = Math.round(((scrollTop + windowHeight) / documentHeight) * 100);
-      
+
       if (scrollDepth > scrollDepthRef.current) {
         scrollDepthRef.current = scrollDepth;
-        
-        // Track at milestones: 25%, 50%, 75%, 100%
+
         if ([25, 50, 75, 100].includes(scrollDepth)) {
           trackMicroConversion("scroll_depth", scrollDepth);
         }
@@ -181,7 +163,6 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [trackMicroConversion]);
 
-  // Track time on page (when user leaves)
   useEffect(() => {
     const handleBeforeUnload = () => {
       const timeOnPage = Math.round((Date.now() - startTime) / 1000);
@@ -192,75 +173,10 @@ export default function LandingPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [startTime, trackMicroConversion]);
 
-  // Track CTA click
   const handleCTAClick = () => {
     trackMicroConversion("cta_click");
   };
 
-  // Early bird countdown logic (client-side only to avoid hydration mismatch)
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-  const [isEarlyBirdExpired, setIsEarlyBirdExpired] = useState(false);
-
-  useEffect(() => {
-    const EARLY_BIRD_END_DATE = new Date();
-    EARLY_BIRD_END_DATE.setDate(EARLY_BIRD_END_DATE.getDate() + 3);
-    EARLY_BIRD_END_DATE.setHours(23, 59, 59, 999);
-
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = EARLY_BIRD_END_DATE.getTime();
-      const difference = end - now;
-
-      if (difference <= 0) {
-        return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-      }
-
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-        expired: false,
-      };
-    };
-
-    // Set initial values
-    const initial = calculateTimeLeft();
-    setTimeLeft({
-      days: initial.days,
-      hours: initial.hours,
-      minutes: initial.minutes,
-      seconds: initial.seconds,
-    });
-    setIsEarlyBirdExpired(initial.expired);
-
-    // Update every second
-    const timer = setInterval(() => {
-      const result = calculateTimeLeft();
-      setTimeLeft((prev) => {
-        if (prev.days === result.days && prev.hours === result.hours &&
-            prev.minutes === result.minutes && prev.seconds === result.seconds) {
-          return prev;
-        }
-        return {
-          days: result.days,
-          hours: result.hours,
-          minutes: result.minutes,
-          seconds: result.seconds,
-        };
-      });
-      setIsEarlyBirdExpired((prev) => prev !== result.expired ? result.expired : prev);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Show loading when redirecting in PWA mode
   if (pwaRedirecting) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center flex-col gap-4">
@@ -276,507 +192,20 @@ export default function LandingPage() {
       <Navbar />
 
       <main className="flex-1 relative z-10 flex flex-col items-center">
-        
-        {/* --- HERO SECTION --- */}
-        {/* SECTION PADDING: Adjust top padding - Mobile: pt-X (lebih kecil = lebih ke atas), Desktop: md:pt-20 (tetap) */}
-        {/* Mobile options: pt-16, pt-20, pt-24, pt-28, pt-32, pt-36, pt-40 (semakin kecil = semakin ke atas) */}
-        <section className="pt-24 md:pt-20 pb-20 px-6 text-center max-w-5xl mx-auto">
-          {/* MAIN SPACING: Adjust spacing between all components - space-y-6 (mobile) md:space-y-8 (desktop) */}
-          {/* Options: space-y-4 (tight), space-y-6 (default), space-y-8 (comfortable), space-y-10 (spacious) */}
-          <div className="flex flex-col items-center space-y-6 md:space-y-4">
-            {!mounted ? (
-              <HeroSkeleton />
-            ) : (
-              <>
-                {/* Badge - Jarak dari atas section diatur oleh pt-24 md:pt-40 di section */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border border-primary/30 rounded-full text-primary bg-primary/10 backdrop-blur-sm">
-                  <Star className="w-3 h-3 text-primary fill-current" />
-                  {t("hero.badge")}
-                </div>
-
-                {/* Heading - Jarak dari badge diatur oleh space-y-6 md:space-y-8 di parent div */}
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-foreground">
-                  {t("hero.title.1")} <br />
-                  <span className="relative whitespace-nowrap">
-                    <span className="absolute -inset-1 bg-primary/10 blur-xl rounded-full"></span>
-                    <span className="relative text-primary">{t("hero.title.2")}</span>
-                  </span>
-                </h1>
-              
-            {/* --- PRODUCT SHOWCASE (UPDATED: REAL SCREENSHOT) --- */}
-            {/* Paddle Point #3: Clear display of product features */}
-            {/* UKURAN: Adjust max-width (max-w-4xl/max-w-5xl/max-w-6xl), padding (px-2/px-4/px-6), margin (mt-X mb-X) */}
-            {/* SCALE: Untuk lebih kecil, tambahkan scale-90 md:scale-100 di container atau scale-75 md:scale-100 */}
-            <div className="relative w-full max-w-4xl md:max-w-2xl px-2 md:px-4 mt-1 md:mt-1 mb-2 md:mb-1 perspective-[2000px] group scale-90 md:scale-85">
-              {/* Background Glow - Adjust w-X h-X untuk mengubah ukuran glow (w-1/2 = 50%, w-3/4 = 75%) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/2 md:w-3/4 h-1/2 md:h-3/4 bg-primary/10 rounded-full blur-[100px]"></div>
-               
-              <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl backdrop-blur-sm transform rotate-x-[0deg] group-hover:rotate-x-[10deg] transition-all duration-700 ease-out">
-                {/* Browser Bar - Adjust h-6/h-8 untuk tinggi browser bar */}
-                <div className="h-6 md:h-8 bg-muted/50 flex items-center px-3 md:px-4 space-x-2 border-b border-border">
-                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-400"></div>
-                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-400"></div>
-                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-400"></div>
-                  <div className="ml-2 md:ml-4 px-2 md:px-3 py-0.5 md:py-1 bg-background/50 rounded text-[9px] md:text-[10px] text-muted-foreground font-mono hidden md:block">jobtrackerapp.site/dashboard</div>
-                </div>
-                
-                {/* Image Container - aspect-video = 16:9, bisa diganti aspect-square (1:1) atau aspect-[4/3] */}
-                <div className="relative aspect-video w-full bg-background">
-                  <Image 
-                    src="/dashboard-preview.png" 
-                    alt="JobTracker Dashboard Interface" 
-                    fill
-                    className="object-cover object-top"
-                    priority
-                    quality={100}
-                    unoptimized
-                  />
-                </div>
-              </div>
-            </div>
-
-                {/* Description - Jarak dari heading: diatur oleh space-y-6 md:space-y-8 di parent div (line 189) */}
-                {/* JARAK KHUSUS: Adjust mt-X (margin-top) dan mb-X (margin-bottom) sesuai kebutuhan - Mobile: lebih kecil, Desktop: lebih besar */}
-                {/* Options: mt-0, mt-2, mt-4, mt-6, mt-8, mt-10, mt-12 | mb-0, mb-2, mb-4, mb-6, mb-8, mb-10, mb-12 */}
-                <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-normal leading-relaxed mt-2 md:mt-0.5 mb-3 md:mb-4">
-                  {t("hero.description")}{" "}
-                  <span className="text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-4">
-                    {t("hero.description.2")}
-                  </span>
-                  .
-                </p>
-
-                {/* CTA Buttons - Jarak dari description: base spacing dari parent - Mobile: lebih kecil, Desktop: lebih besar */}
-                {/* MOBILE: gap-3, padding lebih kecil | DESKTOP: gap-4, padding normal */}
-                <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 w-full sm:w-auto">
-                  <Link
-                    href="/login"
-                    onClick={handleCTAClick}
-                    className={`group relative inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold rounded-lg text-white bg-primary hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg uppercase overflow-hidden ${
-                      ctaVariant === "B" ? "md:text-lg md:px-10 md:py-5" : ""
-                    }`}
-                  >
-                    <span className="relative z-10 flex items-center">
-                      {t("hero.cta.primary")}
-                      <ArrowRight className="ml-2 w-3.5 h-3.5 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </Link>
-
-                  <button
-                    onClick={handleInstallClick}
-                    className="inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 text-sm md:text-base font-semibold border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-300"
-                  >
-                    <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    Install App
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* --- EARLY BIRD SPECIAL SECTION --- */}
-        {mounted && !isEarlyBirdExpired && (
-          <section className="w-full max-w-6xl px-6 py-12 md:py-16 relative z-10 mx-auto">
-            <div className="relative bg-white rounded-2xl border border-border shadow-md overflow-hidden">
-              <div className="relative z-10 p-6 md:p-10">
-                {/* Mobile Layout */}
-                <div className="md:hidden space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full mb-4">
-                      <Zap className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
-                        {t("early.badge")}
-                      </span>
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">
-                      {t("early.title.mobile")}
-                    </h2>
-                    <p className="text-base text-foreground mb-4">
-                      {t("early.price.mobile")} <span className="font-bold text-primary">Rp51.988</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground line-through mb-2">
-                      {t("early.regular")}
-                    </p>
-                  </div>
-
-                  {/* Countdown Timer Mobile */}
-                  <div className="bg-slate-50 rounded-xl p-4 border border-border">
-                    <div className="text-center mb-3">
-                      <Clock className="w-5 h-5 text-primary mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{t("early.timer")}</p>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
-                        <p className="text-2xl font-mono font-bold text-foreground">
-                          {String(timeLeft.days).padStart(2, "0")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.days")}</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
-                        <p className="text-2xl font-mono font-bold text-foreground">
-                          {String(timeLeft.hours).padStart(2, "0")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.hours")}</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
-                        <p className="text-2xl font-mono font-bold text-foreground">
-                          {String(timeLeft.minutes).padStart(2, "0")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.minutes")}</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 text-center border border-border shadow-sm">
-                        <p className="text-2xl font-mono font-bold text-foreground">
-                          {String(timeLeft.seconds).padStart(2, "0")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-1">{t("early.seconds")}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Link
-                    href="/pricing"
-                    onClick={handleCTAClick}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-lg font-semibold text-base hover:bg-primary/90 transition-all duration-300 shadow-md"
-                  >
-                    {t("early.cta")}
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </div>
-
-                {/* Desktop Layout */}
-                <div className="hidden md:flex items-center justify-between gap-8">
-                  <div className="flex-1">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full mb-4">
-                      <Zap className="w-5 h-5 text-blue-600" />
-                      <span className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
-                        {t("early.badge")}
-                      </span>
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                      {t("early.title")}
-                    </h2>
-                    <p className="text-lg text-muted-foreground mb-4">
-                      {t("early.subtitle")}
-                    </p>
-                    
-                    {/* Countdown Timer Desktop */}
-                    <div className="flex items-center gap-4 mt-6">
-                      <Clock className="w-5 h-5 text-primary" />
-                      <span className="text-sm text-muted-foreground font-medium">{t("early.timer")}</span>
-                      <div className="flex items-center gap-2 font-mono text-lg font-bold text-foreground">
-                        <span className="bg-slate-50 border border-border px-3 py-2 rounded-lg">
-                          {String(timeLeft.days).padStart(2, "0")}d
-                        </span>
-                        <span className="text-muted-foreground">:</span>
-                        <span className="bg-slate-50 border border-border px-3 py-2 rounded-lg">
-                          {String(timeLeft.hours).padStart(2, "0")}h
-                        </span>
-                        <span className="text-muted-foreground">:</span>
-                        <span className="bg-slate-50 border border-border px-3 py-2 rounded-lg">
-                          {String(timeLeft.minutes).padStart(2, "0")}m
-                        </span>
-                        <span className="text-muted-foreground">:</span>
-                        <span className="bg-slate-50 border border-border px-3 py-2 rounded-lg">
-                          {String(timeLeft.seconds).padStart(2, "0")}s
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Link
-                    href="/pricing"
-                    onClick={handleCTAClick}
-                    className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all duration-300 shadow-md hover:scale-105"
-                  >
-                    {t("early.cta")}
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* --- COMPARISON SECTION --- */}
-        <section id="comparison" className="py-20 w-full max-w-6xl px-6 relative z-10 mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              {t("comparison.title")}
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              {t("comparison.subtitle")}
-            </p>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-2 md:p-8 shadow-sm">
-            {/* --- DESKTOP VIEW (Grid System) --- */}
-            <div className="hidden md:grid grid-cols-3 gap-6 items-stretch">
-              
-              {/* 1. FEATURES COLUMN */}
-              <div className="flex flex-col px-4 py-8"> 
-                {/* Header Area - Fixed Height for alignment */}
-                <div className="h-[120px] flex flex-col justify-end pb-8 border-b border-border mb-6">
-                  <h3 className="text-xl font-bold text-foreground text-left">
-                    {t("comparison.features")}
-                  </h3>
-                </div>
-                {/* Rows */}
-                <div className="flex flex-col space-y-4">
-                  {[
-                    t("comparison.feature.1"),
-                    t("comparison.feature.2"),
-                    t("comparison.feature.3"),
-                    t("comparison.feature.4"),
-                  ].map((feature, idx) => (
-                    <div key={idx} className="h-12 flex items-center text-base font-medium text-muted-foreground">
-                      {feature}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. JOBTRACKER COLUMN (Highlighted) */}
-              <div className="relative">
-                {/* Glow Effect */}
-                <div className="absolute -inset-1 bg-primary/10 rounded-xl blur-md"></div>
-                
-                <div className="relative bg-card border-2 border-primary rounded-xl p-8 shadow-md h-full">
-                  {/* Header Area - Fixed Height for alignment */}
-                  <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-primary/30 mb-6">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
-                      {t("comparison.jobtracker")}
-                    </h3>
-                    <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-xs font-semibold text-white shadow-sm">
-                      <Star className="w-3 h-3 fill-white" />
-                      {t("comparison.winner")}
-                    </div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="flex flex-col space-y-4">
-                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value={t("comparison.organized")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                    <ComparisonItem value={t("comparison.yes")} icon={<Check className="w-3.5 h-3.5" />} isPositive={true} />
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. SPREADSHEETS COLUMN */}
-              <div className="flex flex-col h-full">
-                <div className="bg-muted/30 border border-border rounded-xl p-8 h-full">
-                  {/* Header Area - Fixed Height for alignment */}
-                  <div className="h-[120px] flex flex-col justify-end items-center pb-8 border-b border-border mb-6">
-                    <h3 className="text-2xl font-bold text-muted-foreground">
-                      {t("comparison.spreadsheets")}
-                    </h3>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="flex flex-col space-y-4">
-                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value={t("comparison.no")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value={t("comparison.messy")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                    <ComparisonItem value={t("comparison.painful")} icon={<X className="w-3.5 h-3.5" />} isPositive={false} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* --- MOBILE VIEW (Stacked Cards) --- */}
-            <div className="md:hidden space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-bold text-foreground mb-2">
-                  {t("comparison.why")}
-                </h3>
-                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-semibold text-primary">
-                  <Star className="w-3 h-3 fill-primary" />
-                  {t("comparison.recommended")}
-                </div>
-              </div>
-
-              {[
-                { feature: t("comparison.feature.5"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
-                { feature: t("comparison.feature.1"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
-                { feature: t("comparison.feature.2"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.no") },
-                { feature: t("comparison.feature.3"), jobtracker: t("comparison.organized"), spreadsheet: t("comparison.messy") },
-                { feature: t("comparison.feature.4"), jobtracker: t("comparison.yes"), spreadsheet: t("comparison.painful") },
-              ].map((item, idx) => (
-                <div key={idx} className="bg-card border border-border rounded-lg p-5 shadow-sm">
-                  <div className="text-sm font-semibold text-foreground mb-4 text-center tracking-wide uppercase">
-                    {item.feature}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* JobTracker Side */}
-                    <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-primary/10 rounded-lg blur-sm"></div>
-                      <div className="relative bg-card border border-primary rounded-lg p-3 text-center h-full flex flex-col justify-center items-center">
-                        <div className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">{t("comparison.jobtracker")}</div>
-                        <div className="flex items-center gap-2 text-foreground font-medium">
-                          <Check className="w-4 h-4 text-primary" /> {item.jobtracker}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Spreadsheet Side */}
-                    <div className="bg-muted/30 border border-border rounded-lg p-3 text-center h-full flex flex-col justify-center items-center">
-                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{t("comparison.spreadsheets")}</div>
-                       <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" /> {item.spreadsheet}
-                       </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* --- SOCIAL PROOF SECTION --- */}
-        <SocialProof />
-
-        {/* --- FAQ SECTION --- */}
+        <HeroSection onCTAClick={handleCTAClick} onInstallClick={handleInstallClick} />
+        <MorphSection />
+        <EarlyBirdSection onCTAClick={handleCTAClick} />
+        <ComparisonSection />
+        <SocialProofSection />
         <FAQSection />
       </main>
 
-      {/* --- FOOTER (UPDATED: EXPLICIT LINKS) --- */}
-      {/* Paddle Point #4: Clear navigation to Terms, Privacy, Refund */}
-      <footer className="py-12 border-t border-border bg-background relative z-10 text-sm">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-           
-           <div className="text-center md:text-left">
-              <p className="text-foreground font-bold tracking-widest uppercase mb-2">JobTracker</p>
-              <p className="text-muted-foreground">&copy; {new Date().getFullYear()} {t("footer.rights")}</p>
-           </div>
+      <FooterSection />
 
-           <div className="flex flex-wrap justify-center gap-6 md:gap-8 text-muted-foreground">
-              <Link href="/terms-policy#terms" className="hover:text-primary transition-colors">{t("footer.terms")}</Link>
-              <Link href="/terms-policy#privacy" className="hover:text-primary transition-colors">{t("footer.privacy")}</Link>
-              <Link href="/terms-policy#refund" className="hover:text-primary transition-colors">{t("footer.refund")}</Link>
-              <Link href="/terms-policy#contact" className="hover:text-primary transition-colors">{t("footer.contact")}</Link>
-           </div>
-
-           <div className="text-muted-foreground text-xs">
-              <a href="mailto:official.jobtrackerapp@gmail.com" className="hover:text-foreground flex items-center gap-2 transition-colors">
-                 official.jobtrackerapp@gmail.com
-              </a>
-           </div>
-        </div>
-      </footer>
-
-      {/* iOS Install Instructions Modal */}
-      {showIOSInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowIOSInstructions(false)}>
-          <div className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Download className="w-5 h-5 text-primary" />
-                Install App
-              </h3>
-              <button
-                onClick={() => setShowIOSInstructions(false)}
-                className="p-1 rounded-md hover:bg-muted transition-colors"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
-            <div className="space-y-4 text-sm">
-              <p className="text-muted-foreground">To install JobTracker on your iOS device:</p>
-              <ol className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">1</span>
-                  <span>Tap the <strong className="text-primary">Share</strong> button <span className="text-lg">􀈂</span> in Safari</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">2</span>
-                  <span>Scroll down and tap <strong className="text-primary">Add to Home Screen</strong></span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">3</span>
-                  <span>Tap <strong className="text-primary">Add</strong> to install JobTracker</span>
-                </li>
-              </ol>
-            </div>
-            <button
-              onClick={() => setShowIOSInstructions(false)}
-              className="w-full mt-6 px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
+      <IOSInstallModal
+        open={showIOSInstructions}
+        onClose={() => setShowIOSInstructions(false)}
+      />
     </div>
-  );
-}
-
-function ComparisonItem({ value, icon, isPositive }: { value: string, icon: React.ReactNode, isPositive: boolean }) {
-  return (
-    <div className="h-12 flex items-center gap-3">
-      <div
-        className={`flex items-center justify-center w-6 h-6 rounded-full shrink-0 ${
-          isPositive
-            ? "bg-primary text-white"
-            : "bg-muted text-muted-foreground"
-        }`}
-      >
-        {icon}
-      </div>
-      <span
-        className={`text-base font-medium ${
-          isPositive ? "text-foreground" : "text-muted-foreground"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function HeroSkeleton() {
-  return (
-    <>
-      {/* Badge Skeleton - matches text-xs font-bold */}
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10">
-        <div className="w-3 h-3 rounded-sm bg-muted-foreground/30"></div>
-        <div className="h-3 w-52 bg-muted-foreground/30 rounded"></div>
-      </div>
-
-      {/* Heading Skeleton - matches text-4xl md:text-6xl lg:text-7xl with leading-[1.1] */}
-      <div className="mt-6 md:mt-4 space-y-2">
-        <div className="h-[2.5rem] md:h-[4.125rem] lg:h-[5rem] w-[19rem] md:w-[29rem] lg:w-[34rem] bg-muted rounded animate-pulse mx-auto"></div>
-        <div className="h-[2.5rem] md:h-[4.125rem] lg:h-[5rem] w-[14rem] md:w-[21rem] lg:w-[25rem] bg-muted rounded animate-pulse mx-auto"></div>
-      </div>
-
-      {/* Product Showcase Skeleton - matches exact container */}
-      <div className="mt-6 md:mt-4 relative w-full max-w-4xl md:max-w-2xl px-2 md:px-4 scale-90 md:scale-85">
-        <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-xl">
-          <div className="h-6 md:h-8 bg-muted/50 flex items-center px-3 md:px-4 space-x-2 border-b border-border">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-400/50"></div>
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-400/50"></div>
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-400/50"></div>
-            <div className="ml-2 md:ml-4 px-2 md:px-3 py-0.5 md:py-1 bg-background/50 rounded h-4 md:h-5 w-44 hidden md:flex items-center">
-              <div className="h-2.5 md:h-3 w-36 bg-muted-foreground/20 rounded"></div>
-            </div>
-          </div>
-          <div className="relative aspect-video w-full bg-muted animate-pulse"></div>
-        </div>
-      </div>
-
-      {/* Description Skeleton - matches text-base md:text-lg lg:text-xl */}
-      <div className="mt-6 md:mt-4 space-y-1.5 max-w-2xl mx-auto px-4">
-        <div className="h-5 md:h-6 lg:h-7 w-full bg-muted rounded animate-pulse"></div>
-        <div className="h-5 md:h-6 lg:h-7 w-48 md:w-60 lg:w-72 bg-muted rounded animate-pulse mx-auto"></div>
-      </div>
-
-      {/* CTA Buttons Skeleton - matches px-6 py-3 md:px-8 md:py-4 */}
-      <div className="mt-6 md:mt-4 flex flex-col sm:flex-row justify-center gap-3 md:gap-4 w-full sm:w-auto px-4 sm:px-0">
-        <div className="h-12 md:h-14 w-full sm:w-auto sm:min-w-[165px] md:min-w-[188px] bg-muted rounded-lg animate-pulse"></div>
-        <div className="h-12 md:h-14 w-full sm:w-auto sm:min-w-[145px] md:min-w-[165px] bg-muted rounded-lg animate-pulse border border-border"></div>
-      </div>
-    </>
   );
 }

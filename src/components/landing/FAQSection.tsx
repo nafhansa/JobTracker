@@ -1,9 +1,10 @@
-'use client'; // Tambahkan ini kalau pakai Next.js App Router
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useLanguage } from '@/lib/language/context';
+"use client";
 
-const FAQSection = () => {
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useLanguage } from "@/lib/language/context";
+
+export default function FAQSection() {
   const { t } = useLanguage();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -31,11 +32,11 @@ const FAQSection = () => {
 
       <div className="space-y-4">
         {faqs.map((faq, idx) => (
-          <div 
-            key={idx} 
+          <div
+            key={idx}
             className={`border rounded-lg transition-all duration-300 shadow-sm ${
-              openIndex === idx 
-                ? "bg-card border-primary/50 shadow-md" 
+              openIndex === idx
+                ? "bg-card border-primary/50 shadow-md"
                 : "bg-card border-border hover:border-primary/30"
             }`}
           >
@@ -52,8 +53,8 @@ const FAQSection = () => {
                 <ChevronDown className="w-5 h-5 text-muted-foreground" />
               )}
             </button>
-            
-            <div 
+
+            <div
               className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 openIndex === idx ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               }`}
@@ -67,6 +68,4 @@ const FAQSection = () => {
       </div>
     </section>
   );
-};
-
-export default FAQSection;
+}

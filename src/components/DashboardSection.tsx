@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { JobApplication } from "@/types";
-import { TrendingUp, TrendingDown, Briefcase, Clock, Flame } from "lucide-react";
+import { TrendingUp, TrendingDown, Briefcase, Clock, Flame, Send, Mail, MessageSquare, UserCheck, ScrollText, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { getUserStreaks } from "@/lib/supabase/streaks";
@@ -25,6 +25,8 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
   const [timeRange, setTimeRange] = useState<TimeRange>("daily");
   const [streak, setStreak] = useState({ current: 0, best: 0 });
   const [jobCount, setJobCount] = useState<number | null>(null);
+  const [activeStatusIdx, setActiveStatusIdx] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -252,6 +254,103 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
           </div>
         </div>
       </div>
+
+      {/* ROW 2: Application Status Breakdown */}
+      {(() => {
+        const statuses = [
+          { key: "applied",   label: "Applied",   icon: Send,          count: jobs.filter(j => j.status.applied).length,       hex: "#60a5fa" },
+          { key: "emailed",   label: "Emailed",   icon: Mail,          count: jobs.filter(j => j.status.emailed).length,       hex: "#a78bfa" },
+          { key: "response",  label: "Responded", icon: MessageSquare, count: jobs.filter(j => j.status.cvResponded).length,   hex: "#22d3ee" },
+          { key: "interview", label: "Interview", icon: UserCheck,     count: jobs.filter(j => j.status.interviewEmail).length, hex: "#fbbf24" },
+          { key: "offer",     label: "Offers",    icon: ScrollText,    count: jobs.filter(j => j.status.contractEmail).length, hex: "#34d399" },
+          { key: "rejected",  label: "Rejected",  icon: XCircle,       count: jobs.filter(j => j.status.rejected).length,      hex: "#f87171" },
+        ];
+
+        const handleScroll = () => {
+          const el = carouselRef.current;
+          if (!el) return;
+          const center = el.scrollLeft + el.clientWidth / 2;
+          let closest = 0, minDist = Infinity;
+          Array.from(el.children).forEach((card, i) => {
+            const c = card as HTMLElement;
+            const cardCenter = c.offsetLeft + c.offsetWidth / 2;
+            const dist = Math.abs(cardCenter - center);
+            if (dist < minDist) { minDist = dist; closest = i; }
+          });
+          setActiveStatusIdx(closest);
+        };
+
+        return (
+          <>
+            {/* Mobile carousel */}
+            <div className="md:hidden overflow-hidden">
+              <div
+                ref={carouselRef}
+                onScroll={handleScroll}
+                className="carousel-track flex overflow-x-auto snap-x snap-mandatory gap-3 px-6 pb-1"
+                style={{
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                }}
+              >
+                {statuses.map((s, i) => {
+                  const Icon = s.icon;
+                  const isActive = i === activeStatusIdx;
+                  return (
+                    <div
+                      key={s.key}
+                      className="flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 py-6 rounded-2xl bg-muted/30 border border-border transition-all duration-300"
+                      style={{
+                        width: "130px",
+                        transform: isActive ? "scale(1.06)" : "scale(1)",
+                        background: isActive ? "var(--background)" : undefined,
+                        borderColor: isActive ? s.hex : undefined,
+                        boxShadow: isActive ? `0 0 0 1px ${s.hex}33` : undefined,
+                      }}
+                    >
+                      <Icon className="w-5 h-5" style={{ color: s.hex }} />
+                      <span className="text-3xl font-bold text-foreground tracking-tight">{s.count}</span>
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">{s.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Dot indicators */}
+              <div className="flex justify-center gap-1.5 mt-1">
+                {statuses.map((s, i) => (
+                  <div
+                    key={s.key}
+                    className="h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                      width: i === activeStatusIdx ? "18px" : "6px",
+                      background: i === activeStatusIdx ? s.hex : "var(--border)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop grid */}
+            <div className="hidden md:grid md:grid-cols-6 md:divide-x md:divide-border">
+              {statuses.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <div
+                    key={s.key}
+                    className="flex flex-col items-center justify-center gap-2 py-4 transition-colors hover:bg-muted/40"
+                  >
+                    <Icon className="w-5 h-5" style={{ color: s.hex }} />
+                    <span className="text-3xl font-bold text-foreground tracking-tight">{s.count}</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
 
 {/* ROW 3: Chart + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
