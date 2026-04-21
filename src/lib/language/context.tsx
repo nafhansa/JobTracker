@@ -104,10 +104,11 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Landing Page - Hero
     "hero.badge": "Premium Career Management",
-    "hero.title.1": "Stop Using Messy Spreadsheets",
-    "hero.title.2": "For Your Future.",
-    "hero.description": "Track your job search with confidence. Monitor status, salaries, and follow-ups in one",
-    "hero.description.2": "sophisticated dashboard",
+    "hero.title.1": "Track Your",
+    "hero.title.2": "Job Applications",
+    "hero.title.3": "With No Setup",
+    "hero.description": "Throw your Spreadsheets and start tracking now. Monitor your application in one",
+    "hero.description.2": "dashboard.",
     "hero.cta.primary": "Get Started Now",
     "hero.cta.secondary": "View Pricing",
     
@@ -483,10 +484,11 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Landing Page - Hero
     "hero.badge": "Premium Career Management",
-    "hero.title.1": "Berhenti Pakai Spreadsheets",
-    "hero.title.2": "Untuk Masa Depanmu.",
-    "hero.description": "Tracking lamaran kerjamu dengan SIMPEL. Pantau status, gaji, dan follow-up dalam satu",
-    "hero.description.2": "dashboard canggih",
+    "hero.title.1": "Lacak",
+    "hero.title.2": "Lamaran Kerja",
+    "hero.title.3": "Tanpa Setup",
+    "hero.description": "Buang Spreadsheetmu dan mulai lacak sekarang. Pantau lamaranmu dalam satu",
+    "hero.description.2": "dashboard.",
     "hero.cta.primary": "Mulai Sekarang",
     "hero.cta.secondary": "Lihat Harga",
     

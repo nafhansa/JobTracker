@@ -8,7 +8,7 @@ import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useLanguage } from "@/lib/language/context";
 import { useAuth } from "@/lib/firebase/auth-context";
 import HeroSection from "@/components/landing/HeroSection";
-import MorphSection from "@/components/landing/MorphSection";
+import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import EarlyBirdSection from "@/components/landing/EarlyBirdSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import SocialProofSection from "@/components/landing/SocialProofSection";
@@ -27,6 +27,7 @@ export default function LandingPage() {
   const [startTime] = useState(() => Date.now());
   const scrollDepthRef = useRef<number>(0);
   const [pwaRedirecting, setPwaRedirecting] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const trackVisit = async () => {
@@ -189,11 +190,13 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
       <ResetThemeToDefault />
-      <Navbar />
+      <Navbar heroRef={heroRef} />
 
       <main className="flex-1 relative z-10 flex flex-col items-center">
-        <HeroSection onCTAClick={handleCTAClick} onInstallClick={handleInstallClick} />
-        <MorphSection />
+        <div ref={heroRef} className="w-full">
+          <HeroSection onCTAClick={handleCTAClick} onInstallClick={handleInstallClick} />
+        </div>
+        <ShowcaseSection />
         <EarlyBirdSection onCTAClick={handleCTAClick} />
         <ComparisonSection />
         <SocialProofSection />
