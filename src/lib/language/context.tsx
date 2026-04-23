@@ -113,7 +113,16 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.cta.secondary": "View Pricing",
     
     // Phone Tracker Section
-    "phone.title": "How It Looks on Your Phone",
+    "phone.badge": "Mobile-First Experience",
+    "phone.title": "Zero Setup.\nAll on Your Phone.",
+    "phone.subtitle": "Stop losing track of applications across spreadsheets and notes. JobTracker keeps everything organized — right from your phone.",
+    "phone.feature.1.title": "Real-Time Updates",
+    "phone.feature.1.desc": "Move applications between stages instantly",
+    "phone.feature.2.title": "Smart Reminders",
+    "phone.feature.2.desc": "Never miss a follow-up or interview",
+    "phone.feature.3.title": "Full Dashboard",
+    "phone.feature.3.desc": "All your stats, always in reach",
+    "phone.cta": "Try It Free",
     
     // Early Bird Section
     "early.badge": "Early Bird Special",
@@ -130,7 +139,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.regular": "Regular Price: Rp58.000",
     
     // Comparison Section
-    "comparison.title": "Spreadsheets vs JobTracker",
+    "comparison.title": "Why Use JobTracker App?",
     "comparison.subtitle": "See why JobTracker is the smarter choice",
     "comparison.features": "Features",
     "comparison.jobtracker": "JobTracker",
@@ -493,7 +502,16 @@ const translations: Record<Language, Record<string, string>> = {
     "hero.cta.secondary": "Lihat Harga",
     
     // Phone Tracker Section
-    "phone.title": "Tampilan di HP Kaya Gimana?",
+    "phone.badge": "Pengalaman Mobile-First",
+    "phone.title": "Tanpa Setup.\nSemua di HP.",
+    "phone.subtitle": "Berhenti kehilangan jejak lamaran di spreadsheet dan catatan. JobTracker bikin semuanya terorganisir — langsung dari HP-mu.",
+    "phone.feature.1.title": "Update Real-Time",
+    "phone.feature.1.desc": "Pindahkan lamaran antar tahap secara instan",
+    "phone.feature.2.title": "Pengingat Cerdas",
+    "phone.feature.2.desc": "Jangan pernah lewatkan follow-up atau interview",
+    "phone.feature.3.title": "Dashboard Lengkap",
+    "phone.feature.3.desc": "Semua statistikmu, selalu dalam jangkauan",
+    "phone.cta": "Coba Gratis",
     
     // Early Bird Section
     "early.badge": "Promo Early Bird",
@@ -510,7 +528,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.regular": "Harga Normal: $17.99",
     
     // Comparison Section
-    "comparison.title": "Spreadsheet vs JobTracker",
+    "comparison.title": "Kenapa Harus JobTracker App?",
     "comparison.subtitle": "Lihat mengapa JobTracker pilihan yang lebih cerdas",
     "comparison.features": "Fitur",
     "comparison.jobtracker": "JobTracker",

@@ -27,7 +27,7 @@ export default function LandingPage() {
   const [startTime] = useState(() => Date.now());
   const scrollDepthRef = useRef<number>(0);
   const [pwaRedirecting, setPwaRedirecting] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const showcaseRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const trackVisit = async () => {
@@ -190,17 +190,27 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen justify-center bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
       <ResetThemeToDefault />
-      <Navbar heroRef={heroRef} />
+      <Navbar showcaseRef={showcaseRef} />
 
-      <main className="flex-1 relative z-10 flex flex-col items-center">
-        <div ref={heroRef} className="w-full">
+      <main className="flex-1 relative z-10">
+        <div className="relative z-30 w-full">
           <HeroSection onCTAClick={handleCTAClick} onInstallClick={handleInstallClick} />
         </div>
-        <ShowcaseSection />
-        <EarlyBirdSection onCTAClick={handleCTAClick} />
-        <ComparisonSection />
-        <SocialProofSection />
-        <FAQSection />
+        <div ref={showcaseRef} className="relative z-20 w-full">
+          <ShowcaseSection />
+        </div>
+        <div className="relative z-20 w-full">
+          <EarlyBirdSection onCTAClick={handleCTAClick} />
+        </div>
+        <div className="relative z-20 w-full">
+          <ComparisonSection />
+        </div>
+        <div className="relative z-20 w-full">
+          <SocialProofSection />
+        </div>
+        <div className="relative z-20 w-full">
+          <FAQSection />
+        </div>
       </main>
 
       <FooterSection />
