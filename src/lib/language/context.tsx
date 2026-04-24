@@ -104,12 +104,25 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Landing Page - Hero
     "hero.badge": "Premium Career Management",
-    "hero.title.1": "Stop Using Messy Spreadsheets",
-    "hero.title.2": "For Your Future.",
-    "hero.description": "Track your job search with confidence. Monitor status, salaries, and follow-ups in one",
-    "hero.description.2": "sophisticated dashboard",
+    "hero.title.1": "Track Your",
+    "hero.title.2": "Job Applications",
+    "hero.title.3": "With No Setup",
+    "hero.description": "Throw your Spreadsheets and start tracking now. Monitor your application in one",
+    "hero.description.2": "dashboard.",
     "hero.cta.primary": "Get Started Now",
     "hero.cta.secondary": "View Pricing",
+    
+    // Phone Tracker Section
+    "phone.badge": "Mobile-First Experience",
+    "phone.title": "Zero Setup.\nAll on Your Phone.",
+    "phone.subtitle": "Stop losing track of applications across spreadsheets and notes. JobTracker keeps everything organized right from your phone.",
+    "phone.feature.1.title": "Real-Time Updates",
+    "phone.feature.1.desc": "Move applications between stages instantly",
+    "phone.feature.2.title": "Smart Reminders",
+    "phone.feature.2.desc": "Never miss a follow-up or interview",
+    "phone.feature.3.title": "Full Dashboard",
+    "phone.feature.3.desc": "All your stats, always in reach",
+    "phone.cta": "Try It Free",
     
     // Early Bird Section
     "early.badge": "Early Bird Special",
@@ -126,7 +139,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.regular": "Regular Price: Rp58.000",
     
     // Comparison Section
-    "comparison.title": "Spreadsheets vs JobTracker",
+    "comparison.title": "Why Use JobTracker App?",
     "comparison.subtitle": "See why JobTracker is the smarter choice",
     "comparison.features": "Features",
     "comparison.jobtracker": "JobTracker",
@@ -146,13 +159,11 @@ const translations: Record<Language, Record<string, string>> = {
     "comparison.painful": "Painful",
     
     // Social Proof
-    "social.title": "Join Hundreds of Job Seekers",
-    "social.subtitle": "They stopped using spreadsheets. You should too.",
-    "social.users": "Active Users",
-    "social.apps": "Applications Tracked",
-    "social.saved": "Hours Saved Weekly",
-    "social.trusted": "Trusted by Job Seekers",
-    "social.switched": "See why they switched from spreadsheets.",
+    "social.title": "A Note from the Founder",
+    "social.subtitle": "I built JobTracker because I was too lazy to set up note templates using Google Spreadsheets. Wasting too much time procrastinating on making a really good Google Spreadsheets template.\nI figured my time was better spent sending cold emails to HR departments than setting up Google Spreadsheets to track my job applications.\nJobTracker App is a tool I originally built for myself, and Alhamdulillah I managed to land my first Full Time Remote job as a Full Stack Developer at a startup called sopan.id",
+    "social.subtitle.2": "I hope this tool helps you land your dream job too.",
+    "social.name": "Nafhan",
+    "social.role": "Founder JobTracker App · Full Stack Developer @sopan.id",
     
     // FAQ
     "faq.title": "Frequently Asked Questions",
@@ -480,12 +491,25 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Landing Page - Hero
     "hero.badge": "Premium Career Management",
-    "hero.title.1": "Berhenti Pakai Spreadsheets",
-    "hero.title.2": "Untuk Masa Depanmu.",
-    "hero.description": "Tracking lamaran kerjamu dengan SIMPEL. Pantau status, gaji, dan follow-up dalam satu",
-    "hero.description.2": "dashboard canggih",
+    "hero.title.1": "Lacak",
+    "hero.title.2": "Lamaran Kerja",
+    "hero.title.3": "Tanpa Setup",
+    "hero.description": "Buang Spreadsheetmu dan mulai lacak sekarang. Pantau lamaranmu dalam satu",
+    "hero.description.2": "dashboard.",
     "hero.cta.primary": "Mulai Sekarang",
     "hero.cta.secondary": "Lihat Harga",
+    
+    // Phone Tracker Section
+    "phone.badge": "Pengalaman Mobile-First",
+    "phone.title": "Tanpa Setup.\nSemua di HP.",
+    "phone.subtitle": "Berhenti kehilangan jejak lamaran di spreadsheet dan catatan. JobTracker bikin semuanya terorganisir langsung dari HP-mu.",
+    "phone.feature.1.title": "Update Real-Time",
+    "phone.feature.1.desc": "Pindahkan lamaran antar tahap secara instan",
+    "phone.feature.2.title": "Pengingat Cerdas",
+    "phone.feature.2.desc": "Jangan pernah lewatkan follow-up atau interview",
+    "phone.feature.3.title": "Dashboard Lengkap",
+    "phone.feature.3.desc": "Semua statistikmu, selalu dalam jangkauan",
+    "phone.cta": "Coba Gratis",
     
     // Early Bird Section
     "early.badge": "Promo Early Bird",
@@ -502,7 +526,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.regular": "Harga Normal: $17.99",
     
     // Comparison Section
-    "comparison.title": "Spreadsheet vs JobTracker",
+    "comparison.title": "Kenapa Harus JobTracker App?",
     "comparison.subtitle": "Lihat mengapa JobTracker pilihan yang lebih cerdas",
     "comparison.features": "Fitur",
     "comparison.jobtracker": "JobTracker",
@@ -522,13 +546,11 @@ const translations: Record<Language, Record<string, string>> = {
     "comparison.painful": "Menyiksa",
     
     // Social Proof
-    "social.title": "Bergabung dengan Ratusan Pencari Kerja",
-    "social.subtitle": "Mereka berhenti pakai spreadsheet. Kamu juga harus.",
-    "social.users": "Pengguna Aktif",
-    "social.apps": "Aplikasi Terlacak",
-    "social.saved": "Jam Dihemat per Minggu",
-    "social.trusted": "Dipercaya Pencari Kerja",
-    "social.switched": "Lihat mengapa mereka beralih dari spreadsheet.",
+    "social.title": "Pesan dari Founder",
+    "social.subtitle": "Aku bikin JobTracker karena aku mager setup catetan template pake Google Spreadsheets. Terlalu banyak waktu procrastinate untuk membuat template Google Spreadsheets yang bener - bener bagus.\nAku rasa waktunya mending aku alokasikan untuk kirim cold email ke HR company daripada perlu setup Google Spreadsheets untuk nyatet job applications aku.\nJobTracker App ini tools yang aku bikin awalnya untuk diri aku sendiri dan Alhamdulillah aku berhasil dapet pekerjaan pertama aku Full Time Remote sebagai Full Stack Developer di salah satu startup yaitu sopan.id",
+    "social.subtitle.2": "Semoga tools ini juga bisa membantu kamu dapet pekerjaan impian kamu.",
+    "social.name": "Nafhan",
+    "social.role": "Founder JobTracker App · Full Stack Developer @sopan.id",
     
     // FAQ
     "faq.title": "Pertanyaan yang Sering Diajukan",

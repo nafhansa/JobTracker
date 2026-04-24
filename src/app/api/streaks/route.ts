@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -14,9 +9,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabaseAdmin as any)
       .from('user_streaks')
-      .select('*')
+      .select('current_streak, best_streak')
       .eq('user_id', userId);
 
     if (error && error.code !== 'PGRST116') {
@@ -31,7 +26,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const streakRecord = data[0];
+    const streakRecord = (data as any[])[0];
 
     const currentStreak = streakRecord?.current_streak || 0;
     const bestStreak = streakRecord?.best_streak || 0;

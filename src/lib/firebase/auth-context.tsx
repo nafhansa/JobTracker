@@ -122,17 +122,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (user) {
         // Sync Firebase user to Supabase (dual storage)
-        await syncFirebaseUserToSupabase(user);
-
-        // Get subscription from Supabase subscriptions table
+        // Run sync and subscription queries in parallel where possible
         try {
+          await syncFirebaseUserToSupabase(user);
+
           const { supabase } = await import("@/lib/supabase/client");
 
-          const { data: subscriptionData, error: subscriptionError } = await supabase
-            .from('subscriptions')
-            .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
-            .eq('user_id', user.uid)
-            .maybeSingle();
+          // Fetch subscription and user data in parallel
+          const [
+            { data: subscriptionData, error: subscriptionError },
+            { data: userData, error: userError }
+          ] = await Promise.all([
+            supabase
+              .from('subscriptions')
+              .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
+              .eq('user_id', user.uid)
+              .maybeSingle(),
+            supabase
+              .from('users')
+              .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
+              .eq('id', user.uid)
+              .single()
+          ]);
 
           if (subscriptionData && !subscriptionError) {
             console.log('Subscription data found:', subscriptionData);
@@ -153,6 +164,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } else {
             console.log('No subscription found, setting to free');
             setSubscription({ plan: "free", status: "active" });
+          }
+
+          if (userData && !userError) {
+            setUpdatedAt((userData as any)?.updated_at || null);
+          } else {
+            setUpdatedAt(null);
           }
         } catch (error) {
           console.error("Supabase subscription fetch failed:", error);
@@ -248,18 +265,33 @@ export const forceReloadSubscription = async () => {
 
     const { supabase } = await import("@/lib/supabase/client");
 
-    // Add delay to ensure database is updated
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Force reload: Starting database query with retry...');
 
-    console.log('Force reload: Starting database query...');
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY = 300;
+    let subscriptionData: any = null;
+    let subscriptionError: any = null;
 
-    const { data: subscriptionData, error: subscriptionError } = await supabase
-      .from('subscriptions')
-      .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const result = await supabase
+        .from('subscriptions')
+        .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      subscriptionData = result.data;
+      subscriptionError = result.error;
+
+      if (subscriptionData && !subscriptionError) {
+        break;
+      }
+
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+      }
+    }
 
     console.log('Force reload: Database query result:', {
       subscriptionData,
