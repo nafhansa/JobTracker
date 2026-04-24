@@ -16,7 +16,7 @@ export default function SocialProofSection() {
               <div className="absolute -inset-3 bg-primary/10 rounded-full blur-xl pointer-events-none" />
               <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-primary/20 shadow-lg">
                 <Image
-                  src="/founder.png"
+                  src="/pp.png"
                   alt={t("social.name")}
                   width={256}
                   height={256}

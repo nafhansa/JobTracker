@@ -115,7 +115,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Phone Tracker Section
     "phone.badge": "Mobile-First Experience",
     "phone.title": "Zero Setup.\nAll on Your Phone.",
-    "phone.subtitle": "Stop losing track of applications across spreadsheets and notes. JobTracker keeps everything organized — right from your phone.",
+    "phone.subtitle": "Stop losing track of applications across spreadsheets and notes. JobTracker keeps everything organized right from your phone.",
     "phone.feature.1.title": "Real-Time Updates",
     "phone.feature.1.desc": "Move applications between stages instantly",
     "phone.feature.2.title": "Smart Reminders",
@@ -502,7 +502,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Phone Tracker Section
     "phone.badge": "Pengalaman Mobile-First",
     "phone.title": "Tanpa Setup.\nSemua di HP.",
-    "phone.subtitle": "Berhenti kehilangan jejak lamaran di spreadsheet dan catatan. JobTracker bikin semuanya terorganisir — langsung dari HP-mu.",
+    "phone.subtitle": "Berhenti kehilangan jejak lamaran di spreadsheet dan catatan. JobTracker bikin semuanya terorganisir langsung dari HP-mu.",
     "phone.feature.1.title": "Update Real-Time",
     "phone.feature.1.desc": "Pindahkan lamaran antar tahap secara instan",
     "phone.feature.2.title": "Pengingat Cerdas",
