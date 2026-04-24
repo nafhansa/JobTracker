@@ -159,13 +159,11 @@ const translations: Record<Language, Record<string, string>> = {
     "comparison.painful": "Painful",
     
     // Social Proof
-    "social.title": "Join Hundreds of Job Seekers",
-    "social.subtitle": "They stopped using spreadsheets. You should too.",
-    "social.users": "Active Users",
-    "social.apps": "Applications Tracked",
-    "social.saved": "Hours Saved Weekly",
-    "social.trusted": "Trusted by Job Seekers",
-    "social.switched": "See why they switched from spreadsheets.",
+    "social.title": "A Note from the Founder",
+    "social.subtitle": "I built JobTracker because I was too lazy to set up note templates using Google Spreadsheets. Wasting too much time procrastinating on making a really good Google Spreadsheets template.\nI figured my time was better spent sending cold emails to HR departments than setting up Google Spreadsheets to track my job applications.\nJobTracker App is a tool I originally built for myself, and Alhamdulillah I managed to land my first Full Time Remote job as a Full Stack Developer at a startup called sopan.id",
+    "social.subtitle.2": "I hope this tool helps you land your dream job too.",
+    "social.name": "Nafhan",
+    "social.role": "Founder JobTracker App · Full Stack Developer @sopan.id",
     
     // FAQ
     "faq.title": "Frequently Asked Questions",
@@ -548,13 +546,11 @@ const translations: Record<Language, Record<string, string>> = {
     "comparison.painful": "Menyiksa",
     
     // Social Proof
-    "social.title": "Bergabung dengan Ratusan Pencari Kerja",
-    "social.subtitle": "Mereka berhenti pakai spreadsheet. Kamu juga harus.",
-    "social.users": "Pengguna Aktif",
-    "social.apps": "Aplikasi Terlacak",
-    "social.saved": "Jam Dihemat per Minggu",
-    "social.trusted": "Dipercaya Pencari Kerja",
-    "social.switched": "Lihat mengapa mereka beralih dari spreadsheet.",
+    "social.title": "Pesan dari Founder",
+    "social.subtitle": "Aku bikin JobTracker karena aku mager setup catetan template pake Google Spreadsheets. Terlalu banyak waktu procrastinate untuk membuat template Google Spreadsheets yang bener - bener bagus.\nAku rasa waktunya mending aku alokasikan untuk kirim cold email ke HR company daripada perlu setup Google Spreadsheets untuk nyatet job applications aku.\nJobTracker App ini tools yang aku bikin awalnya untuk diri aku sendiri dan Alhamdulillah aku berhasil dapet pekerjaan pertama aku Full Time Remote sebagai Full Stack Developer di salah satu startup yaitu sopan.id",
+    "social.subtitle.2": "Semoga tools ini juga bisa membantu kamu dapet pekerjaan impian kamu.",
+    "social.name": "Nafhan",
+    "social.role": "Founder JobTracker App · Full Stack Developer @sopan.id",
     
     // FAQ
     "faq.title": "Pertanyaan yang Sering Diajukan",
