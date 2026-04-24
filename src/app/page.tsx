@@ -200,13 +200,13 @@ export default function LandingPage() {
           <ShowcaseSection />
         </div>
         <div className="relative z-20 w-full">
-          <EarlyBirdSection onCTAClick={handleCTAClick} />
-        </div>
-        <div className="relative z-20 w-full">
           <ComparisonSection />
         </div>
         <div className="relative z-20 w-full">
           <SocialProofSection />
+        </div>
+        <div className="relative z-20 w-full">
+          <EarlyBirdSection onCTAClick={handleCTAClick} />
         </div>
         <div className="relative z-20 w-full">
           <FAQSection />
