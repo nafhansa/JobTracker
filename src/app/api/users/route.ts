@@ -1,15 +1,22 @@
 // src/app/api/users/route.ts
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin"; // ✅ Aman di sini (Server Side)
+import { adminDb } from "@/lib/firebase/admin";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
+    const offset = (page - 1) * pageSize;
+
     // Try Supabase first
     try {
-      const { data: supabaseUsers, error } = await supabaseAdmin
+      const { data: supabaseUsers, error, count } = await supabaseAdmin
         .from('users')
-        .select('*');
+        .select('id, email, subscription_plan, subscription_status, created_at', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + pageSize - 1);
 
       if (!error && supabaseUsers) {
         const users = (supabaseUsers as any[]).map((user) => ({
@@ -21,20 +28,22 @@ export async function GET() {
             status: user.subscription_status,
           },
         }));
-        return NextResponse.json(users);
+        return NextResponse.json({ data: users, total: count || 0, page, pageSize });
       }
     } catch (supabaseError) {
       console.error("Supabase fetch error, falling back to Firebase:", supabaseError);
     }
 
-    // Fallback to Firebase
-    const usersRef = adminDb.collection("users");
-    const snapshot = await usersRef.get();
+    // Fallback to Firebase with pagination
+    let firebaseTotal = 0;
+    let usersRef = adminDb.collection("users").orderBy("createdAt", "desc");
 
-    const users = snapshot.docs.map((doc: any) => {
+    const snapshot = await usersRef.get();
+    firebaseTotal = snapshot.size;
+
+    const users = snapshot.docs.slice(offset, offset + pageSize).map((doc: any) => {
       const data = doc.data();
-      
-      // Konversi Timestamp ke String biar gak error pas dikirim ke frontend
+
       let createdAt = new Date().toISOString();
       if (data.createdAt && typeof data.createdAt.toDate === 'function') {
         createdAt = data.createdAt.toDate().toISOString();
@@ -48,7 +57,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(users);
+    return NextResponse.json({ data: users, total: firebaseTotal, page, pageSize });
   } catch (error) {
     const err = error as { message?: string; code?: string };
     console.error("❌ Error fetching users:", error);
@@ -57,7 +66,7 @@ export async function GET() {
       code: err.code,
     });
     return NextResponse.json(
-      { 
+      {
         error: err.message || "Failed to fetch users",
         code: err.code || "UNKNOWN_ERROR",
       },

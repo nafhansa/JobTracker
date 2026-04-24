@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     // Call the PostgreSQL function directly
-    const { data, error } = await supabase.rpc('increment_daily_streak', { userId });
+    const { data, error } = await (supabaseAdmin as any).rpc('increment_daily_streak', { userId });
 
     if (error) {
       console.error("Error calling increment_daily_streak:", error);

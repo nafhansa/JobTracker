@@ -151,38 +151,61 @@ const transformJobRow = (row: any): JobApplication => {
   };
 };
 
+const JOB_COLUMNS = 'id,user_id,job_title,company,industry,recruiter_email,application_url,job_type,location,potential_salary,potential_salary_min,potential_salary_max,salary_type,currency,status_applied,status_emailed,status_cv_responded,status_interview_email,status_contract_email,status_rejected,created_at,updated_at';
+
 /**
- * Subscribe to jobs for a user (real-time)
+ * Subscribe to jobs for a user (real-time) with incremental updates
  */
 export const subscribeToJobs = (
   userId: string,
   callback: (jobs: JobApplication[]) => void
 ): RealtimeChannel => {
+  let currentJobs: JobApplication[] = [];
+
   const channel = supabase
     .channel(`jobs:${userId}`)
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'jobs',
         filter: `user_id=eq.${userId}`,
       },
-      async () => {
-        // Fetch all jobs when any change occurs
-        const { data, error } = await (supabase
-          .from('jobs') as any)
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching jobs:', error);
-          return;
+      (payload) => {
+        const newJob = transformJobRow(payload.new);
+        currentJobs = [newJob, ...currentJobs];
+        callback(currentJobs);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'jobs',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const updatedJob = transformJobRow(payload.new);
+        currentJobs = currentJobs.map(j => j.id === updatedJob.id ? updatedJob : j);
+        callback(currentJobs);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'jobs',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const deletedId = payload.old?.id;
+        if (deletedId) {
+          currentJobs = currentJobs.filter(j => j.id !== deletedId);
+          callback(currentJobs);
         }
-
-        const jobs = (data || []).map(transformJobRow);
-        callback(jobs);
       }
     )
     .subscribe();
@@ -190,7 +213,7 @@ export const subscribeToJobs = (
   // Initial fetch
   (supabase
     .from('jobs') as any)
-    .select('*')
+    .select(JOB_COLUMNS)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .then(({ data, error }: { data: any; error: any }) => {
@@ -198,8 +221,8 @@ export const subscribeToJobs = (
         console.error('Error fetching initial jobs:', error);
         return;
       }
-      const jobs = (data || []).map(transformJobRow);
-      callback(jobs);
+      currentJobs = (data || []).map(transformJobRow);
+      callback(currentJobs);
     });
 
   return channel;

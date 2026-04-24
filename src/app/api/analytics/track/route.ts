@@ -1,57 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-
-// Helper function to get IP address from request
-function getClientIP(req: Request): string {
-  // Check various headers for IP (in order of preference)
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  
-  const realIP = req.headers.get("x-real-ip");
-  if (realIP) {
-    return realIP;
-  }
-  
-  const cfConnectingIP = req.headers.get("cf-connecting-ip"); // Cloudflare
-  if (cfConnectingIP) {
-    return cfConnectingIP;
-  }
-  
-  return "unknown";
-}
-
-// Helper function to get country from IP using ip-api.com (free, no API key)
-async function getCountryFromIP(ip: string): Promise<{ country?: string; countryCode?: string }> {
-  // Skip if IP is localhost or unknown
-  if (!ip || ip === "unknown" || ip.startsWith("127.") || ip.startsWith("192.168.") || ip.startsWith("10.") || ip === "::1") {
-    return {};
-  }
-
-  try {
-    // Using ip-api.com (free, 45 requests/minute)
-    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
-      headers: {
-        "Accept": "application/json",
-      },
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.status === "success") {
-        return {
-          country: data.country,
-          countryCode: data.countryCode,
-        };
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching country from IP:", error);
-  }
-  
-  return {};
-}
+import { getClientIP, getCountryFromIP } from "@/lib/geo-cache";
 
 export async function POST(req: Request) {
   let type: string | undefined;

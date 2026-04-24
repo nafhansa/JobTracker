@@ -58,28 +58,41 @@ export const createSubscription = async (userId: string, plan: 'monthly' | 'life
  */
 export const getSubscription = async (userId: string) => {
   try {
-    // Get user record with subscription info
-    const { data: userData, error: userError } = await (supabase
+    const { data, error } = await (supabase
       .from('users') as any)
-      .select('*')
+      .select(`
+        id,
+        email,
+        subscription_plan,
+        subscription_status,
+        is_pro,
+        updated_at,
+        created_at,
+        subscriptions:user_id(
+          id,
+          user_id,
+          plan,
+          status,
+          midtrans_subscription_id,
+          midtrans_subscription_token,
+          midtrans_payment_method,
+          renews_at,
+          ends_at,
+          created_at,
+          updated_at
+        )
+      `)
       .eq('id', userId)
       .single();
 
-    if (userError && userError.code !== 'PGRST116') throw userError; // PGRST116 = not found
+    if (error && error.code !== 'PGRST116') throw error;
 
-    if (!userData) {
-      // User doesn't exist, return null
+    if (!data) {
       return null;
     }
 
-    // Get subscription details if exists
-    const { data: subscriptionData } = await (supabase
-      .from('subscriptions') as any)
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const subscriptionData = Array.isArray(data.subscriptions) ? data.subscriptions[0] : data.subscriptions;
 
-    // Transform to match Firebase format
     const subscription = subscriptionData
       ? {
           plan: subscriptionData.plan,
@@ -87,18 +100,18 @@ export const getSubscription = async (userId: string) => {
           renewsAt: subscriptionData.renews_at ? new Date(subscriptionData.renews_at) : undefined,
           endsAt: subscriptionData.ends_at ? new Date(subscriptionData.ends_at) : undefined,
         }
-      : userData.subscription_plan
+      : data.subscription_plan
       ? {
-          plan: userData.subscription_plan,
-          status: userData.subscription_status || 'active',
+          plan: data.subscription_plan,
+          status: data.subscription_status || 'active',
         }
       : null;
 
     return {
       subscription,
-      updatedAt: userData.updated_at ? new Date(userData.updated_at) : null,
-      createdAt: userData.created_at ? new Date(userData.created_at) : null,
-      isPro: userData.is_pro || false,
+      updatedAt: data.updated_at ? new Date(data.updated_at) : null,
+      createdAt: data.created_at ? new Date(data.created_at) : null,
+      isPro: data.is_pro || false,
     };
   } catch (error) {
     console.error('Error getting subscription:', error);
@@ -151,10 +164,11 @@ export const checkIsPro = (subscription: SubscriptionData | null | undefined): b
 /**
  * Check if user is admin
  */
+const ADMIN_EMAILS = new Set(['nafhan1723@gmail.com', 'nafhan.sh@gmail.com']);
+
 export const isAdminUser = (email: string | null | undefined): boolean => {
-  const ADMIN_EMAILS = ['nafhan1723@gmail.com', 'nafhan.sh@gmail.com'];
   const lowerEmail = (email || '').toLowerCase().trim();
-  return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(lowerEmail);
+  return ADMIN_EMAILS.has(lowerEmail);
 };
 
 /**
@@ -205,7 +219,7 @@ export const ensureFreePlan = async (userId: string, userEmail?: string): Promis
     // Check if user exists
     const { data: userData } = await (supabase
       .from('users') as any)
-      .select('*')
+      .select('id, subscription_plan')
       .eq('id', userId)
       .single();
 

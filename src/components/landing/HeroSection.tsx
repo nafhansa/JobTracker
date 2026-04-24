@@ -38,24 +38,25 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
       };
 
       const scatterData = letters.map((_, i) => ({
-        x: (seededRandom(i * 3) - 0.5) * vw * 1.4,
-        y: (seededRandom(i * 3 + 1) - 0.5) * vh * 1.2,
-        rotation: (seededRandom(i * 3 + 2) - 0.5) * 90,
-        scale: 0.6 + seededRandom(i * 3 + 3) * 0.4,
-        opacity: 0.1,
+        x: (seededRandom(i * 3) - 0.5) * vw * 1.2,
+        y: (seededRandom(i * 3 + 1) - 0.5) * vh * 1.0,
+        rotation: (seededRandom(i * 3 + 2) - 0.5) * 60,
+        scale: 0.7 + seededRandom(i * 3 + 3) * 0.3,
+        opacity: 0.15,
         ...scatterOverrides[i],
       }));
 
-      gsap.set(".hero-content", { y: "80vh", opacity: 0, scale: 0.95 });
-      gsap.set(".hero-content-child", { y: 40, opacity: 0 });
+      gsap.set(".hero-content", { y: "60vh", opacity: 0, scale: 0.97 });
+      gsap.set(".hero-content-child", { y: 30, opacity: 0 });
 
       const scrollTl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: "+=120%",
+          end: "+=80%",
           pin: true,
-          scrub: 1.2,
+          scrub: true,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -69,25 +70,25 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
             scale: scatterData[i].scale,
             opacity: scatterData[i].opacity,
             duration: 1,
-            ease: "power2.out",
+            ease: "none",
             force3D: true,
           },
-          i * 0.015
+          i * 0.01
         );
       });
 
       scrollTl.fromTo(
         ".hero-content",
-        { y: "80vh", opacity: 0, scale: 0.95 },
-        { y: 0, opacity: 1, scale: 1, duration: 1, ease: "power3.out", force3D: true },
+        { y: "60vh", opacity: 0, scale: 0.97 },
+        { y: 0, opacity: 1, scale: 1, duration: 1, ease: "power2.out", force3D: true },
         0.25
       );
 
       scrollTl.fromTo(
         ".hero-content-child",
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power2.out", force3D: true },
-        0.4
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power2.out", force3D: true },
+        0.35
       );
     }, section);
 
@@ -101,16 +102,17 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
     <section
       ref={sectionRef}
       className="relative z-30 w-full h-screen bg-white overflow-hidden"
+      style={{ contain: "layout style paint" }}
     >
-      {/* Brand letters - centered */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none" style={{ willChange: "transform" }}>
         <div className="relative flex flex-wrap justify-center">
           {letters.map((char, i) => (
             <span
               key={i}
-              className={`hero-letter text-5xl md:text-9xl lg:text-[10rem] font-black inline-block will-change-transform leading-none tracking-tight md:tracking-normal ${
+              className={`hero-letter text-5xl md:text-9xl lg:text-[10rem] font-black inline-block leading-none tracking-tight md:tracking-normal ${
                 i < 3 ? "text-black" : "text-blue-600"
               }`}
+              style={{ willChange: "transform, opacity" }}
             >
               {char === " " ? "\u00A0" : char}
             </span>
@@ -118,8 +120,7 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
         </div>
       </div>
 
-      {/* Content - initially hidden below, comes up on scroll */}
-      <div className="hero-content absolute inset-0 flex items-center justify-center z-20 opacity-0">
+      <div className="hero-content absolute inset-0 flex items-center justify-center z-20 opacity-0" style={{ willChange: "transform, opacity" }}>
         <div className="flex flex-col items-center text-center px-6 max-w-5xl mx-auto">
           <h2 className="hero-content-child text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
             Track Your Job Applications With{" "}
