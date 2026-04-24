@@ -134,7 +134,7 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
               alt="Dashboard Preview"
               width={1200}
               height={750}
-              className="w-full h-auto drop-shadow-2xl"
+              className="w-full h-auto"
               priority
             />
           </div>
