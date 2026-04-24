@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from './client';
 
 export interface UserStreak {
   current: number;
@@ -24,9 +19,9 @@ export async function incrementDailyStreak(userId: string): Promise<void> {
 
 export async function getUserStreaks(userId: string): Promise<UserStreak> {
   try {
-    const { data, error } = await supabase
-      .from('user_streaks')
-      .select('*')
+    const { data, error } = await (supabase
+      .from('user_streaks') as any)
+      .select('current_streak, best_streak')
       .eq('user_id', userId)
       .maybeSingle();
 

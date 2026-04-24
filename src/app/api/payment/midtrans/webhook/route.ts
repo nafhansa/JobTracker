@@ -110,6 +110,18 @@ export async function POST(req: Request) {
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {
+        // Idempotency check: verify this order hasn't been processed already
+        const { data: processedOrder } = await (supabaseAdmin as any)
+          .from('subscriptions')
+          .select('id, midtrans_subscription_id')
+          .eq('midtrans_subscription_id', order_id)
+          .maybeSingle();
+
+        if (processedOrder) {
+          console.log('Order already processed, skipping:', order_id);
+          return NextResponse.json({ status: 'OK', message: 'Already processed' });
+        }
+
         const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
 
         console.log('=== WEBHOOK SUBSCRIPTION CREATION ===');
@@ -219,7 +231,11 @@ export async function POST(req: Request) {
             });
 
           if (lifetimeError) {
-            console.error('Error recording lifetime purchase:', lifetimeError);
+            if (lifetimeError.code === '23505') {
+              console.log('Lifetime purchase already recorded for order:', order_id);
+            } else {
+              console.error('Error recording lifetime purchase:', lifetimeError);
+            }
           }
         }
 
@@ -446,7 +462,11 @@ async function handleFirstPaymentWithSaveCard({
       });
 
     if (lifetimeError) {
-      console.error('Error recording lifetime purchase:', lifetimeError);
+      if (lifetimeError.code === '23505') {
+        console.log('Lifetime purchase already recorded for order:', order_id);
+      } else {
+        console.error('Error recording lifetime purchase:', lifetimeError);
+      }
     }
   }
 
@@ -605,7 +625,11 @@ async function handleFirstPaymentWithoutSaveCard({
       });
 
     if (lifetimeError) {
-      console.error('Error recording lifetime purchase:', lifetimeError);
+      if (lifetimeError.code === '23505') {
+        console.log('Lifetime purchase already recorded for order:', order_id);
+      } else {
+        console.error('Error recording lifetime purchase:', lifetimeError);
+      }
     }
   }
 
