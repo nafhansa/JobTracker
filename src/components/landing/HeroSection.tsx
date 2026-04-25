@@ -33,18 +33,27 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
         return x - Math.floor(x);
       };
 
-      const scatterOverrides: Record<number, Partial<{ x: number; y: number; rotation: number; scale: number; opacity: number }>> = {
-        7: { y: 200 },
-      };
+      const scatterOverrides: Record<number, Partial<{ x: number; y: number; rotation: number; scale: number; opacity: number }>> = {};
 
-      const scatterData = letters.map((_, i) => ({
-        x: (seededRandom(i * 3) - 0.5) * vw * 1.2,
-        y: (seededRandom(i * 3 + 1) - 0.5) * vh * 1.0,
-        rotation: (seededRandom(i * 3 + 2) - 0.5) * 60,
-        scale: 0.7 + seededRandom(i * 3 + 3) * 0.3,
-        opacity: 0.15,
-        ...scatterOverrides[i],
-      }));
+      const scatterData = letters.map((_, i) => {
+        // Menyebar huruf secara melingkar (ellipse) untuk mencegah tumpang tindih
+        // Ditambah sedikit random noise agar tetap terlihat tersebar natural
+        const angle = (i / letters.length) * Math.PI * 2;
+        const angleNoise = (seededRandom(i * 4) - 0.5) * 0.6;
+        const finalAngle = angle + angleNoise;
+        
+        const radiusX = vw * 0.38 + (seededRandom(i * 4 + 1) - 0.5) * vw * 0.15;
+        const radiusY = vh * 0.38 + (seededRandom(i * 4 + 2) - 0.5) * vh * 0.15;
+
+        return {
+          x: Math.cos(finalAngle) * radiusX,
+          y: Math.sin(finalAngle) * radiusY,
+          rotation: (seededRandom(i * 4 + 3) - 0.5) * 90,
+          scale: 0.65 + seededRandom(i * 4 + 4) * 0.35,
+          opacity: 0.15,
+          ...scatterOverrides[i],
+        };
+      });
 
       gsap.set(".hero-content", { y: "60vh", opacity: 0, scale: 0.97 });
       gsap.set(".hero-content-child", { y: 30, opacity: 0 });
@@ -101,16 +110,22 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
   return (
     <section
       ref={sectionRef}
-      className="relative z-30 w-full h-screen bg-white overflow-hidden"
+      className="relative z-30 w-full h-screen bg-white dark:bg-slate-950 overflow-hidden transition-colors duration-500"
       style={{ contain: "layout style paint" }}
     >
+      {/* Background dark mode glow elements */}
+      <div className="absolute inset-0 pointer-events-none hidden dark:block">
+        <div className="absolute top-1/4 left-1/4 w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[128px] opacity-50 mix-blend-screen" />
+        <div className="absolute bottom-1/4 right-1/4 w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[128px] opacity-50 mix-blend-screen" />
+      </div>
+
       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none" style={{ willChange: "transform" }}>
         <div className="relative flex flex-wrap justify-center">
           {letters.map((char, i) => (
             <span
               key={i}
               className={`hero-letter text-5xl md:text-9xl lg:text-[10rem] font-black inline-block leading-none tracking-tight md:tracking-normal ${
-                i < 3 ? "text-black" : "text-blue-600"
+                i < 3 ? "text-black dark:text-white" : "text-blue-600 dark:text-blue-500"
               }`}
               style={{ willChange: "transform, opacity" }}
             >
@@ -125,37 +140,38 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
           <h2 className="hero-content-child text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
             Track Your Job Applications With{" "}
             <br className="md:hidden" />
-            <span className="text-blue-600">No Setup</span>
+            <span className="text-blue-600 dark:text-blue-500">No Setup</span>
           </h2>
 
-          <div className="hero-content-child w-full max-w-3xl mb-6">
+          <div className="hero-content-child w-full max-w-3xl mb-6 relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-slate-950 z-10 pointer-events-none" />
             <Image
               src="/laptop.svg"
               alt="Dashboard Preview"
               width={1200}
               height={750}
-              className="w-full h-auto"
+              className="w-full h-auto relative z-0 drop-shadow-2xl dark:opacity-90 dark:brightness-[0.85] transition-all"
               priority
             />
           </div>
 
-          <p className="hero-content-child text-lg md:text-xl text-black max-w-2xl mb-8 leading-relaxed font-bold">
+          <p className="hero-content-child text-lg md:text-xl text-black dark:text-slate-300 max-w-2xl mb-8 leading-relaxed font-bold transition-colors">
             Throw your Spreadsheets and start tracking now.
           </p>
 
-          <div className="hero-content-child flex flex-col sm:flex-row gap-4">
+          <div className="hero-content-child flex flex-col sm:flex-row gap-4 relative z-20">
             <button
               onClick={onInstallClick}
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl border-2 border-gray-200 bg-white/90 backdrop-blur-md hover:bg-white hover:border-gray-300 transition-all duration-300 shadow-lg"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl border-2 border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-700 text-foreground transition-all duration-300 shadow-lg dark:shadow-none"
             >
-              <Play className="w-5 h-5 mr-2" />
+              <Play className="w-5 h-5 mr-2 text-black dark:text-white" />
               Watch Demo
             </button>
 
             <Link
               href="/login"
               onClick={onCTAClick}
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.5)]"
+              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.5)] dark:shadow-[0_0_40px_-10px_rgba(37,99,235,0.4)]"
             >
               <span className="relative z-10 flex items-center">
                 Get Started
