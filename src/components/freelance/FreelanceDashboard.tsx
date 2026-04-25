@@ -15,9 +15,11 @@ import { subscribeToFreelanceJobs, deleteFreelanceJob } from "@/lib/supabase/fre
 interface FreelanceDashboardProps {
   userId: string;
   trackerMode?: TrackerMode;
+  initialOpenModal?: boolean;
+  onModalClose?: () => void;
 }
 
-export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDashboardProps) {
+export default function FreelanceDashboard({ userId, trackerMode, initialOpenModal, onModalClose }: FreelanceDashboardProps) {
   const { t } = useLanguage();
   const [jobs, setJobs] = useState<FreelanceJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,20 @@ export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDas
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<FreelanceJob | null>(null);
+
+  useEffect(() => {
+    if (initialOpenModal) {
+      setEditingJob(null);
+      setIsModalOpen(true);
+    }
+  }, [initialOpenModal]);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open && onModalClose) {
+      onModalClose();
+    }
+  };
 
   useEffect(() => {
     if (userId) {
@@ -60,6 +76,8 @@ export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDas
   const handleDelete = async (job: FreelanceJob) => {
     try {
       await deleteFreelanceJob(job.id!);
+      // Force an immediate UI update before realtime kicks in
+      setJobs(prevJobs => prevJobs.filter(j => j.id !== job.id));
     } catch (error) {
       console.error("Failed to delete job:", error);
     }
@@ -151,7 +169,7 @@ export default function FreelanceDashboard({ userId, trackerMode }: FreelanceDas
       <AddFreelanceModal
         userId={userId}
         isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleOpenChange}
         jobToEdit={editingJob}
       />
     </div>
