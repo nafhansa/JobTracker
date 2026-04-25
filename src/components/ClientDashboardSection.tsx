@@ -11,9 +11,10 @@ import { FreelanceJob } from "@/types";
 interface ClientDashboardSectionProps {
   userId?: string;
   onNavigateToClients?: () => void;
+  onAddClientClick?: () => void;
 }
 
-export default function ClientDashboardSection({ userId, onNavigateToClients }: ClientDashboardSectionProps) {
+export default function ClientDashboardSection({ userId, onNavigateToClients, onAddClientClick }: ClientDashboardSectionProps) {
   const { t } = useLanguage();
   const [jobs, setJobs] = useState<FreelanceJob[]>([]);
 
@@ -95,7 +96,10 @@ export default function ClientDashboardSection({ userId, onNavigateToClients }: 
         <p className="text-muted-foreground max-w-md mb-6">
           {t("client.empty.desc")}
         </p>
-        <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2">
+        <Button 
+          onClick={onAddClientClick}
+          className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           {t("client.add")}
         </Button>

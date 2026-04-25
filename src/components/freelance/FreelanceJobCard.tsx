@@ -1,8 +1,9 @@
 "use client";
 
 import { FreelanceJob } from "@/types";
-import { Building, Calendar, DollarSign, Pencil, Trash2, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Building, Calendar, DollarSign, Pencil, Trash2, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,7 @@ interface FreelanceJobCardProps {
 
 export default function FreelanceJobCard({ job, onEdit, onDelete }: FreelanceJobCardProps) {
   const { t } = useLanguage();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
@@ -164,14 +166,32 @@ export default function FreelanceJobCard({ job, onEdit, onDelete }: FreelanceJob
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-muted hover:bg-muted/80 text-foreground border-border">
+                  <AlertDialogCancel className="bg-muted hover:bg-muted/80 text-foreground border-border" disabled={isDeleting}>
                     {t("common.cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => onDelete(job)}
-                    className="bg-red-500 hover:bg-red-600 text-white"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (onDelete) {
+                        setIsDeleting(true);
+                        try {
+                          await onDelete(job);
+                        } finally {
+                          setIsDeleting(false);
+                        }
+                      }
+                    }}
+                    disabled={isDeleting}
+                    className="bg-red-500 hover:bg-red-600 text-white flex items-center gap-2"
                   >
-                    {t("common.delete")}
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      t("common.delete")
+                    )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

@@ -33,6 +33,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   const [trackerMode, setTrackerMode] = useState<TrackerMode>("job");
   const [activeSection, setActiveSection] = useState<SidebarSection>("dashboard");
   const [clientCount, setClientCount] = useState(0);
+  const [openClientModal, setOpenClientModal] = useState(false);
 
   const isAdmin = isAdminUser(user?.email || "");
   
@@ -81,6 +82,11 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
     setActiveSection("applications");
   };
 
+  const handleNavigateToClientsAndAdd = () => {
+    setActiveSection("clients");
+    setOpenClientModal(true);
+  };
+
   const handleTutorialComplete = useCallback(() => {
     triggerTutorialCompleteCelebration();
   }, []);
@@ -89,7 +95,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
     switch (activeSection) {
       case "dashboard":
         if (trackerMode === "client") {
-          return <ClientDashboardSection userId={userId} />;
+          return <ClientDashboardSection userId={userId} onNavigateToClients={() => setActiveSection("clients")} onAddClientClick={handleNavigateToClientsAndAdd} />;
         }
         return <DashboardSection jobs={jobs} userId={userId} plan={plan} onAddJob={handleAddNew} onEditJob={handleEditJob} onNavigateToApplications={handleNavigateToApplications} />;
       case "applications":
@@ -107,7 +113,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
       case "freelance":
         return <FreelanceDashboard userId={userId} />;
       case "clients":
-        return <FreelanceDashboard userId={userId} trackerMode="client" />;
+        return <FreelanceDashboard userId={userId} trackerMode="client" initialOpenModal={openClientModal} onModalClose={() => setOpenClientModal(false)} />;
       case "profile":
         return <ProfileSection isAdmin={isAdmin} />;
       case "settings":
