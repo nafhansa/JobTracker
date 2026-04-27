@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
-import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2, RefreshCw } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { TwitterShareModal } from "@/components/TwitterShareModal";
 import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
@@ -23,7 +23,7 @@ interface LifetimeAvailability {
 export default function PricingPage() {
   const { t } = useLanguage();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, subscription } = useAuth();
   
   const [isIndonesia, setIsIndonesia] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(true);
@@ -31,6 +31,17 @@ export default function PricingPage() {
   const [loadingLifetime, setLoadingLifetime] = useState(true);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
   const [pendingPlanType, setPendingPlanType] = useState<'monthly' | 'lifetime'>('monthly');
+
+  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
+  const previousPlan = isCancelled ? (subscription?.plan || 'monthly') : null;
+  const isLifetime = subscription?.plan === "lifetime";
+
+  useEffect(() => {
+    if (isLifetime && user) {
+      // Lifetime users should not be on pricing page for subscription
+      // Could redirect or show message
+    }
+  }, [isLifetime, user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,10 +76,12 @@ export default function PricingPage() {
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
         <section className="text-center max-w-4xl mx-auto px-6 space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground">
-            {t("pricing.title")}
+            {isCancelled ? "Welcome Back!" : t("pricing.title")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            {t("pricing.subtitle")}
+            {isCancelled
+              ? "Reactivate your subscription and continue enjoying unlimited job tracking."
+              : t("pricing.subtitle")}
           </p>
           
           {showMidtransBadge && (
@@ -78,6 +91,22 @@ export default function PricingPage() {
             </div>
           )}
         </section>
+
+        {isCancelled && previousPlan && (
+          <section className="w-full max-w-6xl mx-auto px-6 mt-8">
+            <div className="bg-gradient-to-r from-blue-500/90 to-indigo-500/90 border border-blue-400/50 rounded-xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2.5 rounded-full">
+                  <RefreshCw className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white text-base">Previous Plan: {previousPlan === 'lifetime' ? 'Lifetime Access' : 'Monthly Pro'}</p>
+                  <p className="text-sm text-white/90">Reactivate now to regain your Pro access instantly.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {!loadingLifetime && showLifetime && lifetimeAvailability && (
           <section className="w-full max-w-6xl mx-auto px-6 mt-12">

@@ -51,7 +51,7 @@ export async function GET(req: Request) {
   }
 }
 
-  export async function POST(req: Request) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { userId, plan, customerDetails, currency = 'IDR', enableAutoRenew } = body;
@@ -64,6 +64,46 @@ export async function GET(req: Request) {
     }
 
     const planType = plan === 'lifetime' ? 'lifetime' : 'monthly';
+
+    const { data: existingSubscription } = await (supabaseAdmin as any)
+      .from('subscriptions')
+      .select('id, plan, status, ends_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existingSubscription?.plan === 'lifetime' && planType !== 'lifetime') {
+      return NextResponse.json(
+        { error: "You already have lifetime access. No need to subscribe again." },
+        { status: 400 }
+      );
+    }
+
+    if (existingSubscription?.plan === planType && existingSubscription.status === 'active') {
+      if (planType === 'monthly' && existingSubscription.ends_at && new Date(existingSubscription.ends_at) > new Date()) {
+        return NextResponse.json(
+          { error: "You already have an active monthly subscription." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { data: existingPending } = await (supabaseAdmin as any)
+      .from('pending_midtrans_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('plan', planType)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (existingPending) {
+      console.log('Returning existing pending transaction for user:', userId);
+      return NextResponse.json({
+        success: true,
+        orderId: existingPending.order_id,
+        token: existingPending.snap_token,
+      });
+    }
+
     const shouldAutoRenew = enableAutoRenew !== undefined ? enableAutoRenew : planType === 'monthly';
     const amount = currency === 'USD'
       ? (planType === 'lifetime' ? MIDTRANS_PRICES.lifetimeUSD : MIDTRANS_PRICES.monthlyUSD)
@@ -74,6 +114,8 @@ export async function GET(req: Request) {
     const userIdShort = userId.substring(0, 12);
     const orderId = `JT-${userIdShort}-${timestamp}-${randomStr}`;
 
+    const billingDay = new Date().getDate();
+
     return await createSnapTransaction({
       userId,
       planType,
@@ -82,6 +124,7 @@ export async function GET(req: Request) {
       customerDetails,
       orderId,
       enableAutoRenew: shouldAutoRenew,
+      billingDay,
     });
   } catch (error) {
     console.error('Midtrans charge error:', error);
@@ -101,6 +144,7 @@ async function createSnapTransaction({
   customerDetails,
   orderId,
   enableAutoRenew = false,
+  billingDay,
 }: {
   userId: string;
   planType: 'monthly' | 'lifetime';
@@ -114,6 +158,7 @@ async function createSnapTransaction({
   };
   orderId: string;
   enableAutoRenew?: boolean;
+  billingDay: number;
 }) {
   const snapBody: any = {
     transaction_details: {
@@ -157,20 +202,19 @@ async function createSnapTransaction({
   }
 
   const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
-  const snapApiUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+  const snapApiUrl = MIDTRANS_CONFIG.isProduction
     ? 'https://app.midtrans.com/snap/v1/transactions'
     : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-
-  console.log('Using Snap API URL:', snapApiUrl);
 
   console.log('Creating Midtrans transaction:', {
     orderId,
     amount,
+    currency,
     snapApiUrl,
     serverKeyLength: MIDTRANS_CONFIG.serverKey.length,
     authStringLength: authString.length,
-    requestBody: JSON.stringify(snapBody),
     enableAutoRenew,
+    billingDay,
   });
 
   let response;
@@ -206,9 +250,7 @@ async function createSnapTransaction({
 
   const responseText = await response.text();
   console.log('Midtrans response status:', response.status);
-  console.log('Midtrans response headers:', Object.fromEntries(response.headers.entries()));
   console.log('Midtrans response body:', responseText);
-  console.log('Response body length:', responseText.length);
 
   if (!response.ok) {
     console.error('Midtrans API error:', response.status, responseText);
@@ -227,8 +269,6 @@ async function createSnapTransaction({
   }
 
   const result = JSON.parse(responseText);
-
-  console.log('Midtrans response parsed:', result);
 
   if (!result.token) {
     console.error('Midtrans Snap error: No token in response', result);
@@ -253,6 +293,8 @@ async function createSnapTransaction({
       amount: amount,
       snap_token: token,
       customer_email: customerDetails.email || null,
+      currency: currency,
+      billing_day: billingDay,
     });
 
   if (dbError) {

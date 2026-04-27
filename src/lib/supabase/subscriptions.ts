@@ -2,10 +2,45 @@ import { supabase } from './client';
 import { Timestamp } from 'firebase/firestore';
 
 export interface SubscriptionData {
+  id?: string;
   status?: string;
   plan?: string;
   renewsAt?: Timestamp | Date | string | { _seconds?: number };
   endsAt?: Timestamp | Date | string | { _seconds?: number };
+  midtransSubscriptionId?: string | null;
+  midtransSubscriptionToken?: string | null;
+  midtransPaymentMethod?: string | null;
+  lastCancelledAt?: string | null;
+  reactivationCount?: number;
+  currency?: string;
+  billingDay?: number;
+}
+
+export interface SubscriptionHistoryEntry {
+  action: string;
+  previous_status: string | null;
+  new_status: string | null;
+  previous_plan: string | null;
+  new_plan: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface SubscriptionStatusResponse {
+  hasSubscription: boolean;
+  plan: string;
+  status: string;
+  isPro: boolean;
+  renewsAt: string | null;
+  endsAt: string | null;
+  midtransSubscriptionId: string | null;
+  midtransPaymentMethod: string | null;
+  reactivationCount: number;
+  canReactivate: boolean;
+  gracePeriodEndsAt: string | null;
+  cooldownEndsAt: string | null;
+  lastCancelledAt: string | null;
+  history: SubscriptionHistoryEntry[];
 }
 
 /**
@@ -78,6 +113,10 @@ export const getSubscription = async (userId: string) => {
           midtrans_payment_method,
           renews_at,
           ends_at,
+          last_cancelled_at,
+          reactivation_count,
+          currency,
+          billing_day,
           created_at,
           updated_at
         )
@@ -95,10 +134,18 @@ export const getSubscription = async (userId: string) => {
 
     const subscription = subscriptionData
       ? {
+          id: subscriptionData.id,
           plan: subscriptionData.plan,
           status: subscriptionData.status,
           renewsAt: subscriptionData.renews_at ? new Date(subscriptionData.renews_at) : undefined,
           endsAt: subscriptionData.ends_at ? new Date(subscriptionData.ends_at) : undefined,
+          midtransSubscriptionId: subscriptionData.midtrans_subscription_id,
+          midtransSubscriptionToken: subscriptionData.midtrans_subscription_token,
+          midtransPaymentMethod: subscriptionData.midtrans_payment_method,
+          lastCancelledAt: subscriptionData.last_cancelled_at,
+          reactivationCount: subscriptionData.reactivation_count || 0,
+          currency: subscriptionData.currency || 'IDR',
+          billingDay: subscriptionData.billing_day,
         }
       : data.subscription_plan
       ? {
@@ -216,7 +263,6 @@ export const canEditDelete = (plan: string | null | undefined, isAdmin = false):
  */
 export const ensureFreePlan = async (userId: string, userEmail?: string): Promise<void> => {
   try {
-    // Check if user exists
     const { data: userData } = await (supabase
       .from('users') as any)
       .select('id, subscription_plan')
@@ -224,7 +270,6 @@ export const ensureFreePlan = async (userId: string, userEmail?: string): Promis
       .single();
 
     if (!userData) {
-      // New user - create with free plan
       await (supabase
         .from('users') as any)
         .insert({
@@ -235,7 +280,6 @@ export const ensureFreePlan = async (userId: string, userEmail?: string): Promis
           is_pro: false,
         });
     } else {
-      // Existing user without subscription - assign free plan
       if (!userData.subscription_plan) {
         await (supabase
           .from('users') as any)
@@ -250,6 +294,38 @@ export const ensureFreePlan = async (userId: string, userEmail?: string): Promis
     }
   } catch (error) {
     console.error('Error ensuring free plan:', error);
-    // Don't throw - let user continue even if assignment fails
   }
 };
+
+export const getSubscriptionStatus = async (userId: string): Promise<SubscriptionStatusResponse | null> => {
+  try {
+    const response = await fetch(`/api/subscription/status?userId=${userId}`);
+    
+    if (!response.ok) {
+      console.error('Failed to fetch subscription status');
+      return null;
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching subscription status:', error);
+    return null;
+  }
+};
+
+export function getNextBillingDate(currentDate: Date, billingDay: number): Date {
+  const nextMonth = new Date(currentDate);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  
+  const lastDayOfMonth = new Date(
+    nextMonth.getFullYear(),
+    nextMonth.getMonth() + 1,
+    0
+  ).getDate();
+  
+  const day = Math.min(billingDay, lastDayOfMonth);
+  nextMonth.setDate(day);
+  
+  return nextMonth;
+}

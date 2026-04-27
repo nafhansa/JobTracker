@@ -1,0 +1,263 @@
+{
+  "info": {
+    "name": "JobTracker Subscription Webhook Tests",
+    "description": "Test collection for Midtrans webhook scenarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://staging.jobtrackerapp.site",
+      "type": "string"
+    },
+    {
+      "key": "server_key",
+      "value": "YOUR_MIDTRANS_SERVER_KEY",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "JT-test-123456",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "YOUR_FIREBASE_USER_ID",
+      "type": "string"
+    },
+    {
+      "key": "gross_amount",
+      "value": "31988",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Settlement - New Monthly Subscription",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-monthly-settlement\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "2. Settlement - New Lifetime Subscription",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-lifetime-settlement\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"51988\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"lifetime\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "3. Settlement - Reactivate Cancelled Subscription",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-reactivate\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "4. Recurring Payment Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-recurring\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"recurring\",\n  \"subscription_id\": \"YOUR_MIDTRANS_SUBSCRIPTION_TOKEN\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "5. Failed Payment - Deny",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-deny\",\n  \"transaction_status\": \"deny\",\n  \"status_code\": \"202\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"credit_card\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "6. Failed Payment - Expire",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-expire\",\n  \"transaction_status\": \"expire\",\n  \"status_code\": \"202\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "7. Subscription Cancelled Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-cancel-event\",\n  \"event\": \"subscription.cancelled\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"subscription_id\": \"YOUR_MIDTRANS_SUBSCRIPTION_TOKEN\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "8. Invalid Signature (Should Return 403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-invalid-sig\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"invalid_signature_here\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "9. Lifetime User Tries Monthly (Should Be Blocked)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-lifetime-block\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "10. Duplicate Webhook (Idempotency Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}-duplicate\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{gross_amount}}\",\n  \"custom_field1\": \"{{user_id}}\",\n  \"custom_field2\": \"monthly\",\n  \"custom_field3\": \"IDR\",\n  \"payment_type\": \"bank_transfer\",\n  \"signature_key\": \"{{signature_key}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/payment/midtrans/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["api", "payment", "midtrans", "webhook"]
+        }
+      }
+    },
+    {
+      "name": "11. Reconciliation Cron Job",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{cron_secret}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/cron/reconcile-subscriptions",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cron", "reconcile-subscriptions"]
+        }
+      }
+    }
+  ]
+}

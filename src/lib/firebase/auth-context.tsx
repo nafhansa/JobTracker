@@ -7,8 +7,18 @@ import { checkIsPro } from "./subscription";
 import { syncFirebaseUserToSupabase } from "./sync-to-supabase";
 
 interface SubscriptionData {
+  id?: string;
   plan?: string;
   status?: string;
+  renewsAt?: Date | string | null;
+  endsAt?: Date | string | null;
+  midtransSubscriptionId?: string | null;
+  midtransSubscriptionToken?: string | null;
+  midtransPaymentMethod?: string | null;
+  lastCancelledAt?: string | null;
+  reactivationCount?: number;
+  currency?: string;
+  billingDay?: number;
   [key: string]: unknown;
 }
 
@@ -82,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
 
       if (subscriptionData && !subscriptionError) {
-        console.log('reloadSubscription: Setting subscription to:', subscriptionData);
+        console.log('reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
         const transformedSubscription: any = {
           id: (subscriptionData as any).id,
           user_id: (subscriptionData as any).user_id,
@@ -93,6 +103,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
           renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
           endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+          lastCancelledAt: (subscriptionData as any).last_cancelled_at,
+          reactivationCount: (subscriptionData as any).reactivation_count || 0,
           createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
           updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
         };
@@ -157,6 +169,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
               renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
               endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+              lastCancelledAt: (subscriptionData as any).last_cancelled_at,
+              reactivationCount: (subscriptionData as any).reactivation_count || 0,
               createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
               updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
             };
@@ -205,6 +219,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
           renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
           endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
+          lastCancelledAt: (subscriptionData as any).last_cancelled_at,
+          reactivationCount: (subscriptionData as any).reactivation_count || 0,
           createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
           updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
         };
