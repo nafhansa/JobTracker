@@ -32,9 +32,9 @@ export default function DashboardPage() {
   const isAdmin = isAdminUser(user?.email || "");
   const isSubscribed = isAdmin || checkIsPro(subscription);
 
-  // Check if user has free plan
-  const plan = subscription?.plan || "free";
-  const isFreeUser = plan === "free" && !isAdmin && !isSubscribed;
+  // Determine effective plan: free if not subscribed, otherwise use actual plan
+  const plan = !isSubscribed ? "free" : (subscription?.plan || "free");
+  const isFreeUser = !isSubscribed;
 
   useEffect(() => {
     if (!authLoading && !user) {

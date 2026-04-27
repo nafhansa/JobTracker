@@ -4,10 +4,8 @@
 import { Sparkles, CheckCircle2, Zap, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter } from "next/navigation";
-import { PADDLE_PRICES, PADDLE_ENV } from "@/lib/paddle-config";
 import { useState } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
-import { usePaddle } from "@/components/providers/PaddleProvider";
 
 type PlanType = "monthly" | "lifetime" | null;
 
@@ -21,7 +19,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(null);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const { paddle } = usePaddle();
+  const [isLoading, setIsLoading] = useState(false);
   const isFreeUser = subscription?.plan === "free";
   const showLimitMessage = isFreeUser && isLimitReached;
 
@@ -34,37 +32,64 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
     setStatusMsg({ type: 'error', text: msg });
   };
 
-  const openCheckout = (priceId: string) => {
-    if (!paddle || !user) return;
+  const handleUpgrade = async (planType: 'monthly' | 'lifetime') => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
-    paddle.Checkout.open({
-      items: [{ priceId, quantity: 1 }],
-      customer: user.email ? {
-        email: user.email,
-      } : undefined,
-      customData: {
-        userId: user.uid,
-      },
-      settings: {
-        displayMode: "overlay",
-        theme: "dark",
-      },
-    });
+    setIsLoading(true);
+    setStatusMsg(null);
+    setSelectedPlan(planType);
+
+    try {
+      const response = await fetch('/api/payment/midtrans/charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          plan: planType,
+          currency: 'IDR',
+          enableAutoRenew: planType === 'monthly',
+          customerDetails: {
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ').slice(1).join('') || '',
+            email: user.email || '',
+            phone: user.phoneNumber || '',
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Payment API error:', response.status, errorText);
+        handleError(`Payment error: ${errorText || 'Unknown error'}`);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        handleSuccess('Redirecting to payment...');
+        router.push(`/payment/midtrans?orderId=${data.orderId}`);
+      } else {
+        handleError(`Failed to create payment: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      handleError(`Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-6 md:p-10 text-center shadow-2xl">
 
-      {PADDLE_ENV.environment === 'sandbox' && (
-        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-yellow-700 dark:text-yellow-300 text-xs text-center">
-          🧪 SANDBOX MODE - Testing with fake money
-        </div>
-      )}
-
       <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wider uppercase mb-4">
           <Sparkles className="w-3 h-3" />
-          {showLimitMessage ? "Upgrade to Add More Jobs" : "Premium Access Required"}
+          {showLimitMessage ? "Upgrade to Add More Jobs" : "Choose Your Plan"}
         </div>
 
         <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
@@ -90,13 +115,13 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm text-muted-foreground line-through decoration-muted-foreground/50 decoration-2">
-                  $2.99
+                  Rp36.000
                 </span>
                 <span className="text-[10px] font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full uppercase tracking-wide">
                   Save 33%
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">$1.99/month subscription</p>
+              <p className="text-sm text-muted-foreground">Rp31.988/bulan</p>
             </div>
 
             <div className="flex-1 space-y-3 mb-6">
@@ -112,15 +137,15 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
 
             <div className="min-h-[55px] flex items-end">
               <button
-                disabled={!paddle}
+                disabled={isLoading}
                 onClick={() => {
                   setSelectedPlan('monthly');
                   setStatusMsg(null);
-                  openCheckout(PADDLE_PRICES.monthly);
+                  handleUpgrade('monthly');
                 }}
                 className="w-full py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
               >
-                Upgrade to Monthly <ArrowRight className="w-4 h-4" />
+                {isLoading ? "Processing..." : "Upgrade to Monthly"} <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -137,7 +162,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
             </div>
 
             <h3 className="text-xl font-bold text-foreground mb-2">Lifetime Access</h3>
-            <p className="text-sm text-muted-foreground mb-6">$7.99 one-time payment</p>
+            <p className="text-sm text-muted-foreground mb-6">Rp51.988 one-time payment</p>
 
             <div className="flex-1 space-y-3 mb-6">
               <div className="flex items-center gap-3 text-foreground text-sm">
@@ -152,15 +177,15 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
 
             <div className="min-h-[55px] flex items-end">
               <button
-                disabled={!paddle}
+                disabled={isLoading}
                 onClick={() => {
                   setSelectedPlan('lifetime');
                   setStatusMsg(null);
-                  openCheckout(PADDLE_PRICES.lifetime);
+                  handleUpgrade('lifetime');
                 }}
                 className="w-full py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                Get Lifetime Access <ArrowRight className="w-4 h-4" />
+                {isLoading ? "Processing..." : "Get Lifetime Access"} <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
