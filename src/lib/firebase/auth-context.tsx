@@ -17,6 +17,8 @@ interface SubscriptionData {
   midtransPaymentMethod?: string | null;
   lastCancelledAt?: string | null;
   reactivationCount?: number;
+  currency?: string;
+  billingDay?: number;
   [key: string]: unknown;
 }
 

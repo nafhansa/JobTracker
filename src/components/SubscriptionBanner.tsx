@@ -97,24 +97,36 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
     setSelectedPlan(planType);
 
     try {
-      const response = await fetch('/api/subscription/reactivate', {
+      const response = await fetch('/api/payment/midtrans/charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.uid,
           plan: planType,
+          currency: 'IDR',
+          enableAutoRenew: planType === 'monthly',
+          customerDetails: {
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+            phone: user.phoneNumber || '',
+          },
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        handleError(data.error || 'Failed to reactivate subscription');
+        handleError(data.error || 'Failed to initiate reactivation payment');
         return;
       }
 
-      handleSuccess('Subscription reactivated successfully!');
-      setTimeout(() => router.refresh(), 1500);
+      if (data.success) {
+        handleSuccess('Redirecting to payment...');
+        router.push(`/payment/midtrans?orderId=${data.orderId}`);
+      } else {
+        handleError(data.error || 'Failed to create payment');
+      }
     } catch (error) {
       console.error('Reactivation error:', error);
       handleError(`Reactivation error: ${error instanceof Error ? error.message : 'Unknown error'}`);

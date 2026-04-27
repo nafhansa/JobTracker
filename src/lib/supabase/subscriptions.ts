@@ -12,6 +12,8 @@ export interface SubscriptionData {
   midtransPaymentMethod?: string | null;
   lastCancelledAt?: string | null;
   reactivationCount?: number;
+  currency?: string;
+  billingDay?: number;
 }
 
 export interface SubscriptionHistoryEntry {
@@ -113,6 +115,8 @@ export const getSubscription = async (userId: string) => {
           ends_at,
           last_cancelled_at,
           reactivation_count,
+          currency,
+          billing_day,
           created_at,
           updated_at
         )
@@ -140,6 +144,8 @@ export const getSubscription = async (userId: string) => {
           midtransPaymentMethod: subscriptionData.midtrans_payment_method,
           lastCancelledAt: subscriptionData.last_cancelled_at,
           reactivationCount: subscriptionData.reactivation_count || 0,
+          currency: subscriptionData.currency || 'IDR',
+          billingDay: subscriptionData.billing_day,
         }
       : data.subscription_plan
       ? {
@@ -307,3 +313,19 @@ export const getSubscriptionStatus = async (userId: string): Promise<Subscriptio
     return null;
   }
 };
+
+export function getNextBillingDate(currentDate: Date, billingDay: number): Date {
+  const nextMonth = new Date(currentDate);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  
+  const lastDayOfMonth = new Date(
+    nextMonth.getFullYear(),
+    nextMonth.getMonth() + 1,
+    0
+  ).getDate();
+  
+  const day = Math.min(billingDay, lastDayOfMonth);
+  nextMonth.setDate(day);
+  
+  return nextMonth;
+}

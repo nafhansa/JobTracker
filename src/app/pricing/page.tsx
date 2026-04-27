@@ -34,6 +34,14 @@ export default function PricingPage() {
 
   const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
   const previousPlan = isCancelled ? (subscription?.plan || 'monthly') : null;
+  const isLifetime = subscription?.plan === "lifetime";
+
+  useEffect(() => {
+    if (isLifetime && user) {
+      // Lifetime users should not be on pricing page for subscription
+      // Could redirect or show message
+    }
+  }, [isLifetime, user]);
 
   useEffect(() => {
     const fetchData = async () => {

@@ -108,30 +108,37 @@ export default function BillingPage() {
 
     setReactivating(true);
     try {
-      const response = await fetch("/api/subscription/reactivate", {
+      const planToReactivate = subscription.plan || "monthly";
+      const response = await fetch("/api/payment/midtrans/charge", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId: user.uid,
-          plan: subscription.plan || "monthly",
+          plan: planToReactivate,
+          currency: isIndonesia ? 'IDR' : 'USD',
+          enableAutoRenew: planToReactivate === 'monthly',
+          customerDetails: {
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+            phone: user.phoneNumber || '',
+          },
         })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 429 && data.cooldownEndsAt) {
-          setCooldownEndsAt(data.cooldownEndsAt);
-        }
-        throw new Error(data.error || "Failed to reactivate subscription");
+        throw new Error(data.error || "Failed to initiate reactivation payment");
       }
 
-      setReactivateSuccess(true);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      if (data.success) {
+        router.push(`/payment/midtrans?orderId=${data.orderId}`);
+      } else {
+        throw new Error(data.error || "Failed to create payment");
+      }
     } catch (error) {
       console.error("Reactivate error:", error);
       alert(error instanceof Error ? error.message : "Failed to reactivate subscription. Please contact support.");

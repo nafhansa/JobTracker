@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/middleware/rate-limit";
+import { verifyAuthOrUserId } from "@/lib/middleware/auth";
 import { checkIsPro } from "@/lib/supabase/subscriptions";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    const authResult = await verifyAuthOrUserId(req);
+    if ('error' in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
+
+    const userId = authResult.userId;
 
     const rateLimit = await checkRateLimit(`status:${userId}`, {
       windowMs: 60 * 1000,
@@ -57,6 +58,8 @@ export async function GET(req: Request) {
       ends_at: null,
       last_cancelled_at: null,
       reactivation_count: 0,
+      currency: 'IDR',
+      billing_day: null,
     };
 
     const isPro = checkIsPro({
@@ -109,6 +112,8 @@ export async function GET(req: Request) {
       gracePeriodEndsAt,
       cooldownEndsAt,
       lastCancelledAt: subData.last_cancelled_at,
+      currency: subData.currency || 'IDR',
+      billingDay: subData.billing_day,
       history: history || [],
     }, { status: 200, headers });
   } catch (error: unknown) {
