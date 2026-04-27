@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { verifyPaymentWithMidtrans } from '@/lib/middleware/webhook-verify';
+import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -59,6 +61,12 @@ export async function POST(req: Request) {
       console.log('Has saved_token_id:', !!saved_token_id);
       console.log('Has masked_card:', !!masked_card);
 
+      const { verified, transactionStatus: verifiedStatus } = await verifyPaymentWithMidtrans(order_id);
+      if (!verified || verifiedStatus !== transaction_status) {
+        console.error('Payment verification failed:', { verified, verifiedStatus, expectedStatus: transaction_status });
+        return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
+      }
+
       console.log('=== HANDLING WITH SAVE CARD (AUTO-RENEWAL) ===');
       await handleFirstPaymentWithSaveCard({
         userId,
@@ -73,6 +81,12 @@ export async function POST(req: Request) {
     }
 
     if (transaction_status === 'settlement' && payment_type === 'recurring') {
+      const { verified, transactionStatus: verifiedStatus } = await verifyPaymentWithMidtrans(order_id);
+      if (!verified || verifiedStatus !== transaction_status) {
+        console.error('Recurring payment verification failed:', { verified, verifiedStatus });
+        return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
+      }
+
       await handleRecurringPayment({
         subscriptionId: subscription_id,
         userId,
@@ -98,6 +112,12 @@ export async function POST(req: Request) {
       console.log('Payment type:', payment_type);
       console.log('User ID:', userId);
       console.log('Plan:', plan);
+
+      const { verified, transactionStatus: verifiedStatus } = await verifyPaymentWithMidtrans(order_id);
+      if (!verified || verifiedStatus !== 'settlement') {
+        console.error('Payment verification failed for non-CC payment:', { verified, verifiedStatus });
+        return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
+      }
     }
 
     if (body.event === 'subscription.cancelled' || body.event === 'subscription.expired') {
@@ -110,7 +130,6 @@ export async function POST(req: Request) {
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {
-        // Idempotency check: verify this order hasn't been processed already
         const { data: processedOrder } = await (supabaseAdmin as any)
           .from('subscriptions')
           .select('id, midtrans_subscription_id')
@@ -136,6 +155,9 @@ export async function POST(req: Request) {
           .maybeSingle();
 
         console.log('Existing subscription found:', existingSubscription);
+
+        const isReactivation = existingSubscription && 
+          (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
 
         const subscriptionData: any = {
           user_id: userId,
@@ -217,6 +239,26 @@ export async function POST(req: Request) {
         if (userError) {
           console.error('Error updating user subscription:', userError);
           throw userError;
+        }
+
+        if (isReactivation) {
+          await recordSubscriptionHistory(userId, 'reactivated', {
+            previousStatus: existingSubscription.status,
+            newStatus: 'active',
+            previousPlan: existingSubscription.plan,
+            newPlan: planType,
+            reason: 'Reactivated via payment webhook',
+            metadata: { orderId: order_id, paymentType },
+          });
+        } else if (!existingSubscription) {
+          await recordSubscriptionHistory(userId, 'subscription_created', {
+            previousStatus: null,
+            newStatus: 'active',
+            previousPlan: 'free',
+            newPlan: planType,
+            reason: 'New subscription via payment webhook',
+            metadata: { orderId: order_id, paymentType },
+          });
         }
 
         if (plan === 'lifetime') {
@@ -332,12 +374,16 @@ async function handleSubscriptionCancellation({
     return;
   }
 
+  const previousStatus = subscription.status;
+  const previousPlan = subscription.plan;
+
   const { error: updateError } = await (supabaseAdmin as any)
     .from('subscriptions')
     .update({
       status: 'cancelled',
       ends_at: subscription.renews_at || now,
       midtrans_subscription_token: null,
+      last_cancelled_at: now,
       updated_at: now,
     })
     .eq('id', subscription.id);
@@ -351,7 +397,7 @@ async function handleSubscriptionCancellation({
     .from('users')
     .update({
       subscription_plan: 'free',
-      subscription_status: 'active',
+      subscription_status: 'cancelled',
       is_pro: false,
       updated_at: now,
     })
@@ -361,7 +407,16 @@ async function handleSubscriptionCancellation({
     console.error('Failed to revert user to free plan:', userError);
   }
 
-    console.log('Subscription cancelled successfully');
+  await recordSubscriptionHistory(userId, 'cancelled', {
+    previousStatus,
+    newStatus: 'cancelled',
+    previousPlan,
+    newPlan: 'free',
+    reason: 'Cancelled via Midtrans webhook',
+    metadata: { subscriptionId, midtransSubscriptionId: subscriptionId },
+  });
+
+  console.log('Subscription cancelled successfully');
 }
 
 async function handleFirstPaymentWithSaveCard({
@@ -449,6 +504,29 @@ async function handleFirstPaymentWithSaveCard({
       },
       { onConflict: 'id' }
     );
+
+  const isReactivation = existingSubscription && 
+    (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
+
+  if (isReactivation) {
+    await recordSubscriptionHistory(userId, 'reactivated', {
+      previousStatus: existingSubscription.status,
+      newStatus: 'active',
+      previousPlan: existingSubscription.plan,
+      newPlan: planType,
+      reason: 'Reactivated via save card payment',
+      metadata: { orderId: order_id, paymentType: 'credit_card' },
+    });
+  } else if (!existingSubscription) {
+    await recordSubscriptionHistory(userId, 'subscription_created', {
+      previousStatus: null,
+      newStatus: 'active',
+      previousPlan: 'free',
+      newPlan: planType,
+      reason: 'New subscription via save card payment',
+      metadata: { orderId: order_id, paymentType: 'credit_card' },
+    });
+  }
 
   if (plan === 'lifetime') {
     const { error: lifetimeError } = await (supabaseAdmin as any)
@@ -612,6 +690,29 @@ async function handleFirstPaymentWithoutSaveCard({
       },
       { onConflict: 'id' }
     );
+
+  const isReactivation = existingSubscription && 
+    (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
+
+  if (isReactivation) {
+    await recordSubscriptionHistory(userId, 'reactivated', {
+      previousStatus: existingSubscription.status,
+      newStatus: 'active',
+      previousPlan: existingSubscription.plan,
+      newPlan: planType,
+      reason: 'Reactivated via one-time payment',
+      metadata: { orderId: order_id },
+    });
+  } else if (!existingSubscription) {
+    await recordSubscriptionHistory(userId, 'subscription_created', {
+      previousStatus: null,
+      newStatus: 'active',
+      previousPlan: 'free',
+      newPlan: planType,
+      reason: 'New subscription via one-time payment',
+      metadata: { orderId: order_id },
+    });
+  }
 
   if (plan === 'lifetime') {
     const { error: lifetimeError } = await (supabaseAdmin as any)

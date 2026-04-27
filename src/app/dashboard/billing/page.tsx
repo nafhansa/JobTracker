@@ -18,9 +18,12 @@ export default function BillingPage() {
   const { user, subscription, loading: authLoading } = useAuth();
   const [cancelling, setCancelling] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+  const [reactivateSuccess, setReactivateSuccess] = useState(false);
   const [jobCount, setJobCount] = useState<number | null>(null);
   const [isIndonesia, setIsIndonesia] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(true);
+  const [cooldownEndsAt, setCooldownEndsAt] = useState<string | null>(null);
 
   const isFreePlan = subscription?.plan === "free";
 
@@ -94,6 +97,46 @@ export default function BillingPage() {
       alert(error instanceof Error ? error.message : "Failed to cancel subscription. Please contact support.");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!user || !subscription) {
+      alert("No user session or subscription found");
+      return;
+    }
+
+    setReactivating(true);
+    try {
+      const response = await fetch("/api/subscription/reactivate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          plan: subscription.plan || "monthly",
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 429 && data.cooldownEndsAt) {
+          setCooldownEndsAt(data.cooldownEndsAt);
+        }
+        throw new Error(data.error || "Failed to reactivate subscription");
+      }
+
+      setReactivateSuccess(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Reactivate error:", error);
+      alert(error instanceof Error ? error.message : "Failed to reactivate subscription. Please contact support.");
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -279,6 +322,51 @@ export default function BillingPage() {
                         After that, your account will revert to free plan.
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {/* Reactivate CTA for Cancelled Users */}
+                {isCancelled && (
+                  <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg shadow-sm">
+                    {reactivateSuccess ? (
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                        <p className="text-emerald-700">
+                          Subscription reactivated successfully!
+                        </p>
+                      </div>
+                    ) : cooldownEndsAt ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Reactivation is temporarily disabled. Please try again after {formatDate(cooldownEndsAt)}.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {subscription?.plan === 'lifetime'
+                            ? 'Restore your lifetime access with a one-time payment.'
+                            : 'Reactivate your Pro subscription to continue enjoying unlimited job tracking.'}
+                        </p>
+                        <Button
+                          onClick={handleReactivate}
+                          disabled={reactivating}
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                        >
+                          {reactivating ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Reactivating...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowUpRight className="w-4 h-4 mr-2" />
+                              Reactivate {subscription?.plan === 'lifetime' ? 'Lifetime' : 'Pro'} Subscription
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
 

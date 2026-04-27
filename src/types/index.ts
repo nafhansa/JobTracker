@@ -90,6 +90,23 @@ export interface AnalyticsStats {
 // Subscription Plan Types
 export type SubscriptionPlan = "free" | "monthly" | "lifetime";
 
+export type SubscriptionStatus = "active" | "cancelled" | "canceled" | "expired";
+
+export type SubscriptionAction = "activated" | "cancelled" | "reactivated" | "expired" | "subscription_created";
+
+export interface SubscriptionHistoryEntry {
+  id?: string;
+  userId: string;
+  action: SubscriptionAction;
+  previousStatus?: string | null;
+  newStatus?: string | null;
+  previousPlan?: string | null;
+  newPlan?: string | null;
+  reason?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+}
+
 // Free Plan Constants
 export const FREE_PLAN_JOB_LIMIT = 10;
 

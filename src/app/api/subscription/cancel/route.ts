@@ -1,6 +1,8 @@
-// src/app/api/subscription/cancel/route.ts
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/middleware/rate-limit";
+import { checkIdempotencyKey, storeIdempotencyKey, recordSubscriptionHistory } from "@/lib/middleware/subscription-utils";
+import { MIDTRANS_CONFIG } from "@/lib/midtrans-config";
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +10,24 @@ export async function POST(req: Request) {
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    const idempotencyKey = req.headers.get('Idempotency-Key');
+    if (idempotencyKey) {
+      const { cached, response } = await checkIdempotencyKey(idempotencyKey);
+      if (cached) {
+        return NextResponse.json(response);
+      }
+    }
+
+    const rateLimit = await checkRateLimit(`cancel:${userId}`);
+    const headers = getRateLimitHeaders(rateLimit.remaining, rateLimit.resetAt);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers }
+      );
     }
 
     console.log('Cancel request received:', { subscriptionId, provider, userId });
@@ -20,32 +40,33 @@ export async function POST(req: Request) {
       .single();
 
     if (!subscription) {
-      console.error('Subscription not found for user:', userId);
       return NextResponse.json(
         { error: "Subscription not found or does not belong to user" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
-    console.log('Subscription found:', subscription.id);
+    if (subscription.status === 'cancelled' || subscription.status === 'canceled') {
+      return NextResponse.json(
+        { error: "Subscription is already cancelled" },
+        { status: 400, headers }
+      );
+    }
 
     const effectiveProvider = provider || "midtrans";
     let endDate: string | null = null;
 
     if (effectiveProvider === "midtrans") {
-      if (!subscription.midtrans_subscription_token) {
-        console.log('No subscription token found, updating database only');
-        endDate = subscription.renews_at || subscription.ends_at || new Date().toISOString();
-      } else {
+      if (subscription.midtrans_subscription_token) {
         const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
-        const MIDTRANS_API_URL = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+        const MIDTRANS_API_URL = MIDTRANS_CONFIG.isProduction
           ? 'https://api.midtrans.com'
           : 'https://api.sandbox.midtrans.com';
 
         if (!MIDTRANS_SERVER_KEY) {
           return NextResponse.json(
             { error: "Midtrans configuration error" },
-            { status: 500 }
+            { status: 500, headers }
           );
         }
 
@@ -64,11 +85,10 @@ export async function POST(req: Request) {
 
         if (!cancelResponse.ok) {
           const errorData = await cancelResponse.json().catch(() => ({}));
-          console.error("❌ Midtrans cancel error:", errorData);
-          throw new Error("Failed to cancel subscription in Midtrans");
+          console.error("Midtrans cancel error:", errorData);
+        } else {
+          console.log("Subscription cancelled in Midtrans");
         }
-
-        console.log("✅ Subscription cancelled in Midtrans");
       }
 
       endDate = subscription.renews_at || subscription.ends_at || new Date().toISOString();
@@ -79,6 +99,7 @@ export async function POST(req: Request) {
           status: 'cancelled',
           ends_at: endDate,
           midtrans_subscription_token: null,
+          last_cancelled_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', subscription.id);
@@ -87,24 +108,42 @@ export async function POST(req: Request) {
         .from('users')
         .update({
           subscription_plan: 'free',
-          subscription_status: 'active',
+          subscription_status: 'cancelled',
           is_pro: false,
           updated_at: new Date().toISOString(),
         })
         .eq('id', subscription.user_id);
 
+      await recordSubscriptionHistory(userId, 'cancelled', {
+        previousStatus: subscription.status,
+        newStatus: 'cancelled',
+        previousPlan: subscription.plan,
+        newPlan: 'free',
+        reason: 'User initiated cancellation',
+        metadata: {
+          subscriptionId: subscription.id,
+          provider: effectiveProvider,
+          endsAt: endDate,
+        },
+      });
     } else {
       throw new Error("Provider not supported");
     }
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       message: "Subscription cancelled successfully",
       endsAt: endDate,
-    });
+    };
+
+    if (idempotencyKey) {
+      await storeIdempotencyKey(idempotencyKey, userId, 'cancel', responseData);
+    }
+
+    return NextResponse.json(responseData, { status: 200, headers });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal server error";
-    console.error("❌ Cancel API Error:", error);
+    console.error("Cancel API Error:", error);
     return NextResponse.json(
       { error: message },
       { status: 500 }
