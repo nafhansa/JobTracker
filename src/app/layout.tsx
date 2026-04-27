@@ -1,7 +1,6 @@
 // src/app/layout.tsx
 import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
-import { PaddleProvider } from "@/components/providers/PaddleProvider";
 import { LanguageProvider } from "@/lib/language/context";
 import { ThemeProvider } from "@/lib/theme/context";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -36,12 +35,10 @@ export default function RootLayout({
           <ThemeProvider>
             <LanguageProvider>
               <AuthProvider>
-                <PaddleProvider>
-                  <SplashScreen />
-                  {children}
-                  <PWAInstallPrompt />
-                  <Toaster />
-                </PaddleProvider>
+                <SplashScreen />
+                {children}
+                <PWAInstallPrompt />
+                <Toaster />
               </AuthProvider>
             </LanguageProvider>
           </ThemeProvider>
