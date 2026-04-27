@@ -7,7 +7,6 @@ export interface PricingPlan {
   description: string;
   features: string[];
   currency: 'USD' | 'IDR';
-  paymentProvider: 'paddle' | 'midtrans';
 }
 
 export const LIFETIME_ACCESS_LIMIT = 20;
