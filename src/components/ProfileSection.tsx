@@ -91,7 +91,10 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
   let parsedDate: Date | null = null;
 
   if (dateToShow) {
-    if (typeof dateToShow === "object" && dateToShow !== null) {
+    if (dateToShow instanceof Date) {
+      parsedDate = dateToShow;
+    }
+    else if (typeof dateToShow === "object" && dateToShow !== null) {
       interface FirestoreTimestampLike {
         toDate?: () => Date;
       }
@@ -102,9 +105,6 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
     }
     else if (typeof dateToShow === "string") {
       parsedDate = parseFirebaseDate(dateToShow);
-    }
-    else if (dateToShow instanceof Date) {
-      parsedDate = dateToShow;
     }
     else if (typeof dateToShow === "number") {
       parsedDate = new Date(dateToShow);

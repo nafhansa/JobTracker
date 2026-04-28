@@ -402,7 +402,7 @@ async function handleFailedPayment({
           previousPlan: 'monthly',
           newPlan: 'free',
           reason: `Recurring payment failed ${newFailureCount} times`,
-          metadata: { failureCount: newFailureCount, transactionStatus },
+          metadata: { failureCount: newFailureCount, transactionStatus: transaction_status },
         });
 
         console.log('Subscription expired after 3 failed payments:', userId);

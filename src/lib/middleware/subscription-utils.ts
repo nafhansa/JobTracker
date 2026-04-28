@@ -54,11 +54,11 @@ export async function recordSubscriptionHistory(
   userId: string,
   action: 'activated' | 'cancelled' | 'reactivated' | 'expired' | 'subscription_created',
   options: {
-    previousStatus?: string;
-    newStatus?: string;
-    previousPlan?: string;
-    newPlan?: string;
-    reason?: string;
+    previousStatus?: string | null;
+    newStatus?: string | null;
+    previousPlan?: string | null;
+    newPlan?: string | null;
+    reason?: string | null;
     metadata?: Record<string, any>;
   } = {}
 ): Promise<void> {

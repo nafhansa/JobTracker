@@ -5,8 +5,8 @@ export interface SubscriptionData {
   id?: string;
   status?: string;
   plan?: string;
-  renewsAt?: Timestamp | Date | string | { _seconds?: number };
-  endsAt?: Timestamp | Date | string | { _seconds?: number };
+  renewsAt?: Timestamp | Date | string | { _seconds?: number } | null;
+  endsAt?: Timestamp | Date | string | { _seconds?: number } | null;
   midtransSubscriptionId?: string | null;
   midtransSubscriptionToken?: string | null;
   midtransPaymentMethod?: string | null;
