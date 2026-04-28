@@ -148,6 +148,38 @@ export async function POST(req: Request) {
           return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
         }
 
+        if (planType === 'lifetime' && existingSubscription?.plan === 'monthly' && existingSubscription?.midtrans_subscription_token) {
+          console.log('User upgrading from monthly to lifetime, cancelling Midtrans recurring subscription:', existingSubscription.midtrans_subscription_token);
+          const cancelResult = await cancelMidtransSubscription(existingSubscription.midtrans_subscription_token);
+          
+          if (!cancelResult.success) {
+            console.error('Failed to cancel Midtrans recurring subscription, queueing for retry:', cancelResult.error);
+            await (supabaseAdmin as any)
+              .from('pending_midtrans_operations')
+              .insert({
+                user_id: userId,
+                operation: 'cancel',
+                subscription_id: existingSubscription.id,
+                payload: { token: existingSubscription.midtrans_subscription_token, reason: 'upgrade_to_lifetime' },
+                last_error: cancelResult.error,
+                next_retry_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+              });
+          }
+
+          await recordSubscriptionHistory(userId, 'upgraded_to_lifetime', {
+            previousStatus: existingSubscription.status,
+            newStatus: 'active',
+            previousPlan: 'monthly',
+            newPlan: 'lifetime',
+            reason: 'Upgraded from monthly to lifetime',
+            metadata: {
+              orderId: order_id,
+              midtransSubscriptionToken: existingSubscription.midtrans_subscription_token,
+              midtransCancelSuccess: cancelResult.success,
+            },
+          });
+        }
+
         const isReactivation = existingSubscription && 
           (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
 
@@ -471,6 +503,55 @@ async function handleSubscriptionCancellation({
   });
 
   console.log('Subscription cancelled successfully');
+}
+
+async function cancelMidtransSubscription(token: string, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
+  if (!token) {
+    return { success: false, error: 'No subscription token provided' };
+  }
+
+  const MIDTRANS_API_URL = MIDTRANS_CONFIG.isProduction
+    ? 'https://api.midtrans.com'
+    : 'https://api.sandbox.midtrans.com';
+
+  const authString = Buffer.from(`${MIDTRANS_CONFIG.serverKey}:`).toString('base64');
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(
+        `${MIDTRANS_API_URL}/v1/subscriptions/${token}/cancel`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Basic ${authString}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        console.log('Midtrans subscription cancelled on attempt', attempt, { token });
+        return { success: true };
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`Midtrans cancel error (attempt ${attempt}):`, errorData);
+
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    } catch (error) {
+      console.error(`Midtrans cancel network error (attempt ${attempt}):`, error);
+
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  return { success: false, error: 'Failed to cancel Midtrans subscription after retries' };
 }
 
 async function handleFirstPaymentWithSaveCard({

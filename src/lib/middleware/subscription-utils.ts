@@ -52,7 +52,7 @@ export async function storeIdempotencyKey(
 
 export async function recordSubscriptionHistory(
   userId: string,
-  action: 'activated' | 'cancelled' | 'reactivated' | 'expired' | 'subscription_created',
+  action: 'activated' | 'cancelled' | 'reactivated' | 'expired' | 'subscription_created' | 'upgraded_to_lifetime',
   options: {
     previousStatus?: string | null;
     newStatus?: string | null;
