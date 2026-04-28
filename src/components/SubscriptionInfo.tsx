@@ -63,8 +63,10 @@ export function SubscriptionInfo() {
   let parsedDate: Date | null = null;
 
   if (dateToShow) {
-  // 1. Cek kalau Firestore Timestamp (punya method toDate)
-  if (typeof dateToShow === "object" && dateToShow !== null) {
+  if (dateToShow instanceof Date) {
+    parsedDate = dateToShow;
+  }
+  else if (typeof dateToShow === "object" && dateToShow !== null) {
     interface FirestoreTimestampLike {
       toDate?: () => Date;
     }
@@ -73,15 +75,9 @@ export function SubscriptionInfo() {
       parsedDate = typed.toDate();
     }
   } 
-  // 2. Cek kalau format string kayak "February 8, 2026 at 5:00:00 PM UTC+7"
   else if (typeof dateToShow === "string") {
     parsedDate = parseFirebaseDate(dateToShow);
   } 
-  // 3. Cek kalau udah Date object
-  else if (dateToShow instanceof Date) {
-    parsedDate = dateToShow;
-  }
-  // 4. Cek kalau timestamp number
   else if (typeof dateToShow === "number") {
     parsedDate = new Date(dateToShow);
   }

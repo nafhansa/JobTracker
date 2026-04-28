@@ -59,8 +59,8 @@ export const getSubscription = async (userId: string) => {
 interface SubscriptionData {
   status?: string;
   plan?: string;
-  renewsAt?: Timestamp | Date | string | { _seconds?: number };
-  endsAt?: Timestamp | Date | string | { _seconds?: number };
+  renewsAt?: Timestamp | Date | string | { _seconds?: number } | null;
+  endsAt?: Timestamp | Date | string | { _seconds?: number } | null;
 }
 
 export const checkIsPro = (subscription: SubscriptionData | null | undefined): boolean => {

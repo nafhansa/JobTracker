@@ -1,7 +1,7 @@
 // src/components/SubscriptionBanner.tsx
 "use client";
 
-import { Sparkles, CheckCircle2, Zap, ArrowRight } from "lucide-react";
+import { Sparkles, CheckCircle2, Zap, ArrowRight, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,7 +21,10 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isFreeUser = subscription?.plan === "free";
+  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
   const showLimitMessage = isFreeUser && isLimitReached;
+
+  const isInGracePeriod = isCancelled && subscription?.endsAt && new Date() < new Date(subscription.endsAt);
 
   const handleSuccess = (msg: string) => {
     setStatusMsg({ type: 'success', text: msg });
@@ -83,22 +86,103 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
     }
   };
 
+  const handleReactivate = async (planType: 'monthly' | 'lifetime') => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    setIsLoading(true);
+    setStatusMsg(null);
+    setSelectedPlan(planType);
+
+    try {
+      const response = await fetch('/api/payment/midtrans/charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          plan: planType,
+          currency: 'IDR',
+          enableAutoRenew: planType === 'monthly',
+          customerDetails: {
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+            phone: user.phoneNumber || '',
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        handleError(data.error || 'Failed to initiate reactivation payment');
+        return;
+      }
+
+      if (data.success) {
+        handleSuccess('Redirecting to payment...');
+        router.push(`/payment/midtrans?orderId=${data.orderId}`);
+      } else {
+        handleError(data.error || 'Failed to create payment');
+      }
+    } catch (error) {
+      console.error('Reactivation error:', error);
+      handleError(`Reactivation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getBannerTitle = () => {
+    if (showLimitMessage) return "Upgrade to Add More Jobs";
+    if (isInGracePeriod) return "Your Pro Access is Ending";
+    if (isCancelled) return "Reactivate Your Pro Plan";
+    return "Choose Your Plan";
+  };
+
+  const getBannerSubtitle = () => {
+    if (showLimitMessage) {
+      return `You're currently tracking ${currentJobCount}/${FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!`;
+    }
+    if (isInGracePeriod && subscription?.endsAt) {
+      const endDate = new Date(subscription.endsAt).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      return `Your Pro access ends on ${endDate}. Reactivate now to continue enjoying unlimited features.`;
+    }
+    if (isCancelled) {
+      return "Your subscription has ended. Reactivate to regain Pro access.";
+    }
+    return null;
+  };
+
+  const getButtonText = (planType: 'monthly' | 'lifetime') => {
+    if (isCancelled) {
+      return `Reactivate ${planType === 'monthly' ? 'Monthly' : 'Lifetime'}`;
+    }
+    return planType === 'monthly' ? 'Upgrade to Monthly' : 'Get Lifetime Access';
+  };
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-6 md:p-10 text-center shadow-2xl">
 
       <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wider uppercase mb-4">
-          <Sparkles className="w-3 h-3" />
-          {showLimitMessage ? "Upgrade to Add More Jobs" : "Choose Your Plan"}
+          {isCancelled ? <RefreshCw className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
+          {getBannerTitle()}
         </div>
 
         <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-          {showLimitMessage ? "You've Reached Your Free Plan Limit" : "Choose Your Plan"}
+          {getBannerTitle()}
         </h2>
 
-        {showLimitMessage && (
-          <p className="text-lg text-muted-foreground mb-4 text-center">
-            You&apos;re currently tracking {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs. Upgrade to Pro for unlimited job tracking!
+        {getBannerSubtitle() && (
+          <p className="text-lg text-muted-foreground mb-4 text-center max-w-2xl">
+            {getBannerSubtitle()}
           </p>
         )}
 
@@ -141,11 +225,20 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
                 onClick={() => {
                   setSelectedPlan('monthly');
                   setStatusMsg(null);
-                  handleUpgrade('monthly');
+                  if (isCancelled) {
+                    handleReactivate('monthly');
+                  } else {
+                    handleUpgrade('monthly');
+                  }
                 }}
                 className="w-full py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
               >
-                {isLoading ? "Processing..." : "Upgrade to Monthly"} <ArrowRight className="w-4 h-4" />
+                {isLoading ? "Processing..." : (
+                  <>
+                    {getButtonText('monthly')}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -181,11 +274,20 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
                 onClick={() => {
                   setSelectedPlan('lifetime');
                   setStatusMsg(null);
-                  handleUpgrade('lifetime');
+                  if (isCancelled) {
+                    handleReactivate('lifetime');
+                  } else {
+                    handleUpgrade('lifetime');
+                  }
                 }}
                 className="w-full py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isLoading ? "Processing..." : "Get Lifetime Access"} <ArrowRight className="w-4 h-4" />
+                {isLoading ? "Processing..." : (
+                  <>
+                    {getButtonText('lifetime')}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </div>
