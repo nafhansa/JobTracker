@@ -27,6 +27,15 @@ function getJobStatus(job: JobApplication): StatusFilter {
   return "applied";
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  contract: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  interview: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  responded: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  applied: "bg-muted text-muted-foreground",
+  emailed: "bg-muted text-muted-foreground",
+};
+
 interface JobPickerProps {
   jobs: JobApplication[];
   selectedJobId: string;
@@ -59,30 +68,36 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
   }, [jobs, filter, search]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search by title, company..."
+            placeholder="Search by title or company..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-8 text-sm bg-background"
+            className="pl-8 h-9 text-sm bg-background"
           />
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={onAddJob} className="flex items-center gap-1 shrink-0">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onAddJob}
+          className="flex items-center gap-1.5 shrink-0 h-9"
+        >
           <Plus className="w-3.5 h-3.5" />
           Add Job
         </Button>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => setFilter(f.id)}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
               filter === f.id
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -93,11 +108,11 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
         ))}
       </div>
 
-      <div className="max-h-52 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+      <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
         {filtered.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             {jobs.length === 0
-              ? "No jobs tracked yet. Click Add Job to start."
+              ? "No jobs tracked yet. Tap Add Job to start."
               : "No matching jobs found."}
           </div>
         ) : (
@@ -110,36 +125,32 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
                 key={job.id}
                 type="button"
                 onClick={() => onSelectJob(job)}
-                className={`w-full flex items-start gap-3 p-3 text-left transition-colors ${
+                className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${
                   isSelected
-                    ? "bg-primary/10 border-l-2 border-l-primary"
+                    ? "bg-primary/5 border-l-2 border-l-primary"
                     : "hover:bg-accent/50"
                 }`}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className="w-3 h-3 text-muted-foreground shrink-0" />
                     <span className="text-sm font-medium text-foreground truncate">
                       {job.jobTitle}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Building className="w-3 h-3 text-muted-foreground shrink-0" />
-                    <span className="text-xs text-muted-foreground truncate">{job.company}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {job.company}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
-                    status === "rejected"
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      : status === "contract"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : status === "interview"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                      : status === "responded"
-                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
+                      STATUS_COLORS[status] || STATUS_COLORS.applied
+                    }`}
+                  >
                     {STATUS_FILTERS.find((f) => f.id === status)?.label || status}
                   </span>
                   {isSelected && <Check className="w-4 h-4 text-primary" />}

@@ -2,20 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
-import { useLanguage } from "@/lib/language/context";
-import { CreditsBalance, GeneratedDocument, UserProfile, GenerationType, CREDIT_PACKAGES } from "@/lib/ai/types";
+import { CreditsBalance, UserProfile, GenerationType } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import CoverLetterForm from "./CoverLetterForm";
 import ColdOutreachForm from "./ColdOutreachForm";
 import GenerationOutput from "./GenerationOutput";
 import GenerationHistory from "./GenerationHistory";
 import CreditsDisplay from "./CreditsDisplay";
-import { Sparkles, Mail, MessageSquare, Clock, FileText } from "lucide-react";
+import { Sparkles, FileText, MessageSquare, Clock } from "lucide-react";
 
 type Tab = "cover-letter" | "cold-outreach" | "history";
 
+const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "cover-letter", label: "Cover Letter", icon: FileText },
+  { id: "cold-outreach", label: "Cold Outreach", icon: MessageSquare },
+  { id: "history", label: "History", icon: Clock },
+];
+
 export default function AIWriterSection({ userId, onNavigateToApplications }: { userId: string; onNavigateToApplications?: () => void }) {
-  const { t } = useLanguage();
   const { user, subscription } = useAuth();
   const isAdmin = isAdminUser(user?.email || "");
   const isSubscribed = isAdmin || checkIsPro(subscription);
@@ -26,6 +30,8 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [generatedType, setGeneratedType] = useState<GenerationType | null>(null);
+  const [generatedTargetCompany, setGeneratedTargetCompany] = useState<string | undefined>(undefined);
+  const [generatedTargetRole, setGeneratedTargetRole] = useState<string | undefined>(undefined);
   const [loadingCredits, setLoadingCredits] = useState(true);
 
   const fetchCredits = useCallback(async () => {
@@ -67,34 +73,32 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     fetchProfile();
   }, [fetchCredits, fetchProfile]);
 
-  const handleGenerated = (content: string, type: GenerationType) => {
+  const handleGenerated = (content: string, type: GenerationType, targetCompany?: string, targetRole?: string) => {
     setGeneratedContent(content);
     setGeneratedType(type);
+    setGeneratedTargetCompany(targetCompany);
+    setGeneratedTargetRole(targetRole);
     fetchCredits();
   };
 
-  const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "cover-letter", label: "Cover Letter", icon: FileText },
-    { id: "cold-outreach", label: "Cold Outreach", icon: MessageSquare },
-    { id: "history", label: "History", icon: Clock },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary-foreground" />
+            </div>
             AI Writer
           </h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            Generate personalized cover letters and cold outreach messages
+          <p className="text-muted-foreground text-sm mt-1.5 ml-[2.625rem]">
+            Generate cover letters and outreach messages
           </p>
         </div>
         <CreditsDisplay credits={credits} loading={loadingCredits} plan={plan} onPurchaseComplete={fetchCredits} />
       </div>
 
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg">
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -102,7 +106,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -116,14 +120,18 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
       </div>
 
       {generatedContent && generatedType && (
-        <GenerationOutput
-          content={generatedContent}
-          type={generatedType}
-          onDismiss={() => {
-            setGeneratedContent(null);
-            setGeneratedType(null);
-          }}
-        />
+<GenerationOutput
+            content={generatedContent}
+            type={generatedType}
+            targetCompany={generatedTargetCompany}
+            targetRole={generatedTargetRole}
+            onDismiss={() => {
+              setGeneratedContent(null);
+              setGeneratedType(null);
+              setGeneratedTargetCompany(undefined);
+              setGeneratedTargetRole(undefined);
+            }}
+          />
       )}
 
       {activeTab === "cover-letter" && (
@@ -133,6 +141,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           onGenerated={handleGenerated}
           credits={credits}
           plan={plan}
+          isAdmin={isAdmin}
           onNavigateToApplications={onNavigateToApplications}
         />
       )}
@@ -143,6 +152,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           onGenerated={handleGenerated}
           credits={credits}
           plan={plan}
+          isAdmin={isAdmin}
           onNavigateToApplications={onNavigateToApplications}
         />
       )}
@@ -150,6 +160,8 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
         <GenerationHistory userId={userId} onSelect={(doc) => {
           setGeneratedContent(doc.content);
           setGeneratedType(doc.type as GenerationType);
+          setGeneratedTargetCompany(doc.target_company || undefined);
+          setGeneratedTargetRole(doc.target_role || undefined);
           setActiveTab(doc.type === "cover_letter" ? "cover-letter" : "cold-outreach");
         }} />
       )}

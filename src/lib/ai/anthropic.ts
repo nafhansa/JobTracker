@@ -1,11 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts";
-import { GenerationType, ToneType, ColdChannel, GenerationFormat } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage } from "./types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOKENS = 2048;
+const COVER_LETTER_MAX_TOKENS = 1024;
 
 interface GenerateContentParams {
   type: GenerationType;
@@ -26,15 +27,19 @@ interface GenerateContentParams {
   tone?: ToneType;
   format?: GenerationFormat;
   customContext?: string;
+  language?: OutputLanguage;
 }
 
 export async function generateContent(params: GenerateContentParams): Promise<string> {
-  const systemPrompt = buildSystemPrompt(params.type);
+  const { language } = params;
+  const systemPrompt = buildSystemPrompt(params.type, language);
   const userPrompt = buildUserPrompt(params);
+
+  const maxTokens = params.type === "cover_letter" ? COVER_LETTER_MAX_TOKENS : MAX_TOKENS;
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: MAX_TOKENS,
+    max_tokens: maxTokens,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });

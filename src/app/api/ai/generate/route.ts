@@ -6,6 +6,7 @@ import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
 import { generateContent } from "@/lib/ai/anthropic";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { GenerateRequest, GenerationType } from "@/lib/ai/types";
+import { isAdminUser } from "@/lib/supabase/subscriptions";
 
 export async function POST(req: Request) {
   try {
@@ -14,21 +15,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    const isAdmin = isAdminUser(authResult.email || "");
+
     const body: GenerateRequest = await req.json();
-    const { type, targetName, targetCompany, targetRole, jobId, channel, tone, format, customContext } = body;
+    const { type, targetName, targetCompany, targetRole, jobId, channel, tone, format, customContext, language } = body;
 
     const validTypes: GenerationType[] = ["cover_letter", "cold_email", "cold_dm_instagram", "cold_wa", "cold_linkedin"];
     if (!type || !validTypes.includes(type)) {
       return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
     }
 
-    const creditDeducted = await deductCredit(authResult.userId);
-    if (!creditDeducted) {
-      const balance = await getOrCreateCredits(authResult.userId);
-      return NextResponse.json({
-        error: "Insufficient credits",
-        credits: balance,
-      }, { status: 402 });
+    if (!isAdmin) {
+      const creditDeducted = await deductCredit(authResult.userId);
+      if (!creditDeducted) {
+        const balance = await getOrCreateCredits(authResult.userId);
+        return NextResponse.json({
+          error: "Insufficient credits",
+          credits: balance,
+        }, { status: 402 });
+      }
     }
 
     let userProfileData;
@@ -62,32 +67,35 @@ export async function POST(req: Request) {
         tone: tone || "professional",
         format: format || (type === "cover_letter" ? "full_letter" : undefined),
         customContext,
+        language,
       });
     } catch (aiError) {
       console.error("AI generation failed, refunding credit:", aiError);
-      try {
-        const { data: creditData } = await (supabaseAdmin as any)
-          .from("ai_credits")
-          .select("weekly_credits, purchased_credits")
-          .eq("user_id", authResult.userId)
-          .single();
+      if (!isAdmin) {
+        try {
+          const { data: creditData } = await (supabaseAdmin as any)
+            .from("ai_credits")
+            .select("weekly_credits, purchased_credits")
+            .eq("user_id", authResult.userId)
+            .single();
 
-        if (creditData) {
-          const wasWeekly = creditData.weekly_credits >= 0;
-          if (wasWeekly) {
-            await (supabaseAdmin as any)
-              .from("ai_credits")
-              .update({ weekly_credits: creditData.weekly_credits + 1 })
-              .eq("user_id", authResult.userId);
-          } else {
-            await (supabaseAdmin as any)
-              .from("ai_credits")
-              .update({ purchased_credits: creditData.purchased_credits + 1 })
-              .eq("user_id", authResult.userId);
+          if (creditData) {
+            const wasWeekly = creditData.weekly_credits >= 0;
+            if (wasWeekly) {
+              await (supabaseAdmin as any)
+                .from("ai_credits")
+                .update({ weekly_credits: creditData.weekly_credits + 1 })
+                .eq("user_id", authResult.userId);
+            } else {
+              await (supabaseAdmin as any)
+                .from("ai_credits")
+                .update({ purchased_credits: creditData.purchased_credits + 1 })
+                .eq("user_id", authResult.userId);
+            }
           }
+        } catch (refundError) {
+          console.error("Failed to refund credit:", refundError);
         }
-      } catch (refundError) {
-        console.error("Failed to refund credit:", refundError);
       }
       return NextResponse.json({ error: "AI generation failed. Your credit has been refunded." }, { status: 500 });
     }

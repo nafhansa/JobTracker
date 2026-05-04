@@ -4,41 +4,69 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Loader2, User, Building, Briefcase, FileText } from "lucide-react";
-import { GenerationType, ToneType, GenerationFormat, CreditsBalance, UserProfile } from "@/lib/ai/types";
+import { toast } from "sonner";
+import {
+  Sparkles,
+  Loader2,
+  Briefcase,
+  Building,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  User,
+  Zap,
+  Check,
+} from "lucide-react";
+import {
+  GenerationType,
+  ToneType,
+  GenerationFormat,
+  OutputLanguage,
+  CreditsBalance,
+  UserProfile,
+  TONE_OPTIONS,
+  LANGUAGE_OPTIONS,
+} from "@/lib/ai/types";
 import { JobApplication } from "@/types";
-import { checkCanAddJob } from "@/lib/supabase/subscriptions";
 import JobPicker from "./JobPicker";
 import JobFormModal from "@/components/forms/AddJobModal";
 
 interface CoverLetterFormProps {
   userId: string;
   profile: UserProfile | null;
-  onGenerated: (content: string, type: GenerationType) => void;
+  onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string) => void;
   credits: CreditsBalance | null;
   plan: string;
+  isAdmin?: boolean;
   onNavigateToApplications?: () => void;
 }
 
-export default function CoverLetterForm({ userId, profile, onGenerated, credits, plan, onNavigateToApplications }: CoverLetterFormProps) {
+export default function CoverLetterForm({
+  userId,
+  profile,
+  onGenerated,
+  credits,
+  plan,
+  isAdmin = false,
+}: CoverLetterFormProps) {
   const { user } = useAuth();
-  const isAdmin = user?.email === "nafkhan.hussein@gmail.com";
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<JobApplication[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [selectedJobId, setSelectedJobId] = useState("");
   const [targetName, setTargetName] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [tone, setTone] = useState<ToneType>("professional");
   const [format, setFormat] = useState<GenerationFormat>("full_letter");
+  const [language, setLanguage] = useState<OutputLanguage>("en");
   const [customContext, setCustomContext] = useState("");
   const [useManual, setUseManual] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
 
   useEffect(() => {
     fetchJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const fetchJobs = async () => {
@@ -84,11 +112,15 @@ export default function CoverLetterForm({ userId, profile, onGenerated, credits,
     fetchJobs();
   };
 
-  const isAutoFilled = !useManual && !!selectedJobId;
+  const selectedJob = jobs.find((j) => j.id === selectedJobId);
+  const hasInsufficientCredits = !isAdmin && (!credits || credits.total_credits <= 0);
+  const canGenerate = useManual
+    ? !!(targetCompany.trim() && targetRole.trim())
+    : !!selectedJobId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!credits || credits.total_credits <= 0) return;
+    if (hasInsufficientCredits) return;
 
     setLoading(true);
     try {
@@ -109,6 +141,7 @@ export default function CoverLetterForm({ userId, profile, onGenerated, credits,
           targetRole: targetRole || undefined,
           tone,
           format,
+          language,
           customContext: customContext || undefined,
         }),
       });
@@ -117,225 +150,338 @@ export default function CoverLetterForm({ userId, profile, onGenerated, credits,
 
       if (!res.ok) {
         if (res.status === 402) {
-          alert(data.error || "Insufficient credits");
+          toast.error("Insufficient credits", { description: data.error || "You need more credits to generate." });
         } else {
-          alert(data.error || "Generation failed");
+          toast.error("Generation failed", { description: data.error || "Something went wrong. Please try again." });
         }
         return;
       }
 
-      onGenerated(data.content, "cover_letter");
+      onGenerated(data.content, "cover_letter", targetCompany || undefined, targetRole || undefined);
       setCustomContext("");
     } catch (err) {
       console.error("Generation failed:", err);
-      alert("Generation failed. Please try again.");
+      toast.error("Generation failed", { description: "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }
   };
 
-  const hasInsufficientCredits = !credits || credits.total_credits <= 0;
-  const canAdd = checkCanAddJob(plan, jobs.length, isAdmin);
-
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="w-5 h-5 text-primary" />
-            Cover Letter Generator
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Source</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={useManual ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => handleSourceChange(false)}
-                >
-                  From Job Tracker
-                </Button>
-                <Button
-                  type="button"
-                  variant={useManual ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleSourceChange(true)}
-                >
-                  Manual Input
-                </Button>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+              1
             </div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Where is this cover letter going?
+            </h3>
+          </div>
 
-            {!useManual && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Select Job</Label>
-                <JobPicker
-                  jobs={jobs}
-                  selectedJobId={selectedJobId}
-                  onSelectJob={handleJobSelect}
-                  onAddJob={() => setIsAddJobOpen(true)}
+          <div className="grid grid-cols-2 gap-3 ml-9">
+            <button
+              type="button"
+              onClick={() => handleSourceChange(false)}
+              className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center ${
+                !useManual
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+              }`}
+            >
+              {!useManual && (
+                <div className="absolute top-2 right-2">
+                  <Check className="w-3.5 h-3.5 text-primary" />
+                </div>
+              )}
+              <Briefcase
+                className={`w-5 h-5 ${!useManual ? "text-primary" : "text-muted-foreground"}`}
+              />
+              <span
+                className={`text-sm font-medium ${!useManual ? "text-primary" : "text-foreground"}`}
+              >
+                From Tracker
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {jobs.length} job{jobs.length !== 1 ? "s" : ""} tracked
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSourceChange(true)}
+              className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center ${
+                useManual
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+              }`}
+            >
+              {useManual && (
+                <div className="absolute top-2 right-2">
+                  <Check className="w-3.5 h-3.5 text-primary" />
+                </div>
+              )}
+              <Pencil
+                className={`w-5 h-5 ${useManual ? "text-primary" : "text-muted-foreground"}`}
+              />
+              <span
+                className={`text-sm font-medium ${useManual ? "text-primary" : "text-foreground"}`}
+              >
+                Enter Details
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                Type company & role
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {!useManual ? (
+          <div className="space-y-3 ml-9">
+            <JobPicker
+              jobs={jobs}
+              selectedJobId={selectedJobId}
+              onSelectJob={handleJobSelect}
+              onAddJob={() => setIsAddJobOpen(true)}
+            />
+            {selectedJob && (
+              <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Building className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {selectedJob.company}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {selectedJob.jobTitle}
+                  </p>
+                </div>
+                <span className="text-xs text-primary font-medium shrink-0">
+                  Selected
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3 ml-9">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Company <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="e.g. Google"
+                  value={targetCompany}
+                  onChange={(e) => setTargetCompany(e.target.value)}
+                  className="bg-background h-10"
                 />
               </div>
-            )}
-
-            {useManual && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1">
-                      <User className="w-3 h-3" /> Recipient Name
-                    </Label>
-                    <Input
-                      placeholder="e.g. Sarah Johnson"
-                      value={targetName}
-                      onChange={(e) => setTargetName(e.target.value)}
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1">
-                      <Building className="w-3 h-3" /> Company
-                    </Label>
-                    <Input
-                      placeholder="e.g. Google"
-                      value={targetCompany}
-                      onChange={(e) => setTargetCompany(e.target.value)}
-                      className="bg-background"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-1">
-                    <Briefcase className="w-3 h-3" /> Role / Position
-                  </Label>
-                  <Input
-                    placeholder="e.g. Senior Software Engineer"
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    className="bg-background"
-                  />
-                </div>
-              </div>
-            )}
-
-            {!useManual && isAutoFilled && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1">
-                      <User className="w-3 h-3" /> Recipient Name
-                    </Label>
-                    <Input
-                      placeholder="e.g. Sarah Johnson"
-                      value={targetName}
-                      onChange={(e) => setTargetName(e.target.value)}
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-1">
-                      <Building className="w-3 h-3" /> Company
-                      <span className="text-xs text-primary ml-1">(auto-filled)</span>
-                    </Label>
-                    <Input
-                      value={targetCompany}
-                      onChange={(e) => setTargetCompany(e.target.value)}
-                      className="bg-background"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-1">
-                    <Briefcase className="w-3 h-3" /> Role / Position
-                    <span className="text-xs text-primary ml-1">(auto-filled)</span>
-                  </Label>
-                  <Input
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    className="bg-background"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Tone</Label>
-                <select
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value as ToneType)}
-                  className="w-full h-9 rounded-md border border-border bg-transparent px-3 text-sm text-foreground"
-                >
-                  <option value="professional">Professional</option>
-                  <option value="formal">Formal</option>
-                  <option value="friendly">Friendly</option>
-                  <option value="casual">Casual</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Format</Label>
-                <select
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value as GenerationFormat)}
-                  className="w-full h-9 rounded-md border border-border bg-transparent px-3 text-sm text-foreground"
-                >
-                  <option value="full_letter">Full Letter (with header)</option>
-                  <option value="body_only">Body Text Only</option>
-                </select>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Role / Position <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="e.g. Senior Software Engineer"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  className="bg-background h-10"
+                />
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Additional Context (optional)</Label>
-              <textarea
-                placeholder="Any specific points you want to highlight, achievements, or details to include..."
-                value={customContext}
-                onChange={(e) => setCustomContext(e.target.value)}
-                rows={3}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+        {(useManual || !!selectedJobId) && (
+          <div className="ml-9">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <User className="w-3 h-3" />
+                Recipient Name <span className="text-[10px]">(optional)</span>
+              </label>
+              <Input
+                placeholder="e.g. Sarah Johnson — leave blank if unknown"
+                value={targetName}
+                onChange={(e) => setTargetName(e.target.value)}
+                className="bg-background h-10"
               />
             </div>
+          </div>
+        )}
 
-            {!profile?.summary && !profile?.skills?.length && (
-              <div className="bg-muted/50 border border-border rounded-lg p-3 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Tip:</span> Set up your professional profile for more personalized cover letters. Go to Settings to add your details.
-              </div>
+        <div className="ml-9 space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Language</label>
+          <div className="flex gap-2">
+            {LANGUAGE_OPTIONS.map((l) => (
+              <button
+                key={l.value}
+                type="button"
+                onClick={() => setLanguage(l.value)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  language === l.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>{l.flag}</span>
+                <span>{l.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="border border-border rounded-xl overflow-hidden ml-9">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <span>Customize tone & details</span>
+            {showAdvanced ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
             )}
+          </button>
+          {showAdvanced && (
+<div className="px-4 pb-4 space-y-4 border-t border-border">
+              <div className="space-y-2 pt-4">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Tone
+                </label>
+                <div className="flex gap-2">
+                  {LANGUAGE_OPTIONS.map((l) => (
+                    <button
+                      key={l.value}
+                      type="button"
+                      onClick={() => setLanguage(l.value)}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        language === l.value
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span>{l.flag}</span>
+                      <span>{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex gap-2 flex-wrap">
+                  {TONE_OPTIONS.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setTone(t.value)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        tone === t.value
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Format
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormat("full_letter")}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                      format === "full_letter"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    Full Letter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormat("body_only")}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                      format === "body_only"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    Body Only
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Additional Notes <span className="text-[10px]">(optional)</span>
+                </label>
+                <textarea
+                  placeholder="Specific achievements, skills, or details you want highlighted..."
+                  value={customContext}
+                  onChange={(e) => setCustomContext(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
-            <Button
-              type="submit"
-              disabled={loading || hasInsufficientCredits}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : hasInsufficientCredits ? (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  No Credits Available
-                </>
+        {!profile?.summary && !profile?.skills?.length && (
+          <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg text-sm ml-9">
+            <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <span className="text-amber-800 dark:text-amber-300 text-xs">
+              Set up your <strong>Professional Profile</strong> in the Profile tab for more
+              personalized results.
+            </span>
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={loading || hasInsufficientCredits || !canGenerate}
+          className="w-full h-12 text-sm font-semibold rounded-xl ml-9 transition-all"
+          variant={canGenerate && !hasInsufficientCredits ? "default" : "secondary"}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating...
+            </>
+          ) : hasInsufficientCredits ? (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              No Credits Available
+            </>
+          ) : !canGenerate ? (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Select a target to continue
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Cover Letter
+              {isAdmin ? (
+                <span className="ml-1.5 opacity-70 text-xs">· admin</span>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Cover Letter (1 Credit)
-                </>
+                <span className="ml-1.5 opacity-70 text-xs">· 1 credit</span>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            </>
+          )}
+        </Button>
+      </form>
 
       <JobFormModal
         userId={userId}
         isOpen={isAddJobOpen}
-        onOpenChange={(open) => { setIsAddJobOpen(open); if (!open) handleJobAdded(); }}
+        onOpenChange={(open) => {
+          setIsAddJobOpen(open);
+          if (!open) handleJobAdded();
+        }}
         plan={plan}
         currentJobCount={jobs.length}
         isAdmin={isAdmin}

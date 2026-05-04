@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, FileText, Mail, MessageSquare, Instagram, Trash2, Eye } from "lucide-react";
 import { GeneratedDocument, GenerationType, GENERATION_TYPE_LABELS } from "@/lib/ai/types";
+import { toast } from "sonner";
 
 interface GenerationHistoryProps {
   userId: string;
@@ -16,6 +17,7 @@ export default function GenerationHistory({ userId, onSelect }: GenerationHistor
   const { user } = useAuth();
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -40,7 +42,12 @@ export default function GenerationHistory({ userId, onSelect }: GenerationHistor
   }, [fetchDocuments]);
 
   const handleDelete = async (docId: string) => {
-    if (!confirm("Delete this generation?")) return;
+    if (pendingDelete !== docId) {
+      setPendingDelete(docId);
+      return;
+    }
+
+    setPendingDelete(null);
     try {
       const token = await user?.getIdToken();
       if (!token) return;
@@ -50,9 +57,11 @@ export default function GenerationHistory({ userId, onSelect }: GenerationHistor
       });
       if (res.ok) {
         setDocuments((prev) => prev.filter((d) => d.id !== docId));
+        toast.success("Deleted", { description: "Generation removed from history." });
       }
     } catch (err) {
       console.error("Failed to delete document:", err);
+      toast.error("Delete failed", { description: "Something went wrong." });
     }
   };
 
@@ -154,9 +163,17 @@ export default function GenerationHistory({ userId, onSelect }: GenerationHistor
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(doc.id)}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                  className={`h-8 p-0 px-2 text-xs font-medium transition-colors ${
+                    pendingDelete === doc.id
+                      ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
+                      : "text-muted-foreground hover:text-destructive"
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {pendingDelete === doc.id ? (
+                    <span>Confirm?</span>
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>

@@ -11,6 +11,13 @@ export type ToneType = "formal" | "casual" | "friendly" | "professional";
 
 export type GenerationFormat = "full_letter" | "body_only";
 
+export type OutputLanguage = "en" | "id";
+
+export const LANGUAGE_OPTIONS: { value: OutputLanguage; label: string; flag: string }[] = [
+  { value: "en", label: "English", flag: "🇺🇸" },
+  { value: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
+];
+
 export interface ExperienceEntry {
   company: string;
   role: string;
@@ -95,6 +102,7 @@ export interface GenerateRequest {
   tone?: ToneType;
   format?: GenerationFormat;
   customContext?: string;
+  language?: OutputLanguage;
 }
 
 export interface CreditsBalance {

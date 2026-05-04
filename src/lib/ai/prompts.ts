@@ -1,72 +1,95 @@
-import { GenerationType, ToneType, ColdChannel, GenerationFormat } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage } from "./types";
 
-export function buildSystemPrompt(type: GenerationType): string {
+const LANGUAGE_INSTRUCTIONS: Record<OutputLanguage, string> = {
+  en: "Write the entire output in English.",
+  id: "Write the entire output in Bahasa Indonesia (Indonesian). Use formal Indonesian for professional/formal tones, and casual Indonesian for casual/friendly tones.",
+};
+
+export function buildSystemPrompt(type: GenerationType, language?: OutputLanguage): string {
+  const langInstruction = language ? LANGUAGE_INSTRUCTIONS[language] : "";
+
   const basePrompt = `You are an expert professional writer specializing in career outreach and cover letters. You write compelling, personalized content that helps job seekers stand out. Your writing should be:
-- Authentic and genuine, never generic or templated
-- Tailored to the specific context, company, and role
-- Concise but impactful
-- Free of clichés and overused phrases
-- Professional yet approachable
+* Authentic and genuine, never generic or templated
+* Tailored to the specific context, company, and role
+* Concise but impactful
+* Free of cliches and overused phrases
+* Professional yet approachable
 
-Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.`;
+${langInstruction}
+
+IMPORTANT: Do NOT use em dashes (the long dash character). Use commas, periods, or rephrase instead. For example, do NOT write "I am writing to you - a leader in..." Instead use "I am writing to you, a leader in..." or "I am writing to you because you are a leader in..." Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.`;
 
   switch (type) {
     case "cover_letter":
-      return `${basePrompt}\n\nYou are writing a FULL cover letter. Include:
-- Today's date at the top
-- Sender's name and contact info
-- Recipient's name and company
-- A formal salutation
-- 3-4 compelling paragraphs (opening hook, relevant experience, value proposition, call to action)
-- Professional closing (Sincerely, Best regards, etc.)
-- Sender name
+      return `${basePrompt}
 
-The letter should be personalized, specific, and demonstrate genuine interest in the role and company. Avoid generic phrases like "I am writing to apply for" - instead, start with a compelling hook.`;
+You are writing a ONE-PAGE cover letter. This is critical: the entire letter MUST fit on a single page (approximately 300-350 words maximum). Be concise and impactful. Do NOT write long paragraphs.
+
+Include:
+* Today's date at the top
+* Sender's name and contact info
+* Recipient's name and company
+* A formal salutation
+* 3 short, compelling paragraphs (opening hook, key experience/fit, call to action)
+* Professional closing (Sincerely, Best regards, etc.)
+* Sender name
+
+The letter should be personalized, specific, and demonstrate genuine interest in the role and company. Avoid generic phrases like "I am writing to apply for". Instead, start with a compelling hook.
+
+Keep every paragraph to 2-3 sentences maximum. Do NOT exceed one page.`;
 
     case "cold_email":
-      return `${basePrompt}\n\nYou are writing a cold outreach email. Guidelines:
-- Subject line: Short, intriguing, personalized (not clickbait)
-- Keep it concise (150-250 words max)
-- Lead with value proposition or shared connection
-- Include a clear, low-commitment call to action
-- No formal letter formatting - this is a direct email
-- Make it feel like it was written specifically for this person
-- Avoid salesy language or desperate tones`;
+      return `${basePrompt}
+
+You are writing a cold outreach email. Guidelines:
+* Subject line: Short, intriguing, personalized (not clickbait)
+* Keep it concise (150-250 words max)
+* Lead with value proposition or shared connection
+* Include a clear, low-commitment call to action
+* No formal letter formatting. This is a direct email.
+* Make it feel like it was written specifically for this person
+* Avoid salesy language or desperate tones`;
 
     case "cold_dm_instagram":
-      return `${basePrompt}\n\nYou are writing a cold Instagram DM. Guidelines:
-- Maximum 300 characters for the main message (Instagram DMs should be punchy)
-- Start with a genuine, specific compliment or shared interest
-- Be authentic and conversational
-- One clear ask or call to action
-- NO formal letter formatting
-- NO subject line
-- Use natural, human language - this is a casual platform
-- Can use 1-2 relevant emojis if it fits the tone, but don't overdo it`;
+      return `${basePrompt}
+
+You are writing a cold Instagram DM. Guidelines:
+* Maximum 300 characters for the main message (Instagram DMs should be punchy)
+* Start with a genuine, specific compliment or shared interest
+* Be authentic and conversational
+* One clear ask or call to action
+* NO formal letter formatting
+* NO subject line
+* Use natural, human language. This is a casual platform.
+* Can use 1-2 relevant emojis if it fits the tone, but don't overdo it`;
 
     case "cold_wa":
-      return `${basePrompt}\n\nYou are writing a cold WhatsApp message. Guidelines:
-- Short and direct (100-200 words max)
-- Start with a warm, personalized greeting
-- Get to the point quickly
-- End with a clear, simple question or call to action
-- NO formal letter formatting
-- NO subject line
-- Conversational but professional
-- Acknowledge that this is an unexpected message briefly
-- Keep it friendly and approachable`;
+      return `${basePrompt}
+
+You are writing a cold WhatsApp message. Guidelines:
+* Short and direct (100-200 words max)
+* Start with a warm, personalized greeting
+* Get to the point quickly
+* End with a clear, simple question or call to action
+* NO formal letter formatting
+* NO subject line
+* Conversational but professional
+* Acknowledge that this is an unexpected message briefly
+* Keep it friendly and approachable`;
 
     case "cold_linkedin":
-      return `${basePrompt}\n\nYou are writing a cold LinkedIn message. Guidelines:
-- Connection note style: concise and compelling
-- If writing a longer message: still keep it under 300 words
-- Reference something specific about their work, company, or shared interests
-- Lead with curiosity, not a pitch
-- Clear, low-pressure call to action
-- NO formal letter formatting
-- NO subject line
-- Professional but warm tone
-- Make it feel like you did your research (because you should have)`;
+      return `${basePrompt}
+
+You are writing a cold LinkedIn message. Guidelines:
+* Connection note style: concise and compelling
+* If writing a longer message: still keep it under 300 words
+* Reference something specific about their work, company, or shared interests
+* Lead with curiosity, not a pitch
+* Clear, low-pressure call to action
+* NO formal letter formatting
+* NO subject line
+* Professional but warm tone
+* Make it feel like you did your research (because you should have)`;
 
     default:
       return basePrompt;
@@ -92,25 +115,26 @@ interface BuildUserPromptParams {
   tone?: ToneType;
   format?: GenerationFormat;
   customContext?: string;
+  language?: OutputLanguage;
 }
 
 export function buildUserPrompt(params: BuildUserPromptParams): string {
-  const { type, userProfile, target, tone, format, customContext } = params;
+  const { type, userProfile, target, tone, format, customContext, language } = params;
 
   const senderInfo = userProfile
     ? `SENDER PROFILE:
-- Name: ${userProfile.fullName || "Not provided"}
-- Skills: ${userProfile.skills?.join(", ") || "Not provided"}
-- Summary: ${userProfile.summary || "Not provided"}
-- Experience: ${userProfile.experience?.map((e) => `${e.role} at ${e.company} (${e.duration}) - ${e.description}`).join("\n") || "Not provided"}
-- Education: ${userProfile.education?.map((e) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join("\n") || "Not provided"}`
+* Name: ${userProfile.fullName || "Not provided"}
+* Skills: ${userProfile.skills?.join(", ") || "Not provided"}
+* Summary: ${userProfile.summary || "Not provided"}
+* Experience: ${userProfile.experience?.map((e) => `${e.role} at ${e.company} (${e.duration}). ${e.description}`).join("\n") || "Not provided"}
+* Education: ${userProfile.education?.map((e) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join("\n") || "Not provided"}`
     : "";
 
   const targetInfo = target
     ? `TARGET:
-- Recipient Name: ${target.recruiterName || target.name || "Not provided"}
-- Company: ${target.company || "Not provided"}
-- Role: ${target.role || "Not provided"}`
+* Recipient Name: ${target.recruiterName || target.name || "Not provided"}
+* Company: ${target.company || "Not provided"}
+* Role: ${target.role || "Not provided"}`
     : "";
 
   const toneInstruction = tone ? `TONE: ${tone}` : "TONE: professional";
@@ -126,7 +150,10 @@ ${targetInfo}
 
 ${toneInstruction}
 ${formatInstruction}
+${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
 ${customContext ? `ADDITIONAL CONTEXT: ${customContext}` : ""}
+
+IMPORTANT: Do NOT use em dashes. Use commas, periods, or rephrase instead.
 
 Write the complete cover letter now.`;
 
@@ -141,7 +168,10 @@ ${senderInfo}
 ${targetInfo}
 
 ${toneInstruction}
+${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
 ${customContext ? `ADDITIONAL CONTEXT: ${customContext}` : ""}
+
+IMPORTANT: Do NOT use em dashes. Use commas, periods, or rephrase instead.
 
 Write the message now.`;
 
