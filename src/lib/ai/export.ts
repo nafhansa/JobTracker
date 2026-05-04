@@ -27,21 +27,15 @@ function stripStructuralTags(html: string): string {
 
 function parseHtmlToParagraphs(html: string): HtmlParagraph[] {
   const paragraphs: HtmlParagraph[] = [];
-  const cleaned = html
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .replace(/<p[^>]*>\s*<\/p>/gi, "\n")
-    .replace(/<p[^>]*>\s*<br\s*\/?>\s*<\/p>/gi, "\n");
+  const normalized = html.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   const blockRegex = /<(p|h[1-6]|li)[^>]*>([\s\S]*?)<\/\1>/gi;
-  let blockMatch: RegExpExecArray | null;
+  let match: RegExpExecArray | null;
 
-  const processedBlocks: { content: string; alignment?: ParagraphAlignment; heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel]; bullet?: boolean }[] = [];
-
-  while ((blockMatch = blockRegex.exec(cleaned)) !== null) {
-    const tag = blockMatch[1].toLowerCase();
-    const rawContent = blockMatch[2];
-    const fullMatch = blockMatch[0];
+  while ((match = blockRegex.exec(normalized)) !== null) {
+    const tag = match[1].toLowerCase();
+    const rawContent = match[2];
+    const fullMatch = match[0];
 
     let alignment: ParagraphAlignment | undefined;
     const alignMatch = fullMatch.match(/style="[^"]*text-align:\s*(left|center|right)[^"]*"/i);
@@ -56,33 +50,35 @@ function parseHtmlToParagraphs(html: string): HtmlParagraph[] {
     else if (tag === "h3" || tag.startsWith("h")) heading = HeadingLevel.HEADING_3;
     else if (tag === "li") bullet = true;
 
-    const content = stripStructuralTags(rawContent).trim();
+    const stripped = rawContent.replace(/<br\s*\/?>/gi, "").trim();
 
-    processedBlocks.push({ content, alignment, heading, bullet });
+    if (tag === "p" && stripped === "") {
+      paragraphs.push({ runs: [{ text: "" }], alignment });
+      continue;
+    }
+
+    const content = stripStructuralTags(rawContent).trim();
+    const runs = parseInlineFormatting(content);
+
+    if (runs.length === 0 || (runs.length === 1 && runs[0].text.trim() === "")) {
+      paragraphs.push({ runs: [{ text: "" }], alignment });
+      continue;
+    }
+
+    paragraphs.push({ runs, alignment, heading, bullet });
   }
 
-  if (processedBlocks.length === 0) {
+  if (paragraphs.length === 0) {
     const lines = html.replace(/<[^>]+>/g, "").split("\n");
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed === "") {
         paragraphs.push({ runs: [{ text: "" }] });
       } else {
-        paragraphs.push({ runs: stripStructuralTags(trimmed).split("").length > 0 ? parseInlineFormatting(stripStructuralTags(trimmed)) : [{ text: "" }] });
+        const runs = parseInlineFormatting(stripStructuralTags(trimmed));
+        paragraphs.push({ runs: runs.length > 0 ? runs : [{ text: "" }] });
       }
     }
-    return paragraphs;
-  }
-
-  for (const block of processedBlocks) {
-    const runs = parseInlineFormatting(block.content);
-
-    if (runs.length === 0 || (runs.length === 1 && runs[0].text.trim() === "")) {
-      paragraphs.push({ runs: [{ text: "" }], alignment: block.alignment });
-      continue;
-    }
-
-    paragraphs.push({ runs, alignment: block.alignment, heading: block.heading, bullet: block.bullet });
   }
 
   return paragraphs;
@@ -216,7 +212,7 @@ export async function generateDocx(params: {
         children: textRuns,
         alignment: para.alignment || AlignmentType.LEFT,
         heading: para.heading,
-        spacing: { after: 80 },
+        spacing: { after: isCoverLetter ? 160 : 100 },
         ...(para.bullet ? { bullet: { level: 0 } } : {}),
       })
     );
@@ -282,6 +278,8 @@ export async function generatePdf(params: {
   doc.setFont(font, "normal");
   doc.setFontSize(defaultSize);
 
+  const paraSpacing = isCoverLetter ? 8 : 4;
+
   for (const para of parsedParagraphs) {
     const isBoldPara = !!para.heading;
     const paraSize = para.heading
@@ -291,7 +289,7 @@ export async function generatePdf(params: {
     doc.setFontSize(paraSize);
 
     if (para.runs.length === 1 && para.runs[0].text.trim() === "") {
-      y += lineHeight * 0.5;
+      y += lineHeight;
       continue;
     }
 
@@ -321,7 +319,7 @@ export async function generatePdf(params: {
         y += lineHeight;
       }
     }
-    y += 2;
+    y += paraSpacing;
   }
 
   const pdfOutput = doc.output("arraybuffer");
