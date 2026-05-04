@@ -162,7 +162,6 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           setGeneratedType(doc.type as GenerationType);
           setGeneratedTargetCompany(doc.target_company || undefined);
           setGeneratedTargetRole(doc.target_role || undefined);
-          setActiveTab(doc.type === "cover_letter" ? "cover-letter" : "cold-outreach");
         }} />
       )}
     </div>

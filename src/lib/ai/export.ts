@@ -275,13 +275,9 @@ export async function generatePdf(params: {
   }
   y += lineHeight * 0.5;
 
-  doc.setFont(font, "normal");
-  doc.setFontSize(defaultSize);
-
   const paraSpacing = isCoverLetter ? 8 : 4;
 
   for (const para of parsedParagraphs) {
-    const isBoldPara = !!para.heading;
     const paraSize = para.heading
       ? para.heading === HeadingLevel.HEADING_2 ? defaultSize + 2 : defaultSize + 1
       : defaultSize;
@@ -293,29 +289,43 @@ export async function generatePdf(params: {
       continue;
     }
 
-    const plainText = para.runs.map((r) => r.text).join("");
-    const wrappedLines = doc.splitTextToSize(plainText, maxWidth - (para.bullet ? 15 : 0));
-
     const align: "left" | "center" | "right" = para.alignment === "center" ? "center" : para.alignment === "right" ? "right" : "left";
-    const xPos = para.alignment === "center" ? pageWidth / 2 : para.alignment === "right" ? pageWidth - margin : margin + (para.bullet ? 15 : 0);
+    const textIndent = para.bullet ? 15 : 0;
+    const effectiveMaxWidth = maxWidth - textIndent;
 
-    if (para.bullet && wrappedLines.length > 0) {
-      doc.setFont(font, "normal");
-      doc.setFontSize(defaultSize);
-      if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
-      doc.text("\u2022", margin + 5, y);
-    }
+    const hasRichFormatting = para.runs.some((r) => r.bold || r.italic || r.underline) || !!para.heading;
 
-    for (let i = 0; i < wrappedLines.length; i++) {
-      if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
-
-      if (para.runs.length === 1 || (!para.runs.some((r) => r.bold || r.italic || r.underline) && !isBoldPara)) {
-        doc.setFont(font, isBoldPara ? "bold" : "normal");
-        doc.setFontSize(paraSize);
-        doc.text(wrappedLines[i], xPos, y, { align });
+    if (hasRichFormatting) {
+      const lines = wrapRichText(doc, para.runs, effectiveMaxWidth, font, paraSize);
+      for (const line of lines) {
+        if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
+        if (para.bullet) {
+          doc.setFont(font, "normal");
+          doc.setFontSize(defaultSize);
+          doc.text("\u2022", margin + 5, y);
+        }
+        drawRichLine(doc, line, font, paraSize, margin + textIndent, y, align, pageWidth, effectiveMaxWidth);
         y += lineHeight;
-      } else {
-        drawRichLine(doc, para.runs, wrappedLines[i], font, defaultSize, margin, maxWidth, pageWidth, y);
+      }
+    } else {
+      const plainText = para.runs.map((r) => r.text).join("");
+      const wrappedLines = doc.splitTextToSize(plainText, effectiveMaxWidth);
+      const xPos = align === "center" ? pageWidth / 2 : align === "right" ? pageWidth - margin : margin + textIndent;
+
+      doc.setFont(font, "normal");
+      doc.setFontSize(paraSize);
+
+      if (para.bullet && wrappedLines.length > 0) {
+        doc.setFont(font, "normal");
+        doc.setFontSize(defaultSize);
+        if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
+        doc.text("\u2022", margin + 5, y);
+      }
+
+      for (const line of wrappedLines) {
+        if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
+        doc.setFontSize(paraSize);
+        doc.text(line, xPos, y, { align });
         y += lineHeight;
       }
     }
@@ -326,28 +336,122 @@ export async function generatePdf(params: {
   return Buffer.from(pdfOutput);
 }
 
-function drawRichLine(
+interface RichLineSegment {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
+function wrapRichText(
   doc: jsPDF,
   runs: HtmlRun[],
-  _line: string,
+  maxWidth: number,
   font: string,
-  defaultSize: number,
-  margin: number,
-  _maxWidth: number,
-  _pageWidth: number,
-  y: number
-) {
-  let x = margin;
+  fontSize: number
+): RichLineSegment[][] {
+  const lines: RichLineSegment[][] = [];
+  let currentLine: RichLineSegment[] = [];
+  let currentLineWidth = 0;
+
   for (const run of runs) {
-    const style = run.bold ? "bold" : run.italic ? "italic" : "normal";
-    doc.setFont(font, style === "italic" && run.bold ? "bolditalic" : style);
-    doc.setFontSize(defaultSize);
-    doc.text(run.text, x, y);
-    x += doc.getTextWidth(run.text);
-    if (run.underline) {
-      doc.line(x - doc.getTextWidth(run.text), y + 2, x, y + 2);
+    const jsFontStyle = run.bold && run.italic ? "bolditalic" : run.bold ? "bold" : run.italic ? "italic" : "normal";
+    doc.setFont(font, jsFontStyle);
+    doc.setFontSize(fontSize);
+
+    const words = run.text.split(/(\s+)/);
+    for (const word of words) {
+      if (word === "") continue;
+      const wordWidth = doc.getTextWidth(word);
+
+      if (currentLineWidth + wordWidth > maxWidth && currentLine.length > 0) {
+        const lastSeg = currentLine[currentLine.length - 1];
+        if (lastSeg.text.endsWith(" ")) {
+          lastSeg.text = lastSeg.text.replace(/\s+$/, "");
+          currentLineWidth -= doc.getTextWidth(" ");
+        }
+        lines.push(currentLine);
+        currentLine = [];
+        currentLineWidth = 0;
+
+        if (/^\s+$/.test(word)) continue;
+      }
+
+      if (currentLine.length > 0) {
+        const lastSeg = currentLine[currentLine.length - 1];
+        if (lastSeg.bold === run.bold && lastSeg.italic === run.italic && lastSeg.underline === run.underline) {
+          lastSeg.text += word;
+        } else {
+          currentLine.push({ text: word, bold: !!run.bold, italic: !!run.italic, underline: !!run.underline });
+        }
+      } else {
+        currentLine.push({ text: word, bold: !!run.bold, italic: !!run.italic, underline: !!run.underline });
+      }
+      currentLineWidth += wordWidth;
     }
   }
+
+  if (currentLine.length > 0) {
+    const lastSeg = currentLine[currentLine.length - 1];
+    lastSeg.text = lastSeg.text.replace(/\s+$/, "");
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function drawRichLine(
+  doc: jsPDF,
+  segments: RichLineSegment[],
+  font: string,
+  fontSize: number,
+  startX: number,
+  y: number,
+  align: "left" | "center" | "right",
+  pageWidth: number,
+  _maxWidth: number
+) {
+  let totalWidth = 0;
+  for (const seg of segments) {
+    const style = seg.bold && seg.italic ? "bolditalic" : seg.bold ? "bold" : seg.italic ? "italic" : "normal";
+    doc.setFont(font, style);
+    doc.setFontSize(fontSize);
+    totalWidth += doc.getTextWidth(seg.text);
+  }
+
+  let x: number;
+  if (align === "center") x = (pageWidth - 2 * (startX - (pageWidth / 2 - totalWidth / 2))) / 2 - totalWidth / 2 + startX;
+  else if (align === "right") x = startX + (_maxWidth - totalWidth);
+  else x = startX;
+
+  // simpler: calculate x based on align
+  if (align === "center") {
+    x = startX + (_maxWidth - totalWidth) / 2;
+  } else if (align === "right") {
+    x = startX + _maxWidth - totalWidth;
+  } else {
+    x = startX;
+  }
+
+  const margin = startX;
+  for (const seg of segments) {
+    const style = seg.bold && seg.italic ? "bolditalic" : seg.bold ? "bold" : seg.italic ? "italic" : "normal";
+    doc.setFont(font, style);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(26, 26, 26);
+    const textToDraw = seg.text.replace(/^\s+/, "");
+    if (textToDraw) {
+      doc.text(textToDraw, x, y);
+      const drawnWidth = doc.getTextWidth(textToDraw);
+      if (seg.underline) {
+        doc.line(x, y + 1.5, x + drawnWidth, y + 1.5);
+      }
+      x += doc.getTextWidth(seg.text);
+    } else {
+      x += doc.getTextWidth(seg.text);
+    }
+  }
+  doc.setTextColor(26, 26, 26);
 }
 
 export function getExportFilename(type: GenerationType, format: "docx" | "pdf", targetCompany?: string): string {
