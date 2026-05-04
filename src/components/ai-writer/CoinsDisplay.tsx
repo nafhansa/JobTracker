@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { motion, useSpring, useTransform } from "framer-motion";
-import { CoinsBalance, WEEKLY_COINS_BY_PLAN, COINS_PER_GENERATION } from "@/lib/ai/types";
+import { CoinsBalance, COINS_PER_GENERATION } from "@/lib/ai/types";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 import Link from "next/link";
@@ -64,8 +64,8 @@ export default function CoinsDisplay({ coins, loading, plan }: CoinsDisplayProps
 
   if (loading || !coins) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg animate-pulse">
-        <div className="w-12 h-3 bg-muted rounded" />
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-lg animate-pulse">
+        <div className="w-20 h-3 bg-muted rounded" />
       </div>
     );
   }
@@ -73,21 +73,25 @@ export default function CoinsDisplay({ coins, loading, plan }: CoinsDisplayProps
   return (
     <Link
       href="/jps-shop"
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-sm font-medium ${
+      className={`flex items-center gap-0 px-1 py-0 rounded-lg transition-all text-sm font-medium overflow-hidden ${
         isOutOfCoins
           ? "bg-amber-50 dark:bg-amber-900/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
           : "bg-primary/10 border border-primary/20 text-foreground hover:bg-primary/15"
       }`}
     >
-      <Sparkles className={`w-3.5 h-3.5 ${isOutOfCoins ? "text-amber-500" : "text-primary"}`} />
-      <span className="hidden sm:inline text-sm text-muted-foreground">Get More</span>
-      <span className="font-semibold">
-        {isAdmin ? "∞" : <AnimatedNumber value={displayTotal} />}
+      <span className="flex items-center gap-1.5 px-2 py-1.5">
+        <Sparkles className={`w-3.5 h-3.5 ${isOutOfCoins ? "text-amber-500" : "text-primary"}`} />
+        <span className="font-semibold">
+          {isAdmin ? "∞" : <AnimatedNumber value={displayTotal} />}
+        </span>
+        <span className="text-[11px] text-muted-foreground">JPs</span>
+        {isOutOfCoins && countdown && (
+          <span className="text-[10px] text-amber-600 dark:text-amber-400">{countdown}</span>
+        )}
       </span>
-      <span className="text-[11px] text-muted-foreground">JPs</span>
-      {isOutOfCoins && countdown && (
-        <span className="text-[10px] text-amber-600 dark:text-amber-400 ml-0.5">{countdown}</span>
-      )}
+      <span className={`border-l ${isOutOfCoins ? "border-amber-500/30" : "border-primary/20"} px-2 py-1.5 text-xs font-medium ${isOutOfCoins ? "text-amber-600 dark:text-amber-300" : "text-primary"}`}>
+        Get More JPs
+      </span>
     </Link>
   );
 }
