@@ -80,7 +80,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -89,22 +89,22 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
             <button
               key={tab.id}
               onClick={() => {
-              if (activeTab !== tab.id) {
-                setActiveTab(tab.id);
-                setGeneratedContent(null);
-                setGeneratedType(null);
-                setGeneratedTargetCompany(undefined);
-                setGeneratedTargetRole(undefined);
-                setGeneratedDocId(undefined);
-              }
-            }}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                if (activeTab !== tab.id) {
+                  setActiveTab(tab.id);
+                  setGeneratedContent(null);
+                  setGeneratedType(null);
+                  setGeneratedTargetCompany(undefined);
+                  setGeneratedTargetRole(undefined);
+                  setGeneratedDocId(undefined);
+                }
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
@@ -112,20 +112,20 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
       </div>
 
       {generatedContent && generatedType && (
-<GenerationOutput
-            content={generatedContent}
-            type={generatedType}
-            targetCompany={generatedTargetCompany}
-            targetRole={generatedTargetRole}
-            onDismiss={() => {
-              setGeneratedContent(null);
-              setGeneratedType(null);
-              setGeneratedTargetCompany(undefined);
-              setGeneratedTargetRole(undefined);
-              setGeneratedDocId(undefined);
-            }}
-            documentId={generatedDocId}
-          />
+        <GenerationOutput
+          content={generatedContent}
+          type={generatedType}
+          targetCompany={generatedTargetCompany}
+          targetRole={generatedTargetRole}
+          onDismiss={() => {
+            setGeneratedContent(null);
+            setGeneratedType(null);
+            setGeneratedTargetCompany(undefined);
+            setGeneratedTargetRole(undefined);
+            setGeneratedDocId(undefined);
+          }}
+          documentId={generatedDocId}
+        />
       )}
 
       {activeTab === "cover-letter" && (

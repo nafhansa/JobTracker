@@ -9,7 +9,6 @@ import {
   Sparkles,
   Loader2,
   Briefcase,
-  Building,
   ChevronDown,
   ChevronUp,
   Pencil,
@@ -171,9 +170,9 @@ export default function CoverLetterForm({
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+            <div className="hidden sm:flex w-6 h-6 rounded-full bg-primary text-primary-foreground items-center justify-center text-[11px] font-bold shrink-0">
               1
             </div>
             <h3 className="text-sm font-semibold text-foreground">
@@ -181,126 +180,100 @@ export default function CoverLetterForm({
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 ml-9">
-            <button
-              type="button"
-              onClick={() => handleSourceChange(false)}
-              className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center ${
-                !useManual
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
-              }`}
-            >
-              {!useManual && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
-              <Briefcase
-                className={`w-5 h-5 ${!useManual ? "text-primary" : "text-muted-foreground"}`}
-              />
-              <span
-                className={`text-sm font-medium ${!useManual ? "text-primary" : "text-foreground"}`}
+          <div className="sm:ml-9">
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => handleSourceChange(false)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  !useManual
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
               >
+                <Briefcase className="w-3.5 h-3.5" />
                 From Tracker
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                {jobs.length} job{jobs.length !== 1 ? "s" : ""} tracked
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSourceChange(true)}
-              className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center ${
-                useManual
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
-              }`}
-            >
-              {useManual && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
-              <Pencil
-                className={`w-5 h-5 ${useManual ? "text-primary" : "text-muted-foreground"}`}
-              />
-              <span
-                className={`text-sm font-medium ${useManual ? "text-primary" : "text-foreground"}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSourceChange(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  useManual
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
               >
+                <Pencil className="w-3.5 h-3.5" />
                 Enter Details
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                Type company & role
-              </span>
-            </button>
-          </div>
-        </div>
+              </button>
+            </div>
 
-        {!useManual ? (
-          <div className="space-y-3 ml-9">
-            <JobPicker
-              jobs={jobs}
-              selectedJobId={selectedJobId}
-              onSelectJob={handleJobSelect}
-              onAddJob={() => setIsAddJobOpen(true)}
-            />
-            {selectedJob && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Company <span className="text-primary text-[10px]">(from job)</span>
-                  </label>
-                  <Input
-                    value={targetCompany}
-                    onChange={(e) => setTargetCompany(e.target.value)}
-                    className="bg-background h-10"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Role / Position <span className="text-primary text-[10px]">(from job)</span>
-                  </label>
-                  <Input
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    className="bg-background h-10"
-                  />
+            {!useManual ? (
+              <div className="space-y-3">
+                <JobPicker
+                  jobs={jobs}
+                  selectedJobId={selectedJobId}
+                  onSelectJob={handleJobSelect}
+                  onAddJob={() => setIsAddJobOpen(true)}
+                />
+                {selectedJob && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Company <span className="text-primary text-[10px]">(from job)</span>
+                      </label>
+                      <Input
+                        value={targetCompany}
+                        onChange={(e) => setTargetCompany(e.target.value)}
+                        className="bg-background h-10"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Role / Position <span className="text-primary text-[10px]">(from job)</span>
+                      </label>
+                      <Input
+                        value={targetRole}
+                        onChange={(e) => setTargetRole(e.target.value)}
+                        className="bg-background h-10"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Company <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. Google"
+                      value={targetCompany}
+                      onChange={(e) => setTargetCompany(e.target.value)}
+                      className="bg-background h-10"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Role / Position <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. Senior Software Engineer"
+                      value={targetRole}
+                      onChange={(e) => setTargetRole(e.target.value)}
+                      className="bg-background h-10"
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
-        ) : (
-          <div className="space-y-3 ml-9">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Company <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. Google"
-                  value={targetCompany}
-                  onChange={(e) => setTargetCompany(e.target.value)}
-                  className="bg-background h-10"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Role / Position <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. Senior Software Engineer"
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  className="bg-background h-10"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
 
         {(useManual || !!selectedJobId) && (
-          <div className="ml-9">
+          <div className="sm:ml-9">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <User className="w-3 h-3" />
@@ -316,7 +289,7 @@ export default function CoverLetterForm({
           </div>
         )}
 
-        <div className="ml-9 space-y-1.5">
+        <div className="sm:ml-9 space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Language</label>
           <div className="flex gap-2">
             {LANGUAGE_OPTIONS.map((l) => (
@@ -337,7 +310,7 @@ export default function CoverLetterForm({
           </div>
         </div>
 
-        <div className="border border-border rounded-xl overflow-hidden ml-9">
+        <div className="border border-border rounded-xl overflow-hidden sm:ml-9">
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -351,30 +324,11 @@ export default function CoverLetterForm({
             )}
           </button>
           {showAdvanced && (
-<div className="px-4 pb-4 space-y-4 border-t border-border">
+            <div className="px-4 pb-4 space-y-4 border-t border-border">
               <div className="space-y-2 pt-4">
                 <label className="text-xs font-medium text-muted-foreground">
                   Tone
                 </label>
-                <div className="flex gap-2">
-                  {LANGUAGE_OPTIONS.map((l) => (
-                    <button
-                      key={l.value}
-                      type="button"
-                      onClick={() => setLanguage(l.value)}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        language === l.value
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      <span>{l.flag}</span>
-                      <span>{l.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
                 <div className="flex gap-2 flex-wrap">
                   {TONE_OPTIONS.map((t) => (
                     <button
@@ -438,7 +392,7 @@ export default function CoverLetterForm({
         </div>
 
         {!profile?.summary && !profile?.skills?.length && (
-          <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg text-sm ml-9">
+          <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg text-sm sm:ml-9">
             <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <span className="text-amber-800 dark:text-amber-300 text-xs">
               Set up your <strong>Professional Profile</strong> in the Profile tab for more
@@ -447,39 +401,41 @@ export default function CoverLetterForm({
           </div>
         )}
 
-        <Button
-          type="submit"
-          disabled={loading || hasInsufficientCoins || !canGenerate}
-          className="w-full h-12 text-sm font-semibold rounded-xl ml-9 transition-all"
-          variant={canGenerate && !hasInsufficientCoins ? "default" : "secondary"}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : hasInsufficientCoins ? (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              No JPs Available
-            </>
-          ) : !canGenerate ? (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Select a target to continue
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Cover Letter
-              {isAdmin ? (
-                <span className="ml-1.5 opacity-70 text-xs">· admin</span>
-              ) : (
-                <span className="ml-1.5 opacity-70 text-xs">· 80 JPs</span>
-              )}
-            </>
-          )}
-        </Button>
+        <div className="sm:ml-9">
+          <Button
+            type="submit"
+            disabled={loading || hasInsufficientCoins || !canGenerate}
+            className="w-full h-12 text-sm font-semibold rounded-xl transition-all"
+            variant={canGenerate && !hasInsufficientCoins ? "default" : "secondary"}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : hasInsufficientCoins ? (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                No JPs Available
+              </>
+            ) : !canGenerate ? (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Select a target to continue
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Cover Letter
+                {isAdmin ? (
+                  <span className="ml-1.5 opacity-70 text-xs">· admin</span>
+                ) : (
+                  <span className="ml-1.5 opacity-70 text-xs">· 80 JPs</span>
+                )}
+              </>
+            )}
+          </Button>
+        </div>
       </form>
 
       <JobFormModal
