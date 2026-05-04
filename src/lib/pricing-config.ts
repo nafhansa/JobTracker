@@ -42,3 +42,15 @@ export const PRICING_IDR = {
     discount: '10.36%',
   },
 };
+
+export const WEEKLY_CREDITS_BY_PLAN = {
+  free: 1,
+  monthly: 5,
+  lifetime: 10,
+};
+
+export const CREDIT_PACKAGES = [
+  { id: 'starter', name: 'Starter', credits: 5, price_idr: 9900, price_usd: 0.99 },
+  { id: 'popular', name: 'Popular', credits: 15, price_idr: 24900, price_usd: 2.49 },
+  { id: 'best-value', name: 'Best Value', credits: 50, price_idr: 64900, price_usd: 5.99 },
+];

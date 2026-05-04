@@ -99,6 +99,82 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['feedback']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['feedback']['Insert']>;
       };
+      user_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string | null;
+          email: string | null;
+          phone: string | null;
+          linkedin_url: string | null;
+          skills: string[];
+          experience: any;
+          education: any;
+          summary: string | null;
+          resume_url: string | null;
+          extracted_resume_data: any;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['user_profiles']['Insert']>;
+      };
+      ai_credits: {
+        Row: {
+          id: string;
+          user_id: string;
+          weekly_credits: number;
+          purchased_credits: number;
+          weekly_allocation: number;
+          weekly_reset_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['ai_credits']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['ai_credits']['Insert']>;
+      };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          type: string;
+          reference_id: string | null;
+          metadata: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['credit_transactions']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['credit_transactions']['Insert']>;
+      };
+      credit_packages: {
+        Row: {
+          id: string;
+          name: string;
+          credits: number;
+          price_idr: number;
+          price_usd: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['credit_packages']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['credit_packages']['Insert']>;
+      };
+      generated_documents: {
+        Row: {
+          id: string;
+          user_id: string;
+          job_id: string | null;
+          type: string;
+          target_name: string | null;
+          target_company: string | null;
+          target_role: string | null;
+          content: string;
+          prompt_data: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['generated_documents']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['generated_documents']['Insert']>;
+      };
     };
   };
 };

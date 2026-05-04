@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2, Users } from "lucide-react";
+import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2, Users, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
@@ -26,7 +26,7 @@ export default function MobileBottomNav({
     { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
     { id: "applications", icon: Briefcase, label: t("sidebar.applications") },
     { id: "plus", isPlus: true }, 
-    { id: "profile", icon: User, label: t("sidebar.profile") },
+    { id: "ai-writer", icon: Sparkles, label: "AI Writer" },
     { id: "settings", icon: SettingsIcon, label: t("sidebar.settings") },
   ];
 
@@ -34,7 +34,7 @@ export default function MobileBottomNav({
     { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
     { id: "clients", icon: Users, label: t("sidebar.clients") },
     { id: "plus", isPlus: true }, 
-    { id: "profile", icon: User, label: t("sidebar.profile") },
+    { id: "ai-writer", icon: Sparkles, label: "AI Writer" },
     { id: "settings", icon: SettingsIcon, label: t("sidebar.settings") },
   ];
 

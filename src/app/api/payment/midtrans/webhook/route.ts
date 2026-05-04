@@ -4,6 +4,7 @@ import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { verifyPaymentWithMidtrans } from '@/lib/middleware/webhook-verify';
 import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
+import { CREDIT_PACKAGES } from '@/lib/ai/types';
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -116,6 +117,58 @@ export async function POST(req: Request) {
     }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
+      if (plan && plan.startsWith('credits_')) {
+        const packageId = plan.replace('credits_', '');
+        const creditPkg = CREDIT_PACKAGES.find((p) => p.id === packageId);
+
+        if (creditPkg && userId) {
+          console.log('=== CREDIT PURCHASE WEBHOOK ===', { order_id, userId, packageId, credits: creditPkg.credits });
+
+          const { data: existingTx } = await (supabaseAdmin as any)
+            .from('credit_transactions')
+            .select('id')
+            .eq('reference_id', order_id)
+            .maybeSingle();
+
+          if (existingTx) {
+            console.log('Credit purchase already processed:', order_id);
+            return NextResponse.json({ status: 'OK', message: 'Already processed' });
+          }
+
+          const { data: currentCredits } = await (supabaseAdmin as any)
+            .from('ai_credits')
+            .select('purchased_credits')
+            .eq('user_id', userId)
+            .single();
+
+          const newPurchased = (currentCredits?.purchased_credits || 0) + creditPkg.credits;
+
+          await (supabaseAdmin as any)
+            .from('ai_credits')
+            .update({ purchased_credits: newPurchased })
+            .eq('user_id', userId);
+
+          await (supabaseAdmin as any)
+            .from('credit_transactions')
+            .insert({
+              user_id: userId,
+              amount: creditPkg.credits,
+              type: 'purchase',
+              reference_id: order_id,
+              metadata: { package_id: packageId, package_name: creditPkg.name, gross_amount },
+            });
+
+          console.log(`Credits added: ${creditPkg.credits} for user ${userId}`);
+        }
+
+        await (supabaseAdmin as any)
+          .from('pending_midtrans_transactions')
+          .delete()
+          .eq('order_id', order_id);
+
+        return NextResponse.json({ status: 'OK' });
+      }
+
       try {
         const { data: processedOrder } = await (supabaseAdmin as any)
           .from('subscriptions')

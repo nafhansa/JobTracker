@@ -10,6 +10,7 @@ import ProfileSection from "@/components/ProfileSection";
 import SettingsSection from "@/components/SettingsSection";
 import JobFormModal from "@/components/forms/AddJobModal";
 import FreelanceDashboard from "@/components/freelance/FreelanceDashboard";
+import AIWriterSection from "@/components/ai-writer/AIWriterSection";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
 import ClientDashboardSection from "@/components/ClientDashboardSection";
@@ -114,6 +115,8 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
         return <FreelanceDashboard userId={userId} />;
       case "clients":
         return <FreelanceDashboard userId={userId} trackerMode="client" initialOpenModal={openClientModal} onModalClose={() => setOpenClientModal(false)} />;
+      case "ai-writer":
+        return <AIWriterSection userId={userId} onNavigateToApplications={handleNavigateToApplications} />;
       case "profile":
         return <ProfileSection isAdmin={isAdmin} />;
       case "settings":
@@ -182,6 +185,16 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
                   </h1>
                   <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                     {t("client.subtitle")}
+                  </p>
+                </>
+              )}
+              {activeSection === "ai-writer" && (
+                <>
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                    AI Writer
+                  </h1>
+                  <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
+                    Generate personalized cover letters and cold outreach messages
                   </p>
                 </>
               )}
