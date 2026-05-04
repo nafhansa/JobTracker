@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
-import { getOrCreateCredits } from "@/lib/supabase/ai-credits";
+import { getOrCreateCoins } from "@/lib/supabase/ai-coins";
 
 export async function GET(req: Request) {
   try {
@@ -9,10 +9,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    const balance = await getOrCreateCredits(authResult.userId);
-    return NextResponse.json({ credits: balance });
+    const balance = await getOrCreateCoins(authResult.userId);
+    return NextResponse.json({ coins: balance });
   } catch (error) {
-    console.error("Error getting credits:", error);
+    console.error("Error getting coins:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

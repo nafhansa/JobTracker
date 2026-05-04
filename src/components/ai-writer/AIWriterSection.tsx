@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
-import { CreditsBalance, UserProfile, GenerationType } from "@/lib/ai/types";
+import { CoinsBalance, UserProfile, GenerationType } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import CoverLetterForm from "./CoverLetterForm";
 import ColdOutreachForm from "./ColdOutreachForm";
 import GenerationOutput from "./GenerationOutput";
 import GenerationHistory from "./GenerationHistory";
-import CreditsDisplay from "./CreditsDisplay";
-import { Sparkles, FileText, MessageSquare, Clock } from "lucide-react";
+import { FileText, MessageSquare, Clock } from "lucide-react";
 
 type Tab = "cover-letter" | "cold-outreach" | "history";
 
@@ -26,16 +25,15 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   const plan = !isSubscribed ? "free" : (subscription?.plan || "free");
 
   const [activeTab, setActiveTab] = useState<Tab>("cover-letter");
-  const [credits, setCredits] = useState<CreditsBalance | null>(null);
+  const [coins, setCoins] = useState<CoinsBalance | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [generatedType, setGeneratedType] = useState<GenerationType | null>(null);
   const [generatedTargetCompany, setGeneratedTargetCompany] = useState<string | undefined>(undefined);
   const [generatedTargetRole, setGeneratedTargetRole] = useState<string | undefined>(undefined);
   const [generatedDocId, setGeneratedDocId] = useState<string | undefined>(undefined);
-  const [loadingCredits, setLoadingCredits] = useState(true);
 
-  const fetchCredits = useCallback(async () => {
+  const fetchCoins = useCallback(async () => {
     try {
       const token = await user?.getIdToken();
       if (!token) return;
@@ -44,12 +42,10 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
       });
       if (res.ok) {
         const data = await res.json();
-        setCredits(data.credits);
+        setCoins(data.coins);
       }
     } catch (err) {
-      console.error("Failed to fetch credits:", err);
-    } finally {
-      setLoadingCredits(false);
+      console.error("Failed to fetch coins:", err);
     }
   }, [user]);
 
@@ -70,9 +66,9 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   }, [user]);
 
   useEffect(() => {
-    fetchCredits();
+    fetchCoins();
     fetchProfile();
-  }, [fetchCredits, fetchProfile]);
+  }, [fetchCoins, fetchProfile]);
 
   const handleGenerated = (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => {
     setGeneratedContent(content);
@@ -80,26 +76,11 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     setGeneratedTargetCompany(targetCompany);
     setGeneratedTargetRole(targetRole);
     setGeneratedDocId(documentId);
-    fetchCredits();
+    fetchCoins();
   };
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            AI Writer
-          </h2>
-          <p className="text-muted-foreground text-sm mt-1.5 ml-[2.625rem]">
-            Generate cover letters and outreach messages
-          </p>
-        </div>
-        <CreditsDisplay credits={credits} loading={loadingCredits} plan={plan} onPurchaseComplete={fetchCredits} />
-      </div>
-
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -152,7 +133,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           userId={userId}
           profile={profile}
           onGenerated={handleGenerated}
-          credits={credits}
+          coins={coins}
           plan={plan}
           isAdmin={isAdmin}
           onNavigateToApplications={onNavigateToApplications}
@@ -163,7 +144,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           userId={userId}
           profile={profile}
           onGenerated={handleGenerated}
-          credits={credits}
+          coins={coins}
           plan={plan}
           isAdmin={isAdmin}
           onNavigateToApplications={onNavigateToApplications}

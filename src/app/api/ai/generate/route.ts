@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
-import { getOrCreateCredits, deductCredit } from "@/lib/supabase/ai-credits";
+import { getOrCreateCoins, deductCoins } from "@/lib/supabase/ai-coins";
 import { getUserProfile } from "@/lib/supabase/user-profile";
 import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
 import { generateContent } from "@/lib/ai/anthropic";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { GenerateRequest, GenerationType } from "@/lib/ai/types";
+import { GenerateRequest, GenerationType, COINS_PER_GENERATION } from "@/lib/ai/types";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 
 export async function POST(req: Request) {
@@ -26,12 +26,12 @@ export async function POST(req: Request) {
     }
 
     if (!isAdmin) {
-      const creditDeducted = await deductCredit(authResult.userId);
-      if (!creditDeducted) {
-        const balance = await getOrCreateCredits(authResult.userId);
+      const coinsDeducted = await deductCoins(authResult.userId);
+      if (!coinsDeducted) {
+        const balance = await getOrCreateCoins(authResult.userId);
         return NextResponse.json({
-          error: "Insufficient credits",
-          credits: balance,
+          error: "Insufficient JPs",
+          coins: balance,
         }, { status: 402 });
       }
     }
@@ -72,34 +72,41 @@ export async function POST(req: Request) {
         language,
       });
     } catch (aiError) {
-      console.error("AI generation failed, refunding credit:", aiError);
+      console.error("AI generation failed, refunding coins:", aiError);
       if (!isAdmin) {
         try {
-          const { data: creditData } = await (supabaseAdmin as any)
-            .from("ai_credits")
-            .select("weekly_credits, purchased_credits")
+          const { data: coinData } = await (supabaseAdmin as any)
+            .from("ai_coins")
+            .select("weekly_coins, purchased_coins")
             .eq("user_id", authResult.userId)
             .single();
 
-          if (creditData) {
-            const wasWeekly = creditData.weekly_credits >= 0;
-            if (wasWeekly) {
+          if (coinData) {
+            const currentWeekly = coinData.weekly_coins || 0;
+            const currentPurchased = coinData.purchased_coins || 0;
+            const weeklyBeforeDeduct = currentWeekly + COINS_PER_GENERATION;
+
+            if (weeklyBeforeDeduct >= COINS_PER_GENERATION) {
               await (supabaseAdmin as any)
-                .from("ai_credits")
-                .update({ weekly_credits: creditData.weekly_credits + 1 })
+                .from("ai_coins")
+                .update({ weekly_coins: weeklyBeforeDeduct })
                 .eq("user_id", authResult.userId);
             } else {
+              const purchasedBeforeDeduct = currentPurchased + (COINS_PER_GENERATION - weeklyBeforeDeduct);
               await (supabaseAdmin as any)
-                .from("ai_credits")
-                .update({ purchased_credits: creditData.purchased_credits + 1 })
+                .from("ai_coins")
+                .update({
+                  weekly_coins: Math.max(0, weeklyBeforeDeduct),
+                  purchased_coins: purchasedBeforeDeduct,
+                })
                 .eq("user_id", authResult.userId);
             }
           }
         } catch (refundError) {
-          console.error("Failed to refund credit:", refundError);
+          console.error("Failed to refund coins:", refundError);
         }
       }
-      return NextResponse.json({ error: "AI generation failed. Your credit has been refunded." }, { status: 500 });
+      return NextResponse.json({ error: "AI generation failed. Your JPs have been refunded." }, { status: 500 });
     }
 
     const savedDoc = await saveGeneratedDocument({
@@ -119,12 +126,12 @@ export async function POST(req: Request) {
       },
     });
 
-    const updatedBalance = await getOrCreateCredits(authResult.userId);
+    const updatedBalance = await getOrCreateCoins(authResult.userId);
 
     return NextResponse.json({
       content,
       type,
-      credits: updatedBalance,
+      coins: updatedBalance,
       documentId: savedDoc.id,
     });
   } catch (error) {

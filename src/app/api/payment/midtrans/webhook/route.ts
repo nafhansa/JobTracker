@@ -4,7 +4,8 @@ import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { verifyPaymentWithMidtrans } from '@/lib/middleware/webhook-verify';
 import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
-import { CREDIT_PACKAGES } from '@/lib/ai/types';
+import { COIN_PACKAGES } from '@/lib/ai/types';
+import { updateWeeklyCoinAllocation } from '@/lib/supabase/ai-coins';
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -117,48 +118,48 @@ export async function POST(req: Request) {
     }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      if (plan && plan.startsWith('credits_')) {
-        const packageId = plan.replace('credits_', '');
-        const creditPkg = CREDIT_PACKAGES.find((p) => p.id === packageId);
+      if (plan && plan.startsWith('coins_')) {
+        const packageId = plan.replace('coins_', '');
+        const coinPkg = COIN_PACKAGES.find((p) => p.id === packageId);
 
-        if (creditPkg && userId) {
-          console.log('=== CREDIT PURCHASE WEBHOOK ===', { order_id, userId, packageId, credits: creditPkg.credits });
+        if (coinPkg && userId) {
+          console.log('=== COIN PURCHASE WEBHOOK ===', { order_id, userId, packageId, coins: coinPkg.coins });
 
           const { data: existingTx } = await (supabaseAdmin as any)
-            .from('credit_transactions')
+            .from('coin_transactions')
             .select('id')
             .eq('reference_id', order_id)
             .maybeSingle();
 
           if (existingTx) {
-            console.log('Credit purchase already processed:', order_id);
+            console.log('Coin purchase already processed:', order_id);
             return NextResponse.json({ status: 'OK', message: 'Already processed' });
           }
 
-          const { data: currentCredits } = await (supabaseAdmin as any)
-            .from('ai_credits')
-            .select('purchased_credits')
+          const { data: currentCoins } = await (supabaseAdmin as any)
+            .from('ai_coins')
+            .select('purchased_coins')
             .eq('user_id', userId)
             .single();
 
-          const newPurchased = (currentCredits?.purchased_credits || 0) + creditPkg.credits;
+          const newPurchased = (currentCoins?.purchased_coins || 0) + coinPkg.coins;
 
           await (supabaseAdmin as any)
-            .from('ai_credits')
-            .update({ purchased_credits: newPurchased })
+            .from('ai_coins')
+            .update({ purchased_coins: newPurchased })
             .eq('user_id', userId);
 
           await (supabaseAdmin as any)
-            .from('credit_transactions')
+            .from('coin_transactions')
             .insert({
               user_id: userId,
-              amount: creditPkg.credits,
+              amount: coinPkg.coins,
               type: 'purchase',
               reference_id: order_id,
-              metadata: { package_id: packageId, package_name: creditPkg.name, gross_amount },
+              metadata: { package_id: packageId, package_name: coinPkg.name, gross_amount },
             });
 
-          console.log(`Credits added: ${creditPkg.credits} for user ${userId}`);
+          console.log(`JPs added: ${coinPkg.coins} for user ${userId}`);
         }
 
         await (supabaseAdmin as any)
@@ -285,6 +286,12 @@ export async function POST(req: Request) {
         if (userError) {
           console.error('Error updating user subscription:', userError);
           throw userError;
+        }
+
+        try {
+          await updateWeeklyCoinAllocation(userId, planType);
+        } catch (allocErr) {
+          console.error('Failed to update weekly coin allocation:', allocErr);
         }
 
         if (isReactivation) {
@@ -610,6 +617,12 @@ async function handleFirstPaymentWithSaveCard({
       },
       { onConflict: 'id' }
     );
+
+  try {
+    await updateWeeklyCoinAllocation(userId, planType);
+  } catch (allocErr) {
+    console.error('Failed to update weekly coin allocation:', allocErr);
+  }
 
   const isReactivation = existingSubscription && 
     (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');

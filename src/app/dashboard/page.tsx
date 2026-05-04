@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
@@ -11,12 +11,14 @@ import { Sparkles, ShieldCheck, LogOut } from "lucide-react";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import CoinsDisplay from "@/components/ai-writer/CoinsDisplay";
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { SubscriptionInfo } from "@/components/SubscriptionInfo";
 import GmailConnect from "@/components/GmailConnect";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { CoinsBalance } from "@/lib/ai/types";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
 import { clearTutorialState } from "@/lib/tutorial/context";
@@ -35,6 +37,31 @@ export default function DashboardPage() {
   // Determine effective plan: free if not subscribed, otherwise use actual plan
   const plan = !isSubscribed ? "free" : (subscription?.plan || "free");
   const isFreeUser = !isSubscribed;
+
+  const [coins, setCoins] = useState<CoinsBalance | null>(null);
+  const [loadingCoins, setLoadingCoins] = useState(true);
+
+  const fetchCoins = useCallback(async () => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) return;
+      const res = await fetch("/api/ai/credits", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCoins(data.coins);
+      }
+    } catch (err) {
+      console.error("Failed to fetch coins:", err);
+    } finally {
+      setLoadingCoins(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchCoins();
+  }, [fetchCoins]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -122,6 +149,8 @@ export default function DashboardPage() {
 
           {/* Sisi Kanan: All Controls & Info */}
           <div className="flex items-center gap-3 ml-auto">
+            <CoinsDisplay coins={coins} loading={loadingCoins} plan={plan} onPurchaseComplete={fetchCoins} />
+
             <ThemeToggle />
             <LanguageToggle />
 

@@ -49,27 +49,28 @@ export interface UserProfile {
   updated_at?: string;
 }
 
-export interface AiCredits {
+export interface AiCoins {
   id?: string;
   user_id: string;
-  weekly_credits: number;
-  purchased_credits: number;
-  weekly_allocation: number;
+  weekly_coins: number;
+  purchased_coins: number;
+  weekly_coin_allocation: number;
   weekly_reset_at: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface CreditPackage {
+export interface CoinPackage {
   id: string;
   name: string;
-  credits: number;
+  label: string;
+  coins: number;
   price_idr: number;
-  price_usd: number;
   is_active: boolean;
+  description: string;
 }
 
-export interface CreditTransaction {
+export interface CoinTransaction {
   id: string;
   user_id: string;
   amount: number;
@@ -105,24 +106,50 @@ export interface GenerateRequest {
   language?: OutputLanguage;
 }
 
-export interface CreditsBalance {
-  weekly_credits: number;
-  purchased_credits: number;
-  total_credits: number;
-  weekly_allocation: number;
+export interface CoinsBalance {
+  weekly_coins: number;
+  purchased_coins: number;
+  total_coins: number;
+  weekly_coin_allocation: number;
   weekly_reset_at: string;
 }
 
-export const WEEKLY_CREDITS_BY_PLAN: Record<string, number> = {
-  free: 1,
-  monthly: 5,
-  lifetime: 10,
+export const COINS_PER_GENERATION = 80;
+
+export const WEEKLY_COINS_BY_PLAN: Record<string, number> = {
+  free: 240,
+  monthly: 400,
+  lifetime: 400,
 };
 
-export const CREDIT_PACKAGES: CreditPackage[] = [
-  { id: "starter", name: "Starter", credits: 5, price_idr: 9900, price_usd: 0.99, is_active: true },
-  { id: "popular", name: "Popular", credits: 15, price_idr: 24900, price_usd: 2.49, is_active: true },
-  { id: "best-value", name: "Best Value", credits: 50, price_idr: 64900, price_usd: 5.99, is_active: true },
+export const COIN_PACKAGES: CoinPackage[] = [
+  {
+    id: "jalur-doa",
+    name: "Jalur Doa",
+    label: "Jalur Doa",
+    coins: 1000,
+    price_idr: 10000,
+    is_active: true,
+    description: "12x generate",
+  },
+  {
+    id: "mulai-panik",
+    name: "Mulai Panik",
+    label: "Mulai Panik",
+    coins: 2200,
+    price_idr: 20000,
+    is_active: true,
+    description: "27x generate",
+  },
+  {
+    id: "budak-korporat",
+    name: "Budak Korporat",
+    label: "Budak Korporat",
+    coins: 4500,
+    price_idr: 40000,
+    is_active: true,
+    description: "56x generate",
+  },
 ];
 
 export const GENERATION_TYPE_LABELS: Record<GenerationType, string> = {

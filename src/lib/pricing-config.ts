@@ -43,14 +43,14 @@ export const PRICING_IDR = {
   },
 };
 
-export const WEEKLY_CREDITS_BY_PLAN = {
-  free: 1,
-  monthly: 5,
-  lifetime: 10,
+export const WEEKLY_COINS_BY_PLAN = {
+  free: 240,
+  monthly: 400,
+  lifetime: 400,
 };
 
-export const CREDIT_PACKAGES = [
-  { id: 'starter', name: 'Starter', credits: 5, price_idr: 9900, price_usd: 0.99 },
-  { id: 'popular', name: 'Popular', credits: 15, price_idr: 24900, price_usd: 2.49 },
-  { id: 'best-value', name: 'Best Value', credits: 50, price_idr: 64900, price_usd: 5.99 },
+export const COIN_PACKAGES = [
+  { id: 'jalur-doa', name: 'Jalur Doa', label: 'Jalur Doa', coins: 1000, price_idr: 10000, description: '12x generate', is_active: true },
+  { id: 'mulai-panik', name: 'Mulai Panik', label: 'Mulai Panik', coins: 2200, price_idr: 20000, description: '27x generate', is_active: true },
+  { id: 'budak-korporat', name: 'Budak Korporat', label: 'Budak Korporat', coins: 4500, price_idr: 40000, description: '56x generate', is_active: true },
 ];

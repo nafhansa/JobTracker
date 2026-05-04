@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
 
-export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "ai-writer" | "profile" | "settings";
+export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "ai-writer" | "jps-shop" | "profile" | "settings";
 
 export interface SidebarProps {
   activeSection: SidebarSection;

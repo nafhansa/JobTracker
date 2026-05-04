@@ -26,7 +26,8 @@ import {
   ColdChannel,
   CHANNEL_OPTIONS,
   TONE_OPTIONS,
-  CreditsBalance,
+  CoinsBalance,
+  COINS_PER_GENERATION,
   UserProfile,
   OutputLanguage,
   LANGUAGE_OPTIONS,
@@ -48,7 +49,7 @@ interface ColdOutreachFormProps {
   userId: string;
   profile: UserProfile | null;
   onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => void;
-  credits: CreditsBalance | null;
+  coins: CoinsBalance | null;
   plan: string;
   isAdmin?: boolean;
   onNavigateToApplications?: () => void;
@@ -58,7 +59,7 @@ export default function ColdOutreachForm({
   userId,
   profile,
   onGenerated,
-  credits,
+  coins,
   plan,
   isAdmin = false,
 }: ColdOutreachFormProps) {
@@ -124,14 +125,14 @@ export default function ColdOutreachForm({
   };
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
-  const hasInsufficientCredits = !isAdmin && (!credits || credits.total_credits <= 0);
+  const hasInsufficientCoins = !isAdmin && (!coins || coins.total_coins < COINS_PER_GENERATION);
   const canGenerate = useManual
     ? !!(targetCompany.trim() && targetRole.trim())
     : !!selectedJobId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasInsufficientCredits) return;
+    if (hasInsufficientCoins) return;
 
     setLoading(true);
     try {
@@ -168,7 +169,7 @@ export default function ColdOutreachForm({
 
       if (!res.ok) {
         if (res.status === 402) {
-          toast.error("Insufficient credits", { description: data.error || "You need more credits to generate." });
+          toast.error("Insufficient JPs", { description: data.error || "You need more Job Points to generate." });
         } else {
           toast.error("Generation failed", { description: data.error || "Something went wrong. Please try again." });
         }
@@ -466,19 +467,19 @@ export default function ColdOutreachForm({
 
         <Button
           type="submit"
-          disabled={loading || hasInsufficientCredits || !canGenerate}
+          disabled={loading || hasInsufficientCoins || !canGenerate}
           className="w-full h-12 text-sm font-semibold rounded-xl ml-9 transition-all"
-          variant={canGenerate && !hasInsufficientCredits ? "default" : "secondary"}
+          variant={canGenerate && !hasInsufficientCoins ? "default" : "secondary"}
         >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Generating...
             </>
-          ) : hasInsufficientCredits ? (
+          ) : hasInsufficientCoins ? (
             <>
               <Sparkles className="w-4 h-4 mr-2" />
-              No Credits Available
+              No JPs Available
             </>
           ) : !canGenerate ? (
             <>
@@ -493,7 +494,7 @@ export default function ColdOutreachForm({
               {isAdmin ? (
                 <span className="ml-1.5 opacity-70 text-xs">· admin</span>
               ) : (
-                <span className="ml-1.5 opacity-70 text-xs">· 1 credit</span>
+                <span className="ml-1.5 opacity-70 text-xs">· 80 JPs</span>
               )}
             </>
           )}

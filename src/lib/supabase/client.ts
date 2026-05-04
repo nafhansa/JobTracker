@@ -119,21 +119,21 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['user_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['user_profiles']['Insert']>;
       };
-      ai_credits: {
+      ai_coins: {
         Row: {
           id: string;
           user_id: string;
-          weekly_credits: number;
-          purchased_credits: number;
-          weekly_allocation: number;
+          weekly_coins: number;
+          purchased_coins: number;
+          weekly_coin_allocation: number;
           weekly_reset_at: string;
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['ai_credits']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['ai_credits']['Insert']>;
+        Insert: Omit<Database['public']['Tables']['ai_coins']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['ai_coins']['Insert']>;
       };
-      credit_transactions: {
+      coin_transactions: {
         Row: {
           id: string;
           user_id: string;
@@ -143,21 +143,21 @@ export type Database = {
           metadata: any;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['credit_transactions']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['credit_transactions']['Insert']>;
+        Insert: Omit<Database['public']['Tables']['coin_transactions']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['coin_transactions']['Insert']>;
       };
-      credit_packages: {
+      coin_packages: {
         Row: {
           id: string;
           name: string;
-          credits: number;
+          coins: number;
           price_idr: number;
-          price_usd: number;
+          price_usd: number | null;
           is_active: boolean;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['credit_packages']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['credit_packages']['Insert']>;
+        Insert: Omit<Database['public']['Tables']['coin_packages']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['coin_packages']['Insert']>;
       };
       generated_documents: {
         Row: {

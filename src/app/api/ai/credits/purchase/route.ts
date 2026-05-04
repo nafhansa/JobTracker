@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { verifyAuth } from "@/lib/middleware/auth";
 import { MIDTRANS_CONFIG } from "@/lib/midtrans-config";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { CREDIT_PACKAGES } from "@/lib/ai/types";
+import { COIN_PACKAGES } from "@/lib/ai/types";
 
 export async function POST(req: Request) {
   try {
@@ -13,9 +13,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { packageId, customerDetails, currency = "IDR" } = body;
+    const { packageId, customerDetails } = body;
 
-    const pkg = CREDIT_PACKAGES.find((p) => p.id === packageId);
+    const pkg = COIN_PACKAGES.find((p) => p.id === packageId);
     if (!pkg) {
       return NextResponse.json({ error: "Invalid package" }, { status: 400 });
     }
@@ -24,17 +24,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing customerDetails" }, { status: 400 });
     }
 
-    const amount = currency === "USD" ? Math.round(pkg.price_usd * 100) : pkg.price_idr;
+    const amount = pkg.price_idr;
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 10);
     const userIdShort = authResult.userId.substring(0, 12);
-    const orderId = `CR-${userIdShort}-${timestamp}-${randomStr}`;
+    const orderId = `JP-${userIdShort}-${timestamp}-${randomStr}`;
 
     const snapBody: Record<string, unknown> = {
       transaction_details: {
         order_id: orderId,
         gross_amount: amount,
-        currency: currency,
+        currency: "IDR",
       },
       customer_details: {
         first_name: customerDetails.firstName || "JobTracker",
@@ -44,17 +44,17 @@ export async function POST(req: Request) {
       },
       item_details: [
         {
-          id: `credits_${pkg.id}`,
+          id: `coins_${pkg.id}`,
           price: amount,
           quantity: 1,
-          name: `JobTracker AI Credits - ${pkg.name} (${pkg.credits} credits)`,
+          name: `JobTracker JPs - ${pkg.name} (${pkg.coins} JPs)`,
           brand: "JobTracker",
-          currency: currency,
+          currency: "IDR",
         },
       ],
       custom_field1: authResult.userId,
-      custom_field2: `credits_${pkg.id}`,
-      custom_field3: currency,
+      custom_field2: `coins_${pkg.id}`,
+      custom_field3: "IDR",
     };
 
     if (!MIDTRANS_CONFIG.serverKey) {
@@ -107,16 +107,16 @@ export async function POST(req: Request) {
         id: transactionId,
         order_id: orderId,
         user_id: authResult.userId,
-        plan: `credits_${pkg.id}`,
+        plan: `coins_${pkg.id}`,
         amount: amount,
         snap_token: result.token,
         customer_email: customerDetails.email || null,
-        currency: currency,
+        currency: "IDR",
         billing_day: new Date().getDate(),
       } as any);
 
     if (dbError) {
-      console.error("Failed to store credit transaction:", dbError);
+      console.error("Failed to store coin transaction:", dbError);
     }
 
     return NextResponse.json({
@@ -125,12 +125,12 @@ export async function POST(req: Request) {
       token: result.token,
       redirectUrl: result.redirect_url,
       packageId: pkg.id,
-      credits: pkg.credits,
+      coins: pkg.coins,
       amount,
-      currency,
+      currency: "IDR",
     });
   } catch (error) {
-    console.error("Error in credit purchase API:", error);
+    console.error("Error in coin purchase API:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
