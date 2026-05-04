@@ -27,12 +27,14 @@ You are writing a ONE-PAGE cover letter. This is critical: the entire letter MUS
 
 Include:
 * Today's date at the top
-* Sender's name and contact info
+* Sender's ACTUAL name, email, and phone from the SENDER PROFILE (do NOT invent or guess contact details; use exactly what is provided)
 * Recipient's name and company
 * A formal salutation
 * 3 short, compelling paragraphs (opening hook, key experience/fit, call to action)
 * Professional closing (Sincerely, Best regards, etc.)
 * Sender name
+
+IMPORTANT: Use the sender's real email and phone number from the profile. Do NOT use placeholder text like "+62 (your phone number)" or fake email addresses.
 
 The letter should be personalized, specific, and demonstrate genuine interest in the role and company. Avoid generic phrases like "I am writing to apply for". Instead, start with a compelling hook.
 
@@ -100,6 +102,8 @@ interface BuildUserPromptParams {
   type: GenerationType;
   userProfile?: {
     fullName?: string;
+    email?: string;
+    phone?: string;
     skills?: string[];
     experience?: Array<{ company: string; role: string; duration: string; description: string }>;
     education?: Array<{ institution: string; degree: string; field: string; year: string }>;
@@ -124,6 +128,8 @@ export function buildUserPrompt(params: BuildUserPromptParams): string {
   const senderInfo = userProfile
     ? `SENDER PROFILE:
 * Name: ${userProfile.fullName || "Not provided"}
+* Email: ${userProfile.email || "Not provided"}
+* Phone: ${userProfile.phone || "Not provided"}
 * Skills: ${userProfile.skills?.join(", ") || "Not provided"}
 * Summary: ${userProfile.summary || "Not provided"}
 * Experience: ${userProfile.experience?.map((e) => `${e.role} at ${e.company} (${e.duration}). ${e.description}`).join("\n") || "Not provided"}

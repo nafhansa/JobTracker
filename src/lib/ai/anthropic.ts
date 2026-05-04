@@ -12,6 +12,8 @@ interface GenerateContentParams {
   type: GenerationType;
   userProfile?: {
     fullName?: string;
+    email?: string;
+    phone?: string;
     skills?: string[];
     experience?: Array<{ company: string; role: string; duration: string; description: string }>;
     education?: Array<{ institution: string; degree: string; field: string; year: string }>;

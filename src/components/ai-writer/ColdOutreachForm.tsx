@@ -307,21 +307,27 @@ export default function ColdOutreachForm({
               onAddJob={() => setIsAddJobOpen(true)}
             />
             {selectedJob && (
-              <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Building className="w-4 h-4 text-primary" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Company <span className="text-primary text-[10px]">(from job)</span>
+                  </label>
+                  <Input
+                    value={targetCompany}
+                    onChange={(e) => setTargetCompany(e.target.value)}
+                    className="bg-background h-10"
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {selectedJob.company}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {selectedJob.jobTitle}
-                  </p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Role / Position <span className="text-primary text-[10px]">(from job)</span>
+                  </label>
+                  <Input
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    className="bg-background h-10"
+                  />
                 </div>
-                <span className="text-xs text-primary font-medium shrink-0">
-                  Selected
-                </span>
               </div>
             )}
           </div>

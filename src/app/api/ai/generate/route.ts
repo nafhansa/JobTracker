@@ -46,6 +46,8 @@ export async function POST(req: Request) {
     const userProfile = userProfileData
       ? {
           fullName: userProfileData.full_name || undefined,
+          email: userProfileData.email || undefined,
+          phone: userProfileData.phone || undefined,
           skills: userProfileData.skills || undefined,
           experience: userProfileData.experience || undefined,
           education: userProfileData.education || undefined,
