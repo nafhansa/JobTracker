@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, X, FileText, Mail, MessageSquare, Instagram, Sparkles, Download, Loader2 } from "lucide-react";
+import { Copy, Check, X, FileText, Mail, MessageSquare, Instagram, Sparkles, Download, Loader2, Pencil, CheckSquare } from "lucide-react";
 import { GenerationType, GENERATION_TYPE_LABELS } from "@/lib/ai/types";
+import { formatPlainTextToHtml } from "@/lib/ai/format-plain-text";
+import RichTextEditor from "./RichTextEditor";
 
 interface GenerationOutputProps {
   content: string;
@@ -19,6 +21,11 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
   const [copied, setCopied] = useState(false);
   const [exportingDocx, setExportingDocx] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [editable, setEditable] = useState(false);
+  const editorRef = useRef<{ getHTML: () => string }>(null);
+
+  const initialHtml = formatPlainTextToHtml(content, type);
+  const [editorContent, setEditorContent] = useState(initialHtml);
 
   const typeIcon = () => {
     switch (type) {
@@ -31,13 +38,17 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
   };
 
   const handleCopy = async () => {
+    const textToCopy = editorRef.current?.getHTML() || editorContent;
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = textToCopy;
+    const plainText = tempDiv.textContent || tempDiv.innerText || content;
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(plainText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = content;
+      textarea.value = plainText;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
@@ -47,13 +58,12 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
     }
   };
 
-  const handleExport = async (format: "docx" | "pdf") => {
-    const setter = format === "docx" ? setExportingDocx : setExportingPdf;
-    setter(true);
+  const handleExportDocx = async () => {
+    setExportingDocx(true);
     try {
       const token = await user?.getIdToken();
       if (!token) return;
-
+      const htmlContent = editorRef.current?.getHTML() || editorContent;
       const res = await fetch("/api/ai/export", {
         method: "POST",
         headers: {
@@ -61,11 +71,12 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          content,
+          content: htmlContent,
           type,
-          format,
+          format: "docx",
           targetCompany: targetCompany || undefined,
           targetRole: targetRole || undefined,
+          isHtml: true,
         }),
       });
 
@@ -77,7 +88,7 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
       const blob = await res.blob();
       const contentDisposition = res.headers.get("Content-Disposition") || "";
       const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      const filename = filenameMatch ? filenameMatch[1] : `export.${format}`;
+      const filename = filenameMatch ? filenameMatch[1] : `export.docx`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -88,17 +99,64 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Export failed:", err);
+      console.error("Docx export failed:", err);
       alert("Export failed. Please try again.");
     } finally {
-      setter(false);
+      setExportingDocx(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const token = await user?.getIdToken();
+      if (!token) return;
+      const htmlContent = editorRef.current?.getHTML() || editorContent;
+      const res = await fetch("/api/ai/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: htmlContent,
+          type,
+          format: "pdf",
+          targetCompany: targetCompany || undefined,
+          targetRole: targetRole || undefined,
+          isHtml: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Export failed");
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("Content-Disposition") || "";
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      const filename = filenameMatch ? filenameMatch[1] : `export.pdf`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExportingPdf(false);
     }
   };
 
   return (
     <div className="animate-in fade-in slide-in-from-2 duration-300 rounded-xl border-2 border-primary/30 bg-gradient-to-b from-primary/5 to-transparent overflow-hidden">
       <div className="p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               {typeIcon()}
@@ -113,19 +171,40 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
               </p>
             </div>
           </div>
-          <button
-            onClick={onDismiss}
-            className="p-1.5 rounded-md hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditable(!editable)}
+              className="flex items-center gap-1.5 h-8"
+            >
+              {editable ? (
+                <>
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span className="text-xs">Done</span>
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span className="text-xs">Edit</span>
+                </>
+              )}
+            </Button>
+            <button
+              onClick={onDismiss}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
-        <div className="bg-background border border-border rounded-lg p-4 max-h-80 overflow-y-auto">
-          <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">
-            {content}
-          </pre>
-        </div>
+        <RichTextEditor
+          ref={editorRef}
+          initialContent={initialHtml}
+          editable={editable}
+          onContentChange={setEditorContent}
+        />
 
         <div className="flex items-center gap-2 flex-wrap">
           <Button
@@ -149,7 +228,7 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleExport("docx")}
+            onClick={handleExportDocx}
             disabled={exportingDocx}
             className="flex items-center gap-1.5 h-8"
           >
@@ -163,7 +242,7 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleExport("pdf")}
+            onClick={handleExportPdf}
             disabled={exportingPdf}
             className="flex items-center gap-1.5 h-8"
           >

@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { content, type, format, targetCompany, targetRole, targetName } = body;
+    const { content, type, format, targetCompany, targetRole, targetName, isHtml } = body;
 
     if (!content || typeof content !== "string") {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
         targetCompany,
         targetRole,
         targetName,
+        isHtml: !!isHtml,
       });
 
       return new NextResponse(new Uint8Array(buffer), {
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
         targetCompany,
         targetRole,
         targetName,
+        isHtml: !!isHtml,
       });
 
       return new NextResponse(new Uint8Array(buffer), {
