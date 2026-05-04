@@ -32,6 +32,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   const [generatedType, setGeneratedType] = useState<GenerationType | null>(null);
   const [generatedTargetCompany, setGeneratedTargetCompany] = useState<string | undefined>(undefined);
   const [generatedTargetRole, setGeneratedTargetRole] = useState<string | undefined>(undefined);
+  const [generatedDocId, setGeneratedDocId] = useState<string | undefined>(undefined);
   const [loadingCredits, setLoadingCredits] = useState(true);
 
   const fetchCredits = useCallback(async () => {
@@ -73,11 +74,12 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     fetchProfile();
   }, [fetchCredits, fetchProfile]);
 
-  const handleGenerated = (content: string, type: GenerationType, targetCompany?: string, targetRole?: string) => {
+  const handleGenerated = (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => {
     setGeneratedContent(content);
     setGeneratedType(type);
     setGeneratedTargetCompany(targetCompany);
     setGeneratedTargetRole(targetRole);
+    setGeneratedDocId(documentId);
     fetchCredits();
   };
 
@@ -105,7 +107,16 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+              if (activeTab !== tab.id) {
+                setActiveTab(tab.id);
+                setGeneratedContent(null);
+                setGeneratedType(null);
+                setGeneratedTargetCompany(undefined);
+                setGeneratedTargetRole(undefined);
+                setGeneratedDocId(undefined);
+              }
+            }}
               className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
@@ -130,7 +141,9 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
               setGeneratedType(null);
               setGeneratedTargetCompany(undefined);
               setGeneratedTargetRole(undefined);
+              setGeneratedDocId(undefined);
             }}
+            documentId={generatedDocId}
           />
       )}
 
@@ -162,6 +175,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           setGeneratedType(doc.type as GenerationType);
           setGeneratedTargetCompany(doc.target_company || undefined);
           setGeneratedTargetRole(doc.target_role || undefined);
+          setGeneratedDocId(doc.id);
         }} />
       )}
     </div>

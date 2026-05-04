@@ -3,9 +3,10 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, X, FileText, Mail, MessageSquare, Instagram, Sparkles, Download, Loader2, Pencil, CheckSquare } from "lucide-react";
+import { Copy, Check, X, FileText, Mail, MessageSquare, Instagram, Sparkles, Download, Loader2, Pencil, CheckSquare, Save } from "lucide-react";
 import { GenerationType, GENERATION_TYPE_LABELS } from "@/lib/ai/types";
-import { formatPlainTextToHtml } from "@/lib/ai/format-plain-text";
+import { formatPlainTextToHtml, isHtmlContent } from "@/lib/ai/format-plain-text";
+import { toast } from "sonner";
 import RichTextEditor from "./RichTextEditor";
 
 interface GenerationOutputProps {
@@ -13,19 +14,84 @@ interface GenerationOutputProps {
   type: GenerationType;
   targetCompany?: string;
   targetRole?: string;
+  documentId?: string;
   onDismiss: () => void;
 }
 
-export default function GenerationOutput({ content, type, targetCompany, targetRole, onDismiss }: GenerationOutputProps) {
+export default function GenerationOutput({ content, type, targetCompany, targetRole, documentId, onDismiss }: GenerationOutputProps) {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [exportingDocx, setExportingDocx] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editable, setEditable] = useState(false);
+  const [saved, setSaved] = useState(false);
   const editorRef = useRef<{ getHTML: () => string }>(null);
 
-  const initialHtml = formatPlainTextToHtml(content, type);
+  const initialHtml = isHtmlContent(content) ? content : formatPlainTextToHtml(content, type);
   const [editorContent, setEditorContent] = useState(initialHtml);
+
+const handleSave = async () => {
+    console.log("[handleSave] documentId:", documentId);
+    if (!documentId) {
+      toast.error("Save failed", { description: "No document ID found. Cannot save." });
+      return;
+    }
+    setSaving(true);
+    try {
+      const token = await user?.getIdToken();
+      if (!token) { toast.error("Save failed", { description: "Not authenticated." }); setSaving(false); return; }
+      const htmlContent = editorRef.current?.getHTML() || editorContent;
+
+      const res = await fetch("/api/ai/generations", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: documentId, content: htmlContent }),
+      });
+
+      console.log("[handleSave] response status:", res.status, "ok:", res.ok);
+
+      if (!res.ok) {
+        let errorMsg = `Save failed (${res.status})`;
+        try {
+          const data = await res.json();
+          errorMsg = data.error || data.details || data.message || JSON.stringify(data);
+        } catch {
+          try { errorMsg = await res.text(); } catch { errorMsg = `HTTP ${res.status}`; }
+        }
+        console.error("[handleSave] Error from server:", errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      setSaved(true);
+      toast.success("Saved", { description: "Your edits have been saved." });
+    } catch (err) {
+      console.error("Save failed:", err);
+      toast.error("Save failed", { description: err instanceof Error ? err.message : "Could not save your edits." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStartEditing = () => {
+    setEditable(true);
+    setSaved(false);
+  };
+
+  const handleDoneEditing = async () => {
+    if (documentId && !saved) {
+      await handleSave();
+    }
+    setEditable(false);
+  };
+
+  const handleContentChange = (html: string) => {
+    setEditorContent(html);
+    if (editable) setSaved(false);
+  };
 
   const typeIcon = () => {
     switch (type) {
@@ -175,13 +241,13 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setEditable(!editable)}
+              onClick={editable ? handleDoneEditing : handleStartEditing}
               className="flex items-center gap-1.5 h-8"
             >
               {editable ? (
                 <>
-                  <CheckSquare className="w-3.5 h-3.5" />
-                  <span className="text-xs">Done</span>
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckSquare className="w-3.5 h-3.5" />}
+                  <span className="text-xs">{saving ? "Saving..." : "Done"}</span>
                 </>
               ) : (
                 <>
@@ -203,7 +269,7 @@ export default function GenerationOutput({ content, type, targetCompany, targetR
           ref={editorRef}
           initialContent={initialHtml}
           editable={editable}
-          onContentChange={setEditorContent}
+          onContentChange={handleContentChange}
         />
 
         <div className="flex items-center gap-2 flex-wrap">

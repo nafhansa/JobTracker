@@ -34,7 +34,7 @@ import JobFormModal from "@/components/forms/AddJobModal";
 interface CoverLetterFormProps {
   userId: string;
   profile: UserProfile | null;
-  onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string) => void;
+  onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => void;
   credits: CreditsBalance | null;
   plan: string;
   isAdmin?: boolean;
@@ -157,7 +157,7 @@ export default function CoverLetterForm({
         return;
       }
 
-      onGenerated(data.content, "cover_letter", targetCompany || undefined, targetRole || undefined);
+      onGenerated(data.content, "cover_letter", targetCompany || undefined, targetRole || undefined, data.documentId);
       setCustomContext("");
     } catch (err) {
       console.error("Generation failed:", err);

@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, TabStopType, TabStopPosition, UnderlineType } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, LevelFormat, UnderlineType } from "docx";
 import { GenerationType, GENERATION_TYPE_LABELS } from "./types";
 
 interface HtmlRun {
@@ -16,6 +16,7 @@ interface HtmlParagraph {
   heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
   bullet?: boolean;
   ordered?: boolean;
+  listIndex?: number;
 }
 
 function stripStructuralTags(html: string): string {
@@ -32,7 +33,24 @@ function parseHtmlToParagraphs(html: string): HtmlParagraph[] {
   const blockRegex = /<(p|h[1-6]|li)[^>]*>([\s\S]*?)<\/\1>/gi;
   let match: RegExpExecArray | null;
 
+  const listStack: { type: "ul" | "ol"; counter: number }[] = [];
+
+  const openListRegex = /<(ul|ol)[^>]*>/gi;
+  const closeListRegex = /<\/(ul|ol)>/gi;
+
+  let lastIndex = 0;
+  let searchFrom = 0;
+
   while ((match = blockRegex.exec(normalized)) !== null) {
+    const beforeText = normalized.substring(searchFrom, match.index);
+    for (const openMatch of beforeText.matchAll(openListRegex)) {
+      listStack.push({ type: openMatch[1].toLowerCase() as "ul" | "ol", counter: 1 });
+    }
+    for (const closeMatch of beforeText.matchAll(closeListRegex)) {
+      listStack.pop();
+    }
+    searchFrom = match.index + match[0].length;
+
     const tag = match[1].toLowerCase();
     const rawContent = match[2];
     const fullMatch = match[0];
@@ -45,10 +63,25 @@ function parseHtmlToParagraphs(html: string): HtmlParagraph[] {
 
     let heading: (typeof HeadingLevel)[keyof typeof HeadingLevel] | undefined;
     let bullet = false;
+    let ordered = false;
+    let listIndex: number | undefined;
 
     if (tag === "h2") heading = HeadingLevel.HEADING_2;
     else if (tag === "h3" || tag.startsWith("h")) heading = HeadingLevel.HEADING_3;
-    else if (tag === "li") bullet = true;
+    else if (tag === "li") {
+      const currentList = listStack[listStack.length - 1];
+      if (currentList) {
+        if (currentList.type === "ul") {
+          bullet = true;
+        } else {
+          ordered = true;
+          listIndex = currentList.counter;
+          currentList.counter++;
+        }
+      } else {
+        bullet = true;
+      }
+    }
 
     const stripped = rawContent.replace(/<br\s*\/?>/gi, "").trim();
 
@@ -65,7 +98,7 @@ function parseHtmlToParagraphs(html: string): HtmlParagraph[] {
       continue;
     }
 
-    paragraphs.push({ runs, alignment, heading, bullet });
+    paragraphs.push({ runs, alignment, heading, bullet, ordered, listIndex });
   }
 
   if (paragraphs.length === 0) {
@@ -118,20 +151,23 @@ function parseInlineFormatting(html: string): HtmlRun[] {
   return runs;
 }
 
-function parsePlainTextToParagraphs(content: string, type: GenerationType): HtmlParagraph[] {
+function parsePlainTextToParagraphs(content: string, _type: GenerationType): HtmlParagraph[] {
   const lines = content.split("\n");
   const paragraphs: HtmlParagraph[] = [];
+  let orderedCounter = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     if (trimmed === "") {
+      orderedCounter = 0;
       paragraphs.push({ runs: [{ text: "" }], alignment: AlignmentType.LEFT });
       continue;
     }
 
     const isSubjectLine = trimmed.toLowerCase().startsWith("subject:") || trimmed.toLowerCase().startsWith("re:");
     const isBullet = /^[•\-]\s/.test(trimmed);
+    const isNumbered = /^\d+\.\s/.test(trimmed);
 
     if (isSubjectLine) {
       paragraphs.push({
@@ -144,7 +180,16 @@ function parsePlainTextToParagraphs(content: string, type: GenerationType): Html
         runs: [{ text }],
         bullet: true,
       });
+    } else if (isNumbered) {
+      orderedCounter++;
+      const text = trimmed.replace(/^\d+\.\s*/, "");
+      paragraphs.push({
+        runs: [{ text }],
+        ordered: true,
+        listIndex: orderedCounter,
+      });
     } else {
+      orderedCounter = 0;
       paragraphs.push({
         runs: [{ text: trimmed }],
         alignment: "left",
@@ -214,11 +259,25 @@ export async function generateDocx(params: {
         heading: para.heading,
         spacing: { after: isCoverLetter ? 160 : 100 },
         ...(para.bullet ? { bullet: { level: 0 } } : {}),
+        ...(para.ordered ? {
+          numbering: { reference: "ordered-list", level: 0 },
+        } : {}),
       })
     );
   }
 
   const doc = new Document({
+    numbering: {
+      config: [{
+        reference: "ordered-list",
+        levels: [{
+          level: 0,
+          format: LevelFormat.DECIMAL,
+          text: "%1.",
+          alignment: AlignmentType.START,
+        }],
+      }],
+    },
     sections: [{
       properties: {
         page: {
@@ -290,7 +349,8 @@ export async function generatePdf(params: {
     }
 
     const align: "left" | "center" | "right" = para.alignment === "center" ? "center" : para.alignment === "right" ? "right" : "left";
-    const textIndent = para.bullet ? 15 : 0;
+    const textIndent = (para.bullet || para.ordered) ? 15 : 0;
+    const listPrefix = para.ordered ? `${para.listIndex}.` : para.bullet ? "\u2022" : null;
     const effectiveMaxWidth = maxWidth - textIndent;
 
     const hasRichFormatting = para.runs.some((r) => r.bold || r.italic || r.underline) || !!para.heading;
@@ -299,10 +359,10 @@ export async function generatePdf(params: {
       const lines = wrapRichText(doc, para.runs, effectiveMaxWidth, font, paraSize);
       for (const line of lines) {
         if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
-        if (para.bullet) {
+        if (listPrefix && line === lines[0]) {
           doc.setFont(font, "normal");
           doc.setFontSize(defaultSize);
-          doc.text("\u2022", margin + 5, y);
+          doc.text(listPrefix, margin + 5, y);
         }
         drawRichLine(doc, line, font, paraSize, margin + textIndent, y, align, pageWidth, effectiveMaxWidth);
         y += lineHeight;
@@ -315,11 +375,11 @@ export async function generatePdf(params: {
       doc.setFont(font, "normal");
       doc.setFontSize(paraSize);
 
-      if (para.bullet && wrappedLines.length > 0) {
+      if (listPrefix && wrappedLines.length > 0) {
         doc.setFont(font, "normal");
         doc.setFontSize(defaultSize);
         if (y + lineHeight > pageHeight - margin) { doc.addPage(); y = margin; }
-        doc.text("\u2022", margin + 5, y);
+        doc.text(listPrefix, margin + 5, y);
       }
 
       for (const line of wrappedLines) {

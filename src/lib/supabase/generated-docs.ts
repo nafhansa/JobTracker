@@ -42,3 +42,17 @@ export async function deleteGeneratedDocument(userId: string, docId: string): Pr
 
   if (error) throw error;
 }
+
+export async function updateGeneratedDocument(userId: string, docId: string, content: string): Promise<GeneratedDocument> {
+  const { data, error } = await (supabaseAdmin as any)
+    .from("generated_documents")
+    .update({ content })
+    .eq("id", docId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error("Document not found");
+  return data;
+}

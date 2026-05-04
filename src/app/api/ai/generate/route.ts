@@ -102,7 +102,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "AI generation failed. Your credit has been refunded." }, { status: 500 });
     }
 
-    await saveGeneratedDocument({
+    const savedDoc = await saveGeneratedDocument({
       user_id: authResult.userId,
       job_id: jobId || null,
       type,
@@ -125,6 +125,7 @@ export async function POST(req: Request) {
       content,
       type,
       credits: updatedBalance,
+      documentId: savedDoc.id,
     });
   } catch (error) {
     console.error("Error in generate API:", error);

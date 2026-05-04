@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
-import { getGeneratedDocuments } from "@/lib/supabase/generated-docs";
+import { getGeneratedDocuments, updateGeneratedDocument } from "@/lib/supabase/generated-docs";
 
 export async function GET(req: Request) {
   try {
@@ -16,6 +16,34 @@ export async function GET(req: Request) {
     return NextResponse.json({ documents });
   } catch (error) {
     console.error("Error getting generations:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const authResult = await verifyAuth(req);
+    if ("error" in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
+    const body = await req.json();
+    const { id, content } = body;
+
+    if (!id || typeof id !== "string" || !content || typeof content !== "string") {
+      return NextResponse.json({ error: "Missing id or content" }, { status: 400 });
+    }
+
+    let updated;
+    try {
+      updated = await updateGeneratedDocument(authResult.userId, id, content);
+    } catch (dbError: any) {
+      console.error("[PATCH generations] DB error:", dbError?.message || dbError);
+      return NextResponse.json({ error: "Failed to save: " + (dbError?.message || "unknown error") }, { status: 500 });
+    }
+    return NextResponse.json({ document: updated });
+  } catch (error) {
+    console.error("Error updating generation:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -47,7 +47,7 @@ const CHANNEL_ICONS: Record<ColdChannel, React.ComponentType<{ className?: strin
 interface ColdOutreachFormProps {
   userId: string;
   profile: UserProfile | null;
-  onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string) => void;
+  onGenerated: (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => void;
   credits: CreditsBalance | null;
   plan: string;
   isAdmin?: boolean;
@@ -175,7 +175,7 @@ export default function ColdOutreachForm({
         return;
       }
 
-      onGenerated(data.content, typeMap[channel], targetCompany || undefined, targetRole || undefined);
+      onGenerated(data.content, typeMap[channel], targetCompany || undefined, targetRole || undefined, data.documentId);
       setCustomContext("");
     } catch (err) {
       console.error("Generation failed:", err);

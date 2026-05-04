@@ -52,7 +52,7 @@ const RichTextEditor = forwardRef<{ getHTML: () => string }, RichTextEditorProps
         {editable && <EditorToolbar editor={editor} />}
         <EditorContent
           editor={editor}
-          className={`prose prose-sm dark:prose-invert max-w-none ${
+          className={`rich-editor max-w-none bg-white dark:bg-background ${
             editable
               ? "min-h-[200px] p-4 focus:outline-none"
               : "p-4"
