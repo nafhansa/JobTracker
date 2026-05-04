@@ -14,7 +14,7 @@ export default function ProfileSection({ isAdmin: isAdminProp }: ProfileSectionP
   const { user } = useAuth();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">

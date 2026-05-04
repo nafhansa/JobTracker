@@ -234,7 +234,7 @@ export default function ProfessionalProfile({ userId }: ProfessionalProfileProps
     );
   }
 
-  if (!editing && hasData) {
+if (!editing && hasData) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -280,95 +280,102 @@ export default function ProfessionalProfile({ userId }: ProfessionalProfileProps
           </div>
         </div>
 
-        <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Info</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-            {fullName && (
-              <div>
-                <p className="text-[11px] text-muted-foreground">Full Name</p>
-                <p className="text-sm font-medium text-foreground">{fullName}</p>
-              </div>
-            )}
-            {email && (
-              <div className="flex items-start gap-1.5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Info</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6 gap-y-3">
+              {fullName && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Full Name</p>
+                  <p className="text-sm font-medium text-foreground">{fullName}</p>
+                </div>
+              )}
+              {email && (
                 <div>
                   <p className="text-[11px] text-muted-foreground">Email</p>
                   <p className="text-sm font-medium text-foreground">{email}</p>
                 </div>
-              </div>
-            )}
-            {phone && (
-              <div>
-                <p className="text-[11px] text-muted-foreground">Phone</p>
-                <p className="text-sm font-medium text-foreground">{phone}</p>
-              </div>
-            )}
-            {linkedinUrl && (
-              <div>
-                <p className="text-[11px] text-muted-foreground">LinkedIn</p>
-                <p className="text-sm font-medium text-primary hover:underline truncate">{linkedinUrl}</p>
-              </div>
+              )}
+              {phone && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Phone</p>
+                  <p className="text-sm font-medium text-foreground">{phone}</p>
+                </div>
+              )}
+              {linkedinUrl && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground">LinkedIn</p>
+                  <p className="text-sm text-primary hover:underline truncate">{linkedinUrl}</p>
+                </div>
+              )}
+            </div>
+            {!fullName && !email && !phone && !linkedinUrl && (
+              <p className="text-xs text-muted-foreground">No personal info added yet</p>
             )}
           </div>
-          {summary && (
-            <div className="pt-1">
-              <p className="text-[11px] text-muted-foreground mb-1">Summary</p>
+
+          {summary ? (
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Summary</h3>
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{summary}</p>
             </div>
-          )}
-          {!fullName && !email && !phone && !linkedinUrl && !summary && (
-            <p className="text-xs text-muted-foreground">No personal info added yet</p>
+          ) : (
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-4 flex items-center justify-center">
+              <p className="text-xs text-muted-foreground">No summary added yet</p>
+            </div>
           )}
         </div>
 
-        {skills.length > 0 && (
-          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill, i) => (
-                <span key={i} className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
-                  {skill}
-                </span>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {skills.length > 0 && (
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill, i) => (
+                  <span key={i} className="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {experience.length > 0 && experience.some(expHasData) && (
-          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Briefcase className="w-3 h-3" /> Experience
-            </h3>
-            <div className="space-y-3">
-              {experience.filter(expHasData).map((exp, i) => (
-                <div key={i} className="border-l-2 border-primary/30 pl-3">
-                  <p className="text-sm font-medium text-foreground">{exp.role}{exp.role && exp.company ? " at " : ""}{exp.company}</p>
-                  {exp.duration && <p className="text-xs text-muted-foreground">{exp.duration}</p>}
-                  {exp.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed">{exp.description}</p>}
-                </div>
-              ))}
+          {experience.length > 0 && experience.some(expHasData) && (
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="w-3 h-3" /> Experience
+              </h3>
+              <div className="space-y-3">
+                {experience.filter(expHasData).map((exp, i) => (
+                  <div key={i} className="border-l-2 border-primary/30 pl-3">
+                    <p className="text-sm font-medium text-foreground">{exp.role}{exp.role && exp.company ? " at " : ""}{exp.company}</p>
+                    {exp.duration && <p className="text-xs text-muted-foreground">{exp.duration}</p>}
+                    {exp.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed">{exp.description}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {education.length > 0 && education.some(eduHasData) && (
-          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <GraduationCap className="w-3 h-3" /> Education
-            </h3>
-            <div className="space-y-3">
-              {education.filter(eduHasData).map((edu, i) => (
-                <div key={i} className="border-l-2 border-primary/30 pl-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {edu.degree}{edu.degree && edu.field ? " in " : ""}{edu.field}
-                  </p>
-                  {edu.institution && <p className="text-xs text-muted-foreground">{edu.institution}</p>}
-                  {edu.year && <p className="text-xs text-muted-foreground">{edu.year}</p>}
-                </div>
-              ))}
+          {education.length > 0 && education.some(eduHasData) && (
+            <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <GraduationCap className="w-3 h-3" /> Education
+              </h3>
+              <div className="space-y-3">
+                {education.filter(eduHasData).map((edu, i) => (
+                  <div key={i} className="border-l-2 border-primary/30 pl-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {edu.degree}{edu.degree && edu.field ? " in " : ""}{edu.field}
+                    </p>
+                    {edu.institution && <p className="text-xs text-muted-foreground">{edu.institution}</p>}
+                    {edu.year && <p className="text-xs text-muted-foreground">{edu.year}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
@@ -415,128 +422,132 @@ export default function ProfessionalProfile({ userId }: ProfessionalProfileProps
         </div>
       </div>
 
-      <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Info</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Full Name</Label>
-            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" className="bg-background h-10" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Info</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Full Name</Label>
+              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" className="bg-background h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Email</Label>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="bg-background h-10" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 890" className="bg-background h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">LinkedIn URL</Label>
+              <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/johndoe" className="bg-background h-10" />
+            </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Email</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="bg-background h-10" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 890" className="bg-background h-10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">LinkedIn URL</Label>
-            <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/johndoe" className="bg-background h-10" />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">Professional Summary</Label>
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={3}
-            placeholder="Brief summary of your professional background and key strengths..."
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-          />
-        </div>
-      </div>
-
-      <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skills</h3>
-          <div className="flex items-center gap-2">
-            <Input
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
-              placeholder="Add a skill..."
-              className="w-36 bg-background h-8 text-sm"
+            <Label className="text-xs font-medium text-muted-foreground">Professional Summary</Label>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              rows={3}
+              placeholder="Brief summary of your professional background and key strengths..."
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
             />
-            <Button size="sm" variant="outline" onClick={addSkill} className="h-8 w-8 p-0">
-              <Plus className="w-3.5 h-3.5" />
-            </Button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {skills.map((skill, i) => (
-            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
-              {skill}
-              <button onClick={() => removeSkill(i)} className="text-primary/50 hover:text-primary transition-colors">
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          {skills.length === 0 && <p className="text-xs text-muted-foreground">No skills added yet</p>}
-        </div>
-      </div>
 
-      <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Experience</h3>
-          <Button size="sm" variant="outline" onClick={addExperience} className="h-7 text-xs gap-1">
-            <Plus className="w-3 h-3" /> Add
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {experience.map((exp, i) => (
-            <div key={i} className="p-3 bg-muted/30 border border-border rounded-lg space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium">Experience {i + 1}</span>
-                <button onClick={() => removeExperience(i)} className="text-destructive/60 hover:text-destructive transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <Input value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} placeholder="Company" className="bg-background h-9 text-sm" />
-                <Input value={exp.role} onChange={(e) => updateExperience(i, "role", e.target.value)} placeholder="Role" className="bg-background h-9 text-sm" />
-              </div>
-              <Input value={exp.duration} onChange={(e) => updateExperience(i, "duration", e.target.value)} placeholder="Duration (e.g. Jan 2022 - Present)" className="bg-background h-9 text-sm" />
-              <textarea
-                value={exp.description}
-                onChange={(e) => updateExperience(i, "description", e.target.value)}
-                placeholder="Key achievements and responsibilities..."
-                rows={2}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
-            </div>
-          ))}
-          {experience.length === 0 && <p className="text-xs text-muted-foreground">No experience added yet</p>}
-        </div>
-      </div>
-
-      <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Education</h3>
-          <Button size="sm" variant="outline" onClick={addEducation} className="h-7 text-xs gap-1">
-            <Plus className="w-3 h-3" /> Add
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {education.map((edu, i) => (
-            <div key={i} className="p-3 bg-muted/30 border border-border rounded-lg space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground font-medium">Education {i + 1}</span>
-                <button onClick={() => removeEducation(i)} className="text-destructive/60 hover:text-destructive transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-              <Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} placeholder="Institution" className="bg-background h-9 text-sm" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} placeholder="Degree" className="bg-background h-9 text-sm" />
-                <Input value={edu.field} onChange={(e) => updateEducation(i, "field", e.target.value)} placeholder="Field" className="bg-background h-9 text-sm" />
-                <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)} placeholder="Year" className="bg-background h-9 text-sm" />
+        <div className="space-y-4">
+          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skills</h3>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
+                  placeholder="Add a skill..."
+                  className="w-36 bg-background h-8 text-sm"
+                />
+                <Button size="sm" variant="outline" onClick={addSkill} className="h-8 w-8 p-0">
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
               </div>
             </div>
-          ))}
-          {education.length === 0 && <p className="text-xs text-muted-foreground">No education added yet</p>}
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                  {skill}
+                  <button onClick={() => removeSkill(i)} className="text-primary/50 hover:text-primary transition-colors">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {skills.length === 0 && <p className="text-xs text-muted-foreground">No skills added yet</p>}
+            </div>
+          </div>
+
+          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Experience</h3>
+              <Button size="sm" variant="outline" onClick={addExperience} className="h-7 text-xs gap-1">
+                <Plus className="w-3 h-3" /> Add
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {experience.map((exp, i) => (
+                <div key={i} className="p-3 bg-muted/30 border border-border rounded-lg space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground font-medium">Experience {i + 1}</span>
+                    <button onClick={() => removeExperience(i)} className="text-destructive/60 hover:text-destructive transition-colors">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Input value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} placeholder="Company" className="bg-background h-9 text-sm" />
+                    <Input value={exp.role} onChange={(e) => updateExperience(i, "role", e.target.value)} placeholder="Role" className="bg-background h-9 text-sm" />
+                  </div>
+                  <Input value={exp.duration} onChange={(e) => updateExperience(i, "duration", e.target.value)} placeholder="Duration (e.g. Jan 2022 - Present)" className="bg-background h-9 text-sm" />
+                  <textarea
+                    value={exp.description}
+                    onChange={(e) => updateExperience(i, "description", e.target.value)}
+                    placeholder="Key achievements and responsibilities..."
+                    rows={2}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+              ))}
+              {experience.length === 0 && <p className="text-xs text-muted-foreground">No experience added yet</p>}
+            </div>
+          </div>
+
+          <div className="bg-card dark:bg-card border border-border rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Education</h3>
+              <Button size="sm" variant="outline" onClick={addEducation} className="h-7 text-xs gap-1">
+                <Plus className="w-3 h-3" /> Add
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {education.map((edu, i) => (
+                <div key={i} className="p-3 bg-muted/30 border border-border rounded-lg space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground font-medium">Education {i + 1}</span>
+                    <button onClick={() => removeEducation(i)} className="text-destructive/60 hover:text-destructive transition-colors">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} placeholder="Institution" className="bg-background h-9 text-sm" />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} placeholder="Degree" className="bg-background h-9 text-sm" />
+                    <Input value={edu.field} onChange={(e) => updateEducation(i, "field", e.target.value)} placeholder="Field" className="bg-background h-9 text-sm" />
+                    <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)} placeholder="Year" className="bg-background h-9 text-sm" />
+                  </div>
+                </div>
+              ))}
+              {education.length === 0 && <p className="text-xs text-muted-foreground">No education added yet</p>}
+            </div>
+          </div>
         </div>
       </div>
 

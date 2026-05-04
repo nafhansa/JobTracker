@@ -329,6 +329,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sidebar.clients": "Clients",
     "sidebar.profile": "Profile",
     "sidebar.settings": "Settings",
+    "sidebar.more": "More",
     "sidebar.connected": "Connected",
     
     // Tracker Mode
@@ -716,6 +717,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sidebar.clients": "Klien",
     "sidebar.profile": "Profil",
     "sidebar.settings": "Pengaturan",
+    "sidebar.more": "Lainnya",
     "sidebar.connected": "Terhubung",
     
     // Tracker Mode
