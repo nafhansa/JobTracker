@@ -1,7 +1,7 @@
 // /home/nafhan/Documents/projek/job/src/app/login/page.tsx
 "use client";
 
-import { loginWithGoogle } from "@/lib/firebase/auth";
+import { loginWithGoogle, handleRedirectResult } from "@/lib/firebase/auth";
 import { useRouter } from "next/navigation"; 
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -15,6 +15,50 @@ export default function LoginPage() {
   const router = useRouter(); 
   const [isLoading, setIsLoading] = useState(false);
   
+  // Handle redirect result (from popup-blocked fallback)
+  useEffect(() => {
+    let cancelled = false;
+    handleRedirectResult().then((user) => {
+      if (cancelled || !user) return;
+      const sessionId = getOrCreateSessionId();
+      const deviceInfo = getDeviceInfo();
+
+      fetch(`/api/onboarding?userId=${user.uid}`)
+        .then((res) => res.json())
+        .then((data) => {
+          fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "login",
+              userId: user.uid,
+              userEmail: user.email || undefined,
+              sessionId,
+              deviceInfo,
+            }),
+          });
+          fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "dashboard",
+              userId: user.uid,
+              userEmail: user.email || undefined,
+              sessionId,
+              deviceInfo,
+            }),
+          });
+          if (!data.completed) {
+            router.push("/onboarding/language");
+          } else {
+            router.push("/dashboard");
+          }
+        })
+        .catch(() => router.push("/dashboard"));
+    });
+    return () => { cancelled = true; };
+  }, [router]);
+
   // Check if user is already logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

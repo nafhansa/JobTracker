@@ -1,0 +1,6 @@
+# .graphifyignore
+node_modules/
+dist/
+*.generated.py
+.next
+.opencode
