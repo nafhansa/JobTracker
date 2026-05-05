@@ -5,6 +5,13 @@ import { saveResumeExtraction } from "@/lib/supabase/user-profile";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+const VALID_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/pdf",
+];
+
 export async function POST(req: Request) {
   try {
     const authResult = await verifyAuth(req);
@@ -23,9 +30,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "File too large. Maximum 10MB." }, { status: 400 });
     }
 
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Invalid file type. Supported: PNG, JPEG, WebP. PDF support coming soon." }, { status: 400 });
+    if (!VALID_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: "Invalid file type. Supported: PNG, JPEG, WebP, PDF." }, { status: 400 });
     }
 
     const arrayBuffer = await file.arrayBuffer();

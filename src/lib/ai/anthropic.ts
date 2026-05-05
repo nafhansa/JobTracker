@@ -60,6 +60,10 @@ interface ExtractResumeParams {
   mimeType: string;
 }
 
+interface ExtractResumeTextParams {
+  resumeText: string;
+}
+
 export interface ExtractedResumeData {
   fullName?: string;
   email?: string;
@@ -81,17 +85,7 @@ export interface ExtractedResumeData {
   }>;
 }
 
-export async function extractResumeData(
-  params: ExtractResumeParams
-): Promise<ExtractedResumeData> {
-  const { fileBuffer, mimeType } = params;
-
-  const mediaType = mimeType as "image/png" | "image/jpeg" | "image/gif" | "image/webp";
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: `You are an expert resume parser. Extract all information from the provided resume document and return it as a JSON object with the following structure. Be thorough and accurate:
+const RESUME_SYSTEM_PROMPT = `You are an expert resume parser. Extract all information from the provided resume and return it as a JSON object with the following structure. Be thorough and accurate:
 
 {
   "fullName": "string or null",
@@ -118,24 +112,78 @@ export async function extractResumeData(
   ]
 }
 
-Return ONLY valid JSON, no markdown, no explanation.`,
+Return ONLY valid JSON, no markdown, no explanation.`;
+
+export async function extractResumeData(
+  params: ExtractResumeParams
+): Promise<ExtractedResumeData> {
+  const { fileBuffer, mimeType } = params;
+
+  const isPdf = mimeType === "application/pdf";
+  const base64Data = fileBuffer.toString("base64");
+
+  const fileContent = isPdf
+    ? {
+        type: "document" as const,
+        source: {
+          type: "base64" as const,
+          media_type: "application/pdf" as const,
+          data: base64Data,
+        },
+      }
+    : {
+        type: "image" as const,
+        source: {
+          type: "base64" as const,
+          media_type: mimeType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+          data: base64Data,
+        },
+      };
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    system: RESUME_SYSTEM_PROMPT,
     messages: [
       {
         role: "user" as const,
         content: [
-          {
-            type: "image" as const,
-            source: {
-              type: "base64" as const,
-              media_type: mediaType,
-              data: fileBuffer.toString("base64"),
-            },
-          },
+          fileContent,
           {
             type: "text" as const,
             text: "Extract all information from this resume and return as JSON.",
           },
         ],
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("No text content in response");
+  }
+
+  try {
+    const cleanedText = textBlock.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleanedText);
+  } catch {
+    throw new Error("Failed to parse resume extraction result");
+  }
+}
+
+export async function extractResumeFromText(
+  params: ExtractResumeTextParams
+): Promise<ExtractedResumeData> {
+  const { resumeText } = params;
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    system: RESUME_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user" as const,
+        content: `Here is the resume text to extract information from:\n\n${resumeText}`,
       },
     ],
   });

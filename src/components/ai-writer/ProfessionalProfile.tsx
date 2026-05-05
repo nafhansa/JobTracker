@@ -264,7 +264,7 @@ if (!editing && hasData) {
             <label className="cursor-pointer">
               <input
                 type="file"
-                accept=".png,.jpg,.jpeg,.webp"
+accept=".png,.jpg,.jpeg,.webp,.pdf"
                 onChange={handleResumeUpload}
                 className="hidden"
                 disabled={uploading}
@@ -276,7 +276,7 @@ if (!editing && hasData) {
                 </span>
               </Button>
             </label>
-            <span className="text-xs text-muted-foreground">PNG, JPEG, WebP (max 10MB)</span>
+            <span className="text-xs text-muted-foreground">PNG, JPEG, WebP, PDF (max 10MB)</span>
           </div>
         </div>
 
@@ -406,7 +406,7 @@ if (!editing && hasData) {
           <label className="cursor-pointer">
             <input
               type="file"
-              accept=".png,.jpg,.jpeg,.webp"
+              accept=".png,.jpg,.jpeg,.webp,.pdf"
               onChange={handleResumeUpload}
               className="hidden"
               disabled={uploading}
@@ -418,7 +418,7 @@ if (!editing && hasData) {
               </span>
             </Button>
           </label>
-          <span className="text-xs text-muted-foreground">PNG, JPEG, WebP</span>
+          <span className="text-xs text-muted-foreground">PNG, JPEG, WebP, PDF</span>
         </div>
       </div>
 
