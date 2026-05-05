@@ -131,6 +131,55 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
     }
   }, [user]);
 
+  const verifyPurchase = useCallback(async (orderId: string, pkg: typeof COIN_PACKAGES[0]) => {
+    const maxAttempts = 5;
+    const delay = 3000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const token = await user?.getIdToken();
+        if (!token) break;
+
+        const res = await fetch("/api/payment/midtrans/verify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const data = await res.json();
+
+        if (data.success && data.type === "coin_purchase") {
+          toast.success("JPs added!", { description: `${pkg.coins.toLocaleString("id-ID")} Job Points have been added to your account.` });
+          fetchCoins();
+          return;
+        }
+
+        if (data.success && data.message === "Already processed") {
+          toast.success("JPs added!", { description: `${pkg.coins.toLocaleString("id-ID")} Job Points have been added to your account.` });
+          fetchCoins();
+          return;
+        }
+
+        if (!data.success && data.transaction_status && data.transaction_status !== "settlement" && data.transaction_status !== "capture") {
+          // Payment not settled yet, retry
+        }
+      } catch (err) {
+        console.error(`Verify attempt ${attempt} failed:`, err);
+      }
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    // All attempts exhausted — check balance anyway
+    await fetchCoins();
+    toast.info("Verifying purchase", { description: "Your JPs will be added shortly. If not, please refresh the page." });
+  }, [user, fetchCoins]);
+
   useEffect(() => {
     fetchCoins();
   }, [fetchCoins]);
@@ -194,8 +243,9 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
         window.snap.pay(data.token, {
           onSuccess: () => {
             setShowSnap(false);
-            toast.success("JPs added!", { description: `${pkg.coins.toLocaleString("id-ID")} Job Points have been added to your account.` });
-            fetchCoins();
+            toast.success("Payment successful!", { description: "Verifying your purchase..." });
+            // Poll for verification since webhook may not arrive instantly
+            verifyPurchase(data.orderId, pkg);
           },
           onClose: () => {
             setShowSnap(false);

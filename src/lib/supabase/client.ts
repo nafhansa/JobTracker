@@ -146,6 +146,25 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['coin_transactions']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['coin_transactions']['Insert']>;
       };
+      coin_purchases: {
+        Row: {
+          id: string;
+          user_id: string;
+          order_id: string;
+          package_id: string;
+          coins: number;
+          amount_idr: number;
+          status: string;
+          payment_type: string | null;
+          midtrans_transaction_id: string | null;
+          snap_token: string | null;
+          credited_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['coin_purchases']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['coin_purchases']['Insert']>;
+      };
       coin_packages: {
         Row: {
           id: string;

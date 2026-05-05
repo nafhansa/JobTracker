@@ -2,6 +2,8 @@ import { supabaseAdmin } from "./server";
 import { WEEKLY_COINS_BY_PLAN, COINS_PER_GENERATION, CoinsBalance } from "../ai/types";
 
 export async function getOrCreateCoins(userId: string, plan?: string): Promise<CoinsBalance> {
+  console.log('[getOrCreateCoins] called for user:', userId);
+
   let { data, error } = await (supabaseAdmin as any)
     .from("ai_coins")
     .select("*")
@@ -9,6 +11,7 @@ export async function getOrCreateCoins(userId: string, plan?: string): Promise<C
     .single();
 
   if (error && error.code === "PGRST116") {
+    console.log('[getOrCreateCoins] no row found, creating new for user:', userId);
     const allocation = plan ? (WEEKLY_COINS_BY_PLAN[plan] ?? 240) : 240;
     const { data: newData, error: insertError } = await (supabaseAdmin as any)
       .from("ai_coins")
@@ -22,9 +25,13 @@ export async function getOrCreateCoins(userId: string, plan?: string): Promise<C
       .select()
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('[getOrCreateCoins] insert error:', insertError);
+      throw insertError;
+    }
     data = newData;
   } else if (error) {
+    console.error('[getOrCreateCoins] select error:', error);
     throw error;
   }
 
@@ -108,21 +115,39 @@ export async function deductCoins(userId: string, amount: number = COINS_PER_GEN
 }
 
 export async function addPurchasedCoins(userId: string, amount: number, referenceId?: string): Promise<void> {
+  console.log('[addPurchasedCoins] called:', { userId, amount, referenceId });
+
   const balance = await getOrCreateCoins(userId);
+  console.log('[addPurchasedCoins] current balance:', { purchased_coins: balance.purchased_coins, weekly_coins: balance.weekly_coins, total_coins: balance.total_coins });
 
-  const { error } = await (supabaseAdmin as any)
+  const newPurchased = balance.purchased_coins + amount;
+  console.log('[addPurchasedCoins] updating purchased_coins to:', newPurchased);
+
+  const { data: updateData, error: updateError } = await (supabaseAdmin as any)
     .from("ai_coins")
-    .update({ purchased_coins: balance.purchased_coins + amount })
-    .eq("user_id", userId);
+    .update({ purchased_coins: newPurchased })
+    .eq("user_id", userId)
+    .select()
+    .single();
 
-  if (error) throw error;
+  if (updateError) {
+    console.error('[addPurchasedCoins] update error:', updateError);
+    throw updateError;
+  }
+  console.log('[addPurchasedCoins] update result:', updateData);
 
-  await (supabaseAdmin as any).from("coin_transactions").insert({
+  const { data: txData, error: txError } = await (supabaseAdmin as any).from("coin_transactions").insert({
     user_id: userId,
     amount,
     type: "purchase",
     reference_id: referenceId || null,
-  });
+  }).select().single();
+
+  if (txError) {
+    console.error('[addPurchasedCoins] coin_transactions insert error:', txError);
+    throw txError;
+  }
+  console.log('[addPurchasedCoins] transaction recorded:', txData);
 }
 
 export async function updateWeeklyCoinAllocation(userId: string, plan: string): Promise<void> {

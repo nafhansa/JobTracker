@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     }
 
     const transactionId = crypto.randomUUID();
-    const { error: dbError } = await supabaseAdmin
+    const { error: dbError } = await (supabaseAdmin as any)
       .from("pending_midtrans_transactions")
       .insert({
         id: transactionId,
@@ -113,10 +113,28 @@ export async function POST(req: Request) {
         customer_email: customerDetails.email || null,
         currency: "IDR",
         billing_day: new Date().getDate(),
-      } as any);
+      });
 
     if (dbError) {
-      console.error("Failed to store coin transaction:", dbError);
+      console.error("Failed to store pending coin transaction:", dbError);
+      return NextResponse.json({ error: "Failed to create transaction record" }, { status: 500 });
+    }
+
+    // Also create a permanent coin_purchases record
+    const { error: purchaseError } = await (supabaseAdmin as any)
+      .from("coin_purchases")
+      .insert({
+        user_id: authResult.userId,
+        order_id: orderId,
+        package_id: pkg.id,
+        coins: pkg.coins,
+        amount_idr: pkg.price_idr,
+        status: "pending",
+        snap_token: result.token,
+      });
+
+    if (purchaseError) {
+      console.error("Failed to store coin purchase record:", purchaseError);
     }
 
     return NextResponse.json({
