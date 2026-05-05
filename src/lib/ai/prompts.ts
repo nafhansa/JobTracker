@@ -1,11 +1,20 @@
-import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage } from "./types";
 
 const LANGUAGE_INSTRUCTIONS: Record<OutputLanguage, string> = {
   en: "Write the entire output in English.",
   id: "Write the entire output in Bahasa Indonesia (Indonesian). Use formal Indonesian for professional/formal tones, and casual Indonesian for casual/friendly tones.",
 };
 
-export function buildSystemPrompt(type: GenerationType, language?: OutputLanguage): string {
+const STAGE_CONTEXT: Record<ApplicationStage, string> = {
+  applied: "The user has applied but has received no response yet. This is initial outreach — make a strong first impression and express genuine enthusiasm for the role and company.",
+  emailed: "The user has already sent an email to this company. This could be a follow-up email or a new angle of approach — acknowledge any prior contact if appropriate, and add new value rather than repeating previous messages.",
+  responded: "The company has responded to the user's application. Build on this existing conversation — reference the response positively, reinforce the user's fit, and move the conversation forward toward next steps.",
+  interview: "The user has an interview scheduled or recently completed one. Write something that reinforces their candidacy — express continued interest, reference the interview discussion, or follow up with additional context that strengthens their case.",
+  offer: "The user has received a job offer. Write a professional message for offer negotiation, acceptance, or asking clarifying questions about terms. Be positive but strategic.",
+  rejected: "The user was rejected for this position. Write a graceful, professional follow-up message — thank them for the opportunity, ask for constructive feedback, and keep the door open for future opportunities. Be humble, not desperate.",
+};
+
+export function buildSystemPrompt(type: GenerationType, language?: OutputLanguage, targetStage?: ApplicationStage): string {
   const langInstruction = language ? LANGUAGE_INSTRUCTIONS[language] : "";
 
   const basePrompt = `You are an expert professional writer specializing in career outreach and cover letters. You write compelling, personalized content that helps job seekers stand out. Your writing should be:
@@ -17,7 +26,9 @@ export function buildSystemPrompt(type: GenerationType, language?: OutputLanguag
 
 ${langInstruction}
 
-IMPORTANT: Do NOT use em dashes (the long dash character). Use commas, periods, or rephrase instead. For example, do NOT write "I am writing to you - a leader in..." Instead use "I am writing to you, a leader in..." or "I am writing to you because you are a leader in..." Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.`;
+IMPORTANT: Do NOT use em dashes (the long dash character). Use commas, periods, or rephrase instead. For example, do NOT write "I am writing to you - a leader in..." Instead use "I am writing to you, a leader in..." or "I am writing to you because you are a leader in..." Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.
+
+${targetStage ? `APPLICATION STAGE CONTEXT: The user's job application is at the "${targetStage}" stage. ${STAGE_CONTEXT[targetStage]}` : ""}`;
 
   switch (type) {
     case "cover_letter":
@@ -115,6 +126,7 @@ interface BuildUserPromptParams {
     role?: string;
     recruiterName?: string;
   };
+  targetStage?: ApplicationStage;
   channel?: ColdChannel;
   tone?: ToneType;
   format?: GenerationFormat;
@@ -123,7 +135,7 @@ interface BuildUserPromptParams {
 }
 
 export function buildUserPrompt(params: BuildUserPromptParams): string {
-  const { type, userProfile, target, tone, format, customContext, language } = params;
+  const { type, userProfile, target, tone, format, customContext, language, targetStage } = params;
 
   const senderInfo = userProfile
     ? `SENDER PROFILE:
@@ -140,7 +152,7 @@ export function buildUserPrompt(params: BuildUserPromptParams): string {
     ? `TARGET:
 * Recipient Name: ${target.recruiterName || target.name || "Not provided"}
 * Company: ${target.company || "Not provided"}
-* Role: ${target.role || "Not provided"}`
+* Role: ${target.role || "Not provided"}${targetStage ? `\n* Application Stage: ${targetStage} — ${STAGE_CONTEXT[targetStage]}` : ""}`
     : "";
 
   const toneInstruction = tone ? `TONE: ${tone}` : "TONE: professional";

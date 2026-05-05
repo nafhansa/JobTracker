@@ -6,19 +6,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, Briefcase, Pencil, ArrowRight } from "lucide-react";
 import { JobApplication } from "@/types";
+import { ApplicationStage, STAGE_LABELS } from "@/lib/ai/types";
 import JobPicker from "./JobPicker";
 import JobFormModal from "@/components/forms/AddJobModal";
+
+function getApplicationStage(status: JobApplication["status"]): ApplicationStage {
+  if (status.contractEmail) return "offer";
+  if (status.interviewEmail) return "interview";
+  if (status.cvResponded) return "responded";
+  if (status.emailed) return "emailed";
+  if (status.rejected) return "rejected";
+  return "applied";
+}
 
 interface TargetSelectorProps {
   userId: string;
   targetCompany: string;
   targetRole: string;
   targetName: string;
+  targetStage: ApplicationStage | null;
   jobId: string;
   useManual: boolean;
   onTargetCompanyChange: (v: string) => void;
   onTargetRoleChange: (v: string) => void;
   onTargetNameChange: (v: string) => void;
+  onTargetStageChange: (v: ApplicationStage | null) => void;
   onJobIdChange: (v: string) => void;
   onUseManualChange: (v: boolean) => void;
   onNext: () => void;
@@ -32,11 +44,13 @@ export default function TargetSelector({
   targetCompany,
   targetRole,
   targetName,
+  targetStage,
   jobId,
   useManual,
   onTargetCompanyChange,
   onTargetRoleChange,
   onTargetNameChange,
+  onTargetStageChange,
   onJobIdChange,
   onUseManualChange,
   onNext,
@@ -76,10 +90,12 @@ export default function TargetSelector({
       onTargetCompanyChange("");
       onTargetRoleChange("");
       onTargetNameChange("");
+      onTargetStageChange(null);
     } else {
       onJobIdChange(job.id || "");
       onTargetCompanyChange(job.company);
       onTargetRoleChange(job.jobTitle);
+      onTargetStageChange(getApplicationStage(job.status));
     }
   };
 
@@ -177,6 +193,14 @@ export default function TargetSelector({
                   className="bg-background h-10"
                 />
               </div>
+            </div>
+          )}
+          {jobId && targetStage && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Application Stage:</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                {STAGE_LABELS[targetStage]}
+              </span>
             </div>
           )}
         </div>

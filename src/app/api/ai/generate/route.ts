@@ -5,7 +5,7 @@ import { getUserProfile } from "@/lib/supabase/user-profile";
 import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
 import { generateContent } from "@/lib/ai/anthropic";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { GenerateRequest, GenerationType, COINS_PER_GENERATION } from "@/lib/ai/types";
+import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage } from "@/lib/ai/types";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 
 export async function POST(req: Request) {
@@ -18,9 +18,10 @@ export async function POST(req: Request) {
     const isAdmin = isAdminUser(authResult.email || "");
 
     const body: GenerateRequest = await req.json();
-    const { type, targetName, targetCompany, targetRole, jobId, channel, tone, format, customContext, language } = body;
+    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language } = body;
 
     const validTypes: GenerationType[] = ["cover_letter", "cold_email", "cold_dm_instagram", "cold_wa", "cold_linkedin"];
+    const validStages: ApplicationStage[] = ["applied", "emailed", "responded", "interview", "offer", "rejected"];
     if (!type || !validTypes.includes(type)) {
       return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
     }
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
         type,
         userProfile,
         target,
+        targetStage: targetStage as ApplicationStage | undefined,
         channel,
         tone: tone || "professional",
         format: format || (type === "cover_letter" ? "full_letter" : undefined),

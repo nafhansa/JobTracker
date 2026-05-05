@@ -12,6 +12,7 @@ import {
   GenerationFormat,
   OutputLanguage,
   GeneratedDocument,
+  ApplicationStage,
   COINS_PER_GENERATION,
 } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
@@ -45,6 +46,7 @@ interface CreationFormData {
   targetName: string;
   targetCompany: string;
   targetRole: string;
+  targetStage: ApplicationStage | null;
   jobId: string;
   useManual: boolean;
   tone: ToneType;
@@ -59,6 +61,7 @@ const INITIAL_FORM_DATA: CreationFormData = {
   targetName: "",
   targetCompany: "",
   targetRole: "",
+  targetStage: null,
   jobId: "",
   useManual: false,
   tone: "professional",
@@ -211,6 +214,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           targetName: formData.targetName || undefined,
           targetCompany: formData.targetCompany || undefined,
           targetRole: formData.targetRole || undefined,
+          targetStage: formData.targetStage || undefined,
           tone: formData.tone,
           format: formData.type === "cover_letter" ? formData.format : undefined,
           language: formData.language,
@@ -322,11 +326,13 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           targetCompany={formData.targetCompany}
           targetRole={formData.targetRole}
           targetName={formData.targetName}
+          targetStage={formData.targetStage}
           jobId={formData.jobId}
           useManual={formData.useManual}
           onTargetCompanyChange={(v) => setFormData((prev) => ({ ...prev, targetCompany: v }))}
           onTargetRoleChange={(v) => setFormData((prev) => ({ ...prev, targetRole: v }))}
           onTargetNameChange={(v) => setFormData((prev) => ({ ...prev, targetName: v }))}
+          onTargetStageChange={(v) => setFormData((prev) => ({ ...prev, targetStage: v }))}
           onJobIdChange={(v) => setFormData((prev) => ({ ...prev, jobId: v }))}
           onUseManualChange={(v) => setFormData((prev) => ({ ...prev, useManual: v }))}
           onNext={() => navigate("customize")}

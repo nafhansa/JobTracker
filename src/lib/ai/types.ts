@@ -93,11 +93,23 @@ export interface GeneratedDocument {
   created_at: string;
 }
 
+export type ApplicationStage = "applied" | "emailed" | "responded" | "interview" | "offer" | "rejected";
+
+export const STAGE_LABELS: Record<ApplicationStage, string> = {
+  applied: "Applied",
+  emailed: "Emailed",
+  responded: "Responded",
+  interview: "Interview",
+  offer: "Offer",
+  rejected: "Rejected",
+};
+
 export interface GenerateRequest {
   type: GenerationType;
   targetName?: string;
   targetCompany?: string;
   targetRole?: string;
+  targetStage?: ApplicationStage;
   jobId?: string;
   channel?: ColdChannel;
   tone?: ToneType;

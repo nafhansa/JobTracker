@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts";
-import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage } from "./types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -25,6 +25,7 @@ interface GenerateContentParams {
     role?: string;
     recruiterName?: string;
   };
+  targetStage?: ApplicationStage;
   channel?: ColdChannel;
   tone?: ToneType;
   format?: GenerationFormat;
@@ -33,8 +34,8 @@ interface GenerateContentParams {
 }
 
 export async function generateContent(params: GenerateContentParams): Promise<string> {
-  const { language } = params;
-  const systemPrompt = buildSystemPrompt(params.type, language);
+  const { language, targetStage } = params;
+  const systemPrompt = buildSystemPrompt(params.type, language, targetStage);
   const userPrompt = buildUserPrompt(params);
 
   const maxTokens = params.type === "cover_letter" ? COVER_LETTER_MAX_TOKENS : MAX_TOKENS;
