@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Sparkles, Clock, Zap, Flame, Crown, ArrowLeft, Loader2, Check } from "lucide-react";
 import { motion, useSpring, useTransform, Variants } from "framer-motion";
@@ -78,6 +78,36 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [showSnap, setShowSnap] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
+  const snapLoadAttempted = useRef(false);
+
+  const loadMidtransScript = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window !== "undefined" && window.snap) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
+        ? "https://app.midtrans.com/snap/snap.js"
+        : "https://app.sandbox.midtrans.com/snap/snap.js";
+      script.setAttribute("data-client-key", process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "");
+      script.onload = () => {
+        setTimeout(() => {
+          if (window.snap) resolve();
+          else reject(new Error("Snap SDK failed to initialize"));
+        }, 300);
+      };
+      script.onerror = () => reject(new Error("Failed to load payment SDK"));
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!snapLoadAttempted.current) {
+      snapLoadAttempted.current = true;
+      loadMidtransScript().catch(() => {});
+    }
+  }, [loadMidtransScript]);
 
   const weeklyAllocation = WEEKLY_COINS_BY_PLAN[plan] ?? 240;
   const weeklyGenerates = Math.floor(weeklyAllocation / COINS_PER_GENERATION);
@@ -147,8 +177,21 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
         return;
       }
 
-      if (data.token && typeof window !== "undefined" && (window as any).snap) {
-        (window as any).snap.pay(data.token, {
+      if (data.token) {
+        try {
+          await loadMidtransScript();
+        } catch {
+          toast.error("Failed to load payment gateway", { description: "Please refresh the page and try again." });
+          return;
+        }
+
+        if (!window.snap) {
+          toast.error("Payment gateway not available", { description: "Please refresh the page and try again." });
+          return;
+        }
+
+        setShowSnap(true);
+        window.snap.pay(data.token, {
           onSuccess: () => {
             setShowSnap(false);
             toast.success("JPs added!", { description: `${pkg.coins.toLocaleString("id-ID")} Job Points have been added to your account.` });
@@ -158,7 +201,6 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
             setShowSnap(false);
           },
         });
-        setShowSnap(true);
       } else {
         toast.info("Payment initialized", { description: "JPs will be added after payment is confirmed." });
         fetchCoins();
