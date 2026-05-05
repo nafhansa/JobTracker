@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, Briefcase, Pencil, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, Briefcase, Pencil, ArrowRight, Globe, CheckCircle2 } from "lucide-react";
 import { JobApplication } from "@/types";
-import { ApplicationStage, STAGE_LABELS } from "@/lib/ai/types";
+import { ApplicationStage, STAGE_LABELS, CompanyInfo } from "@/lib/ai/types";
+import { toast } from "sonner";
 import JobPicker from "./JobPicker";
 import JobFormModal from "@/components/forms/AddJobModal";
 
@@ -27,12 +28,16 @@ interface TargetSelectorProps {
   targetStage: ApplicationStage | null;
   jobId: string;
   useManual: boolean;
+  companyUrl: string;
+  companyInfo: CompanyInfo | null;
   onTargetCompanyChange: (v: string) => void;
   onTargetRoleChange: (v: string) => void;
   onTargetNameChange: (v: string) => void;
   onTargetStageChange: (v: ApplicationStage | null) => void;
   onJobIdChange: (v: string) => void;
   onUseManualChange: (v: boolean) => void;
+  onCompanyUrlChange: (v: string) => void;
+  onCompanyInfoChange: (v: CompanyInfo | null) => void;
   onNext: () => void;
   onBack: () => void;
   plan: string;
@@ -47,12 +52,16 @@ export default function TargetSelector({
   targetStage,
   jobId,
   useManual,
+  companyUrl = "",
+  companyInfo = null,
   onTargetCompanyChange,
   onTargetRoleChange,
   onTargetNameChange,
   onTargetStageChange,
   onJobIdChange,
   onUseManualChange,
+  onCompanyUrlChange,
+  onCompanyInfoChange,
   onNext,
   onBack,
   plan,
@@ -62,6 +71,7 @@ export default function TargetSelector({
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
+  const [scrapeLoading, setScrapeLoading] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -122,6 +132,36 @@ export default function TargetSelector({
   const canContinue = useManual
     ? !!(targetCompany.trim() && targetRole.trim())
     : !!jobId;
+
+  const handleContinue = async () => {
+    if (!canContinue) return;
+
+    if (companyUrl.trim()) {
+      setScrapeLoading(true);
+      try {
+        const token = await user?.getIdToken();
+        if (!token) { setScrapeLoading(false); return; }
+        const res = await fetch("/api/ai/company-info", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ url: companyUrl }),
+        });
+        const data = await res.json();
+        if (res.ok && data.companyInfo) {
+          onCompanyInfoChange(data.companyInfo);
+          toast.success("Company info loaded", { description: "Details will enhance your generation" });
+        } else {
+          onCompanyInfoChange(null);
+        }
+      } catch {
+        onCompanyInfoChange(null);
+      } finally {
+        setScrapeLoading(false);
+      }
+    }
+
+    onNext();
+  };
 
   return (
     <div className="space-y-4">
@@ -258,6 +298,62 @@ export default function TargetSelector({
         </div>
       )}
 
+      <div className="border border-border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b border-border">
+          <div className="flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-foreground">Company Website</span>
+            <span className="text-[10px] text-muted-foreground">(optional — enriches your generation with real company info)</span>
+          </div>
+        </div>
+        <div className="p-4 space-y-2">
+          <Input
+            placeholder="e.g. google.com or https://google.com"
+            value={companyUrl}
+            onChange={(e) => {
+              onCompanyUrlChange(e.target.value);
+              if (companyInfo) onCompanyInfoChange(null);
+            }}
+            className="bg-background h-9 text-sm"
+            disabled={scrapeLoading}
+          />
+          {scrapeLoading && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Fetching company info...
+            </div>
+          )}
+          {companyInfo && !scrapeLoading && (
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                <span className="text-xs font-medium text-foreground">Company info ready</span>
+              </div>
+              {companyInfo.description && (
+                <p className="text-xs text-muted-foreground">{companyInfo.description}</p>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {companyInfo.industry && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                    {companyInfo.industry}
+                  </span>
+                )}
+                {companyInfo.companySize && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                    {companyInfo.companySize}
+                  </span>
+                )}
+                {companyInfo.headquarters && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                    {companyInfo.headquarters}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between pt-2">
         <button
           onClick={onBack}
@@ -266,13 +362,22 @@ export default function TargetSelector({
           &larr; Back
         </button>
         <Button
-          onClick={onNext}
-          disabled={!canContinue}
+          onClick={handleContinue}
+          disabled={!canContinue || scrapeLoading}
           className="gap-1.5"
         >
-          <Sparkles className="w-4 h-4" />
-          Continue
-          <ArrowRight className="w-3.5 h-3.5" />
+          {scrapeLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Fetching info...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Continue
+              <ArrowRight className="w-3.5 h-3.5" />
+            </>
+          )}
         </Button>
       </div>
 

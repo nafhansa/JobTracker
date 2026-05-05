@@ -230,7 +230,7 @@ export async function generateDocx(params: {
         }),
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { after: isCoverLetter ? 400 : 300 },
+      spacing: { after: isCoverLetter ? 600 : 400 },
     })
   );
 
@@ -332,7 +332,7 @@ export async function generatePdf(params: {
     doc.text(line, pageWidth / 2, y, { align: "center" });
     y += lineHeight;
   }
-  y += lineHeight * 0.5;
+  y += lineHeight * (isCoverLetter ? 2 : 1.5);
 
   const paraSpacing = isCoverLetter ? 8 : 4;
 

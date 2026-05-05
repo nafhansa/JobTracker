@@ -5,7 +5,8 @@ import { getUserProfile } from "@/lib/supabase/user-profile";
 import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
 import { generateContent } from "@/lib/ai/anthropic";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage } from "@/lib/ai/types";
+import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage, CompanyInfo } from "@/lib/ai/types";
+import { formatCompanyInfoForPrompt } from "@/lib/ai/company-extraction";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 
 export async function POST(req: Request) {
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     const isAdmin = isAdminUser(authResult.email || "");
 
     const body: GenerateRequest = await req.json();
-    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language } = body;
+    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language, companyInfo } = body;
 
     const validTypes: GenerationType[] = ["cover_letter", "cold_email", "cold_dm_instagram", "cold_wa", "cold_linkedin"];
     const validStages: ApplicationStage[] = ["applied", "emailed", "responded", "interview", "offer", "rejected"];
@@ -60,6 +61,11 @@ export async function POST(req: Request) {
       ? { name: targetName, company: targetCompany, role: targetRole }
       : undefined;
 
+    let companyInfoPrompt: string | undefined;
+    if (companyInfo) {
+      companyInfoPrompt = formatCompanyInfoForPrompt(companyInfo as CompanyInfo, type as GenerationType);
+    }
+
     let content: string;
     try {
       content = await generateContent({
@@ -72,6 +78,7 @@ export async function POST(req: Request) {
         format: format || (type === "cover_letter" ? "full_letter" : undefined),
         customContext,
         language,
+        companyInfoPrompt,
       });
     } catch (aiError) {
       console.error("AI generation failed, refunding coins:", aiError);

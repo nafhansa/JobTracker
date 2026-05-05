@@ -14,6 +14,7 @@ import {
   GeneratedDocument,
   ApplicationStage,
   COINS_PER_GENERATION,
+  CompanyInfo,
 } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import StepIndicator from "./StepIndicator";
@@ -52,6 +53,8 @@ interface CreationFormData {
   tone: ToneType;
   format: GenerationFormat;
   customContext: string;
+  companyUrl: string;
+  companyInfo: CompanyInfo | null;
 }
 
 const INITIAL_FORM_DATA: CreationFormData = {
@@ -67,6 +70,8 @@ const INITIAL_FORM_DATA: CreationFormData = {
   tone: "professional",
   format: "full_letter",
   customContext: "",
+  companyUrl: "",
+  companyInfo: null,
 };
 
 function getSteps(type: GenerationType | null, view: AIWriterView): { label: string }[] {
@@ -219,6 +224,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           format: formData.type === "cover_letter" ? formData.format : undefined,
           language: formData.language,
           customContext: formData.customContext || undefined,
+          companyInfo: formData.companyInfo || undefined,
         }),
       });
 
@@ -329,12 +335,16 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           targetStage={formData.targetStage}
           jobId={formData.jobId}
           useManual={formData.useManual}
+          companyUrl={formData.companyUrl}
+          companyInfo={formData.companyInfo}
           onTargetCompanyChange={(v) => setFormData((prev) => ({ ...prev, targetCompany: v }))}
           onTargetRoleChange={(v) => setFormData((prev) => ({ ...prev, targetRole: v }))}
           onTargetNameChange={(v) => setFormData((prev) => ({ ...prev, targetName: v }))}
           onTargetStageChange={(v) => setFormData((prev) => ({ ...prev, targetStage: v }))}
           onJobIdChange={(v) => setFormData((prev) => ({ ...prev, jobId: v }))}
           onUseManualChange={(v) => setFormData((prev) => ({ ...prev, useManual: v }))}
+          onCompanyUrlChange={(v) => setFormData((prev) => ({ ...prev, companyUrl: v }))}
+          onCompanyInfoChange={(v) => setFormData((prev) => ({ ...prev, companyInfo: v }))}
           onNext={() => navigate("customize")}
           onBack={() => navigate("language")}
           plan={plan}

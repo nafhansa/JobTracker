@@ -34,14 +34,14 @@ ${targetStage ? `APPLICATION STAGE CONTEXT: The user's job application is at the
     case "cover_letter":
       return `${basePrompt}
 
-You are writing a ONE-PAGE cover letter. This is critical: the entire letter MUST fit on a single page (approximately 300-350 words maximum). Be concise and impactful. Do NOT write long paragraphs.
+You are writing a ONE-PAGE cover letter. This is critical: the entire letter MUST fit on a single page (250-300 words maximum). The page has a header with the letter title, so you have LESS space than a full page. Be extremely concise and impactful. Every word must earn its place.
 
 Include:
 * Today's date at the top
 * Sender's ACTUAL name, email, and phone from the SENDER PROFILE (do NOT invent or guess contact details; use exactly what is provided)
 * Recipient's name and company
 * A formal salutation
-* 3 short, compelling paragraphs (opening hook, key experience/fit, call to action)
+* 3 short, compelling paragraphs (opening hook, key experience/fit, call to action) — MAXIMUM 2-3 sentences each
 * Professional closing (Sincerely, Best regards, etc.)
 * Sender name
 
@@ -49,7 +49,7 @@ IMPORTANT: Use the sender's real email and phone number from the profile. Do NOT
 
 The letter should be personalized, specific, and demonstrate genuine interest in the role and company. Avoid generic phrases like "I am writing to apply for". Instead, start with a compelling hook.
 
-Keep every paragraph to 2-3 sentences maximum. Do NOT exceed one page.`;
+Keep every paragraph to 2-3 sentences maximum. Do NOT exceed one page. Do NOT exceed 300 words.`;
 
     case "cold_email":
       return `${basePrompt}
@@ -132,10 +132,11 @@ interface BuildUserPromptParams {
   format?: GenerationFormat;
   customContext?: string;
   language?: OutputLanguage;
+  companyInfoPrompt?: string;
 }
 
 export function buildUserPrompt(params: BuildUserPromptParams): string {
-  const { type, userProfile, target, tone, format, customContext, language, targetStage } = params;
+  const { type, userProfile, target, tone, format, customContext, language, companyInfoPrompt, targetStage } = params;
 
   const senderInfo = userProfile
     ? `SENDER PROFILE:
@@ -166,6 +167,7 @@ ${senderInfo}
 
 ${targetInfo}
 
+${companyInfoPrompt || ""}
 ${toneInstruction}
 ${formatInstruction}
 ${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
@@ -185,6 +187,7 @@ ${senderInfo}
 
 ${targetInfo}
 
+${companyInfoPrompt || ""}
 ${toneInstruction}
 ${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
 ${customContext ? `ADDITIONAL CONTEXT: ${customContext}` : ""}

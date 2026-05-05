@@ -104,6 +104,18 @@ export const STAGE_LABELS: Record<ApplicationStage, string> = {
   rejected: "Rejected",
 };
 
+export interface CompanyInfo {
+  description: string;
+  mission: string | null;
+  values: string[];
+  products: string[];
+  culture: string | null;
+  recentNews: string[];
+  industry: string | null;
+  companySize: string | null;
+  headquarters: string | null;
+}
+
 export interface GenerateRequest {
   type: GenerationType;
   targetName?: string;
@@ -116,6 +128,8 @@ export interface GenerateRequest {
   format?: GenerationFormat;
   customContext?: string;
   language?: OutputLanguage;
+  companyUrl?: string;
+  companyInfo?: CompanyInfo;
 }
 
 export interface CoinsBalance {

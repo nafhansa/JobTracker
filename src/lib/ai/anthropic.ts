@@ -31,11 +31,11 @@ interface GenerateContentParams {
   format?: GenerationFormat;
   customContext?: string;
   language?: OutputLanguage;
+  companyInfoPrompt?: string;
 }
 
 export async function generateContent(params: GenerateContentParams): Promise<string> {
-  const { language, targetStage } = params;
-  const systemPrompt = buildSystemPrompt(params.type, language, targetStage);
+  const systemPrompt = buildSystemPrompt(params.type, params.language, params.targetStage);
   const userPrompt = buildUserPrompt(params);
 
   const maxTokens = params.type === "cover_letter" ? COVER_LETTER_MAX_TOKENS : MAX_TOKENS;
