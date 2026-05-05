@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
-import { CheckCircle2, ArrowRight, Star, Tag, Gift, AlertTriangle, Clock, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Star, Tag, Gift, AlertTriangle, Clock, Loader2, RefreshCw } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { TwitterShareModal } from "@/components/TwitterShareModal";
 import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { detectLocation } from "@/lib/utils/location";
@@ -71,6 +72,17 @@ export default function PricingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
       <ResetThemeToDefault />
+      <div className="fixed top-4 left-4 z-50 lg:top-6 lg:left-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/dashboard")}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
       <Navbar />
 
       <main className="flex-1 relative z-10 flex flex-col items-center pt-24 md:pt-32 pb-16">
