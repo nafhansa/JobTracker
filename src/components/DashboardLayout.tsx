@@ -11,6 +11,7 @@ import SettingsSection from "@/components/SettingsSection";
 import JobFormModal from "@/components/forms/AddJobModal";
 import FreelanceDashboard from "@/components/freelance/FreelanceDashboard";
 import AIWriterSection from "@/components/ai-writer/AIWriterSection";
+import MobileCoins from "@/components/ai-writer/MobileCoins";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
 import ClientDashboardSection from "@/components/ClientDashboardSection";
@@ -190,11 +191,16 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
               )}
               {activeSection === "ai-writer" && (
                 <>
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
-                    AI Writer
-                  </h1>
+                  <div className="flex items-start justify-between gap-3">
+                    <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                      AI Writer
+                    </h1>
+                    <div className="lg:hidden shrink-0 pt-1">
+                      <MobileCoins userId={userId} />
+                    </div>
+                  </div>
                   <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
-                    Generate personalized cover letters and cold outreach messages
+                    Generate personalized cover letters<br className="sm:hidden" /> and cold outreach messages
                   </p>
                 </>
               )}

@@ -2,21 +2,117 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
-import { CoinsBalance, UserProfile, GenerationType } from "@/lib/ai/types";
+import { toast } from "sonner";
+import {
+  CoinsBalance,
+  UserProfile,
+  GenerationType,
+  ColdChannel,
+  ToneType,
+  GenerationFormat,
+  OutputLanguage,
+  GeneratedDocument,
+  COINS_PER_GENERATION,
+} from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
-import CoverLetterForm from "./CoverLetterForm";
-import ColdOutreachForm from "./ColdOutreachForm";
+import StepIndicator from "./StepIndicator";
+import AIWriterHome from "./AIWriterHome";
+import CreationDetail from "./CreationDetail";
+import TypeSelector from "./TypeSelector";
+import LanguageSelector from "./LanguageSelector";
+import ChannelSelector from "./ChannelSelector";
+import TargetSelector from "./TargetSelector";
+import CustomizeStep from "./CustomizeStep";
+import GeneratingView from "./GeneratingView";
 import GenerationOutput from "./GenerationOutput";
-import GenerationHistory from "./GenerationHistory";
-import { FileText, MessageSquare, Clock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-type Tab = "cover-letter" | "cold-outreach" | "history";
+type AIWriterView =
+  | "home"
+  | "detail"
+  | "select-type"
+  | "language"
+  | "channel"
+  | "target"
+  | "customize"
+  | "generating"
+  | "result";
 
-const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "cover-letter", label: "Cover Letter", icon: FileText },
-  { id: "cold-outreach", label: "Cold Outreach", icon: MessageSquare },
-  { id: "history", label: "History", icon: Clock },
-];
+interface CreationFormData {
+  type: GenerationType | null;
+  channel: ColdChannel;
+  language: OutputLanguage;
+  targetName: string;
+  targetCompany: string;
+  targetRole: string;
+  jobId: string;
+  useManual: boolean;
+  tone: ToneType;
+  format: GenerationFormat;
+  customContext: string;
+}
+
+const INITIAL_FORM_DATA: CreationFormData = {
+  type: null,
+  channel: "email",
+  language: "en",
+  targetName: "",
+  targetCompany: "",
+  targetRole: "",
+  jobId: "",
+  useManual: false,
+  tone: "professional",
+  format: "full_letter",
+  customContext: "",
+};
+
+function getSteps(type: GenerationType | null, view: AIWriterView): { label: string }[] {
+  if (type === "cover_letter") {
+    return [
+      { label: "Type" },
+      { label: "Language" },
+      { label: "Target" },
+      { label: "Customize" },
+      { label: "Generate" },
+      { label: "Result" },
+    ];
+  }
+  return [
+    { label: "Type" },
+    { label: "Channel" },
+    { label: "Language" },
+    { label: "Target" },
+    { label: "Customize" },
+    { label: "Generate" },
+    { label: "Result" },
+  ];
+}
+
+function getStepIndex(type: GenerationType | null, view: AIWriterView): number {
+  if (view === "home" || view === "detail") return -1;
+  if (view === "select-type") return 0;
+
+  if (type === "cover_letter") {
+    switch (view) {
+      case "language": return 1;
+      case "target": return 2;
+      case "customize": return 3;
+      case "generating": return 4;
+      case "result": return 5;
+      default: return 0;
+    }
+  }
+
+  switch (view) {
+    case "channel": return 1;
+    case "language": return 2;
+    case "target": return 3;
+    case "customize": return 4;
+    case "generating": return 5;
+    case "result": return 6;
+    default: return 0;
+  }
+}
 
 export default function AIWriterSection({ userId, onNavigateToApplications }: { userId: string; onNavigateToApplications?: () => void }) {
   const { user, subscription } = useAuth();
@@ -24,9 +120,12 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
   const isSubscribed = isAdmin || checkIsPro(subscription);
   const plan = !isSubscribed ? "free" : (subscription?.plan || "free");
 
-  const [activeTab, setActiveTab] = useState<Tab>("cover-letter");
+  const [view, setView] = useState<AIWriterView>("home");
+  const [formData, setFormData] = useState<CreationFormData>({ ...INITIAL_FORM_DATA });
   const [coins, setCoins] = useState<CoinsBalance | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  const [selectedDoc, setSelectedDoc] = useState<GeneratedDocument | null>(null);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [generatedType, setGeneratedType] = useState<GenerationType | null>(null);
   const [generatedTargetCompany, setGeneratedTargetCompany] = useState<string | undefined>(undefined);
@@ -70,94 +169,228 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     fetchProfile();
   }, [fetchCoins, fetchProfile]);
 
-  const handleGenerated = (content: string, type: GenerationType, targetCompany?: string, targetRole?: string, documentId?: string) => {
-    setGeneratedContent(content);
-    setGeneratedType(type);
-    setGeneratedTargetCompany(targetCompany);
-    setGeneratedTargetRole(targetRole);
-    setGeneratedDocId(documentId);
-    fetchCoins();
+  const resetFormAndGoHome = useCallback(() => {
+    setView("home");
+    setFormData({ ...INITIAL_FORM_DATA });
+    setGeneratedContent(null);
+    setGeneratedType(null);
+    setGeneratedTargetCompany(undefined);
+    setGeneratedTargetRole(undefined);
+    setGeneratedDocId(undefined);
+    setSelectedDoc(null);
+  }, []);
+
+  const navigate = (nextView: AIWriterView) => {
+    setView(nextView);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleGenerate = useCallback(async () => {
+    if (!formData.type || !user) return;
+
+    const hasInsufficientCoins = !isAdmin && (!coins || coins.total_coins < COINS_PER_GENERATION);
+    if (hasInsufficientCoins) {
+      toast.error("Insufficient JPs", { description: "You need more Job Points to generate." });
+      return;
+    }
+
+    navigate("generating");
+
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: formData.type,
+          channel: formData.channel || undefined,
+          jobId: formData.jobId || undefined,
+          targetName: formData.targetName || undefined,
+          targetCompany: formData.targetCompany || undefined,
+          targetRole: formData.targetRole || undefined,
+          tone: formData.tone,
+          format: formData.type === "cover_letter" ? formData.format : undefined,
+          language: formData.language,
+          customContext: formData.customContext || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 402) {
+          toast.error("Insufficient JPs", { description: data.error || "You need more Job Points." });
+        } else {
+          toast.error("Generation failed", { description: data.error || "Something went wrong." });
+        }
+        navigate("customize");
+        return;
+      }
+
+      setGeneratedContent(data.content);
+      setGeneratedType(formData.type);
+      setGeneratedTargetCompany(formData.targetCompany || undefined);
+      setGeneratedTargetRole(formData.targetRole || undefined);
+      setGeneratedDocId(data.documentId);
+      fetchCoins();
+      navigate("result");
+    } catch (err) {
+      console.error("Generation failed:", err);
+      toast.error("Generation failed", { description: "Something went wrong. Please try again." });
+      navigate("customize");
+    }
+  }, [formData, user, isAdmin, coins, fetchCoins]);
+
+  const steps = getSteps(formData.type, view);
+  const currentStep = getStepIndex(formData.type, view);
+
+  const showStepIndicator = !["home", "detail"].includes(view) && currentStep >= 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (activeTab !== tab.id) {
-                  setActiveTab(tab.id);
-                  setGeneratedContent(null);
-                  setGeneratedType(null);
-                  setGeneratedTargetCompany(undefined);
-                  setGeneratedTargetRole(undefined);
-                  setGeneratedDocId(undefined);
-                }
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {showStepIndicator && (
+        <StepIndicator steps={steps} currentStep={currentStep} />
+      )}
 
-      {generatedContent && generatedType && (
-        <GenerationOutput
-          content={generatedContent}
-          type={generatedType}
-          targetCompany={generatedTargetCompany}
-          targetRole={generatedTargetRole}
-          onDismiss={() => {
-            setGeneratedContent(null);
-            setGeneratedType(null);
-            setGeneratedTargetCompany(undefined);
-            setGeneratedTargetRole(undefined);
-            setGeneratedDocId(undefined);
+      {view === "home" && (
+        <AIWriterHome
+          onCreateNew={() => navigate("select-type")}
+          onSelectDoc={(doc) => {
+            setSelectedDoc(doc);
+            navigate("detail");
           }}
-          documentId={generatedDocId}
         />
       )}
 
-      {activeTab === "cover-letter" && (
-        <CoverLetterForm
-          userId={userId}
-          profile={profile}
-          onGenerated={handleGenerated}
-          coins={coins}
-          plan={plan}
-          isAdmin={isAdmin}
-          onNavigateToApplications={onNavigateToApplications}
+      {view === "detail" && selectedDoc && (
+        <CreationDetail
+          content={selectedDoc.content}
+          type={selectedDoc.type as GenerationType}
+          targetCompany={selectedDoc.target_company || undefined}
+          targetRole={selectedDoc.target_role || undefined}
+          documentId={selectedDoc.id}
+          onBack={resetFormAndGoHome}
         />
       )}
-      {activeTab === "cold-outreach" && (
-        <ColdOutreachForm
-          userId={userId}
-          profile={profile}
-          onGenerated={handleGenerated}
-          coins={coins}
-          plan={plan}
-          isAdmin={isAdmin}
-          onNavigateToApplications={onNavigateToApplications}
+
+      {view === "select-type" && (
+        <TypeSelector
+          onSelect={(type) => {
+            setFormData((prev) => ({ ...prev, type }));
+            if (type === "cover_letter") {
+              navigate("language");
+            } else {
+              navigate("channel");
+            }
+          }}
+          onBack={resetFormAndGoHome}
         />
       )}
-      {activeTab === "history" && (
-        <GenerationHistory userId={userId} onSelect={(doc) => {
-          setGeneratedContent(doc.content);
-          setGeneratedType(doc.type as GenerationType);
-          setGeneratedTargetCompany(doc.target_company || undefined);
-          setGeneratedTargetRole(doc.target_role || undefined);
-          setGeneratedDocId(doc.id);
-        }} />
+
+      {view === "channel" && (
+        <ChannelSelector
+          onSelect={(channel, type) => {
+            setFormData((prev) => ({ ...prev, channel, type }));
+            navigate("language");
+          }}
+          onBack={() => navigate("select-type")}
+        />
+      )}
+
+      {view === "language" && (
+        <LanguageSelector
+          onSelect={(language) => {
+            setFormData((prev) => ({ ...prev, language }));
+            navigate("target");
+          }}
+          onBack={() => {
+            if (formData.type === "cover_letter") {
+              navigate("select-type");
+            } else {
+              navigate("channel");
+            }
+          }}
+        />
+      )}
+
+      {view === "target" && (
+        <TargetSelector
+          userId={userId}
+          targetCompany={formData.targetCompany}
+          targetRole={formData.targetRole}
+          targetName={formData.targetName}
+          jobId={formData.jobId}
+          useManual={formData.useManual}
+          onTargetCompanyChange={(v) => setFormData((prev) => ({ ...prev, targetCompany: v }))}
+          onTargetRoleChange={(v) => setFormData((prev) => ({ ...prev, targetRole: v }))}
+          onTargetNameChange={(v) => setFormData((prev) => ({ ...prev, targetName: v }))}
+          onJobIdChange={(v) => setFormData((prev) => ({ ...prev, jobId: v }))}
+          onUseManualChange={(v) => setFormData((prev) => ({ ...prev, useManual: v }))}
+          onNext={() => navigate("customize")}
+          onBack={() => navigate("language")}
+          plan={plan}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {view === "customize" && formData.type && (
+        <CustomizeStep
+          type={formData.type}
+          channel={formData.channel}
+          language={formData.language}
+          tone={formData.tone}
+          format={formData.format}
+          customContext={formData.customContext}
+          profile={profile}
+          coins={coins}
+          isAdmin={isAdmin}
+          onLanguageChange={(l) => setFormData((prev) => ({ ...prev, language: l }))}
+          onToneChange={(t) => setFormData((prev) => ({ ...prev, tone: t }))}
+          onFormatChange={(f) => setFormData((prev) => ({ ...prev, format: f }))}
+          onCustomContextChange={(c) => setFormData((prev) => ({ ...prev, customContext: c }))}
+          onGenerate={handleGenerate}
+          onBack={() => navigate("target")}
+        />
+      )}
+
+      {view === "generating" && formData.type && (
+        <GeneratingView type={formData.type} />
+      )}
+
+      {view === "result" && generatedContent && generatedType && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={resetFormAndGoHome}
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </button>
+          </div>
+          <GenerationOutput
+            content={generatedContent}
+            type={generatedType}
+            targetCompany={generatedTargetCompany}
+            targetRole={generatedTargetRole}
+            documentId={generatedDocId}
+            onDismiss={resetFormAndGoHome}
+          />
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setFormData({ ...INITIAL_FORM_DATA });
+                navigate("select-type");
+              }}
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Generate Another
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
