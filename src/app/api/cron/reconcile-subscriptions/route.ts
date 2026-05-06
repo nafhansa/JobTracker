@@ -5,6 +5,36 @@ import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
 
 export const runtime = 'nodejs';
 
+const CONCURRENCY_LIMIT = 5;
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<void>
+): Promise<void[]> {
+  const results: Promise<void>[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const p = fn(item, i).catch((err) => {
+      console.error('Batch task error:', err);
+    });
+    results.push(p);
+
+    const e = p.then(() => {
+      executing.splice(executing.indexOf(e), 1);
+    });
+    executing.push(e);
+
+    if (executing.length >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.all(results);
+}
+
 async function verifyWithMidtrans(orderId: string): Promise<any> {
   if (!MIDTRANS_CONFIG.serverKey) {
     return null;
@@ -51,9 +81,11 @@ async function processPendingOperations() {
     return { processed: 0 };
   }
 
+  console.log(`Found ${pendingOps.length} pending operations to process`);
+
   let processed = 0;
 
-  for (const op of pendingOps) {
+  await runWithConcurrency(pendingOps as any[], CONCURRENCY_LIMIT, async (op: any) => {
     try {
       if (op.operation === 'cancel' && op.payload?.token) {
         const midtransApiUrl = MIDTRANS_CONFIG.isProduction
@@ -104,7 +136,7 @@ async function processPendingOperations() {
         })
         .eq('id', op.id);
     }
-  }
+  });
 
   return { processed };
 }
@@ -149,21 +181,26 @@ async function reconcileActiveSubscriptions() {
     return { reconciled: 0 };
   }
 
-  let reconciled = 0;
+  console.log(`Found ${subscriptions.length} active subscriptions to reconcile`);
 
-  for (const sub of subscriptions) {
+  let reconciled = 0;
+  const results: { id: string; status: string; action: string }[] = [];
+
+  await runWithConcurrency(subscriptions as any[], CONCURRENCY_LIMIT, async (sub: any) => {
     try {
       const midtransStatus = await verifyWithMidtrans(sub.midtrans_subscription_id || sub.midtrans_subscription_token);
 
       if (!midtransStatus) {
         console.log(`Could not verify subscription ${sub.id}, skipping`);
-        continue;
+        results.push({ id: sub.id, status: 'unknown', action: 'skipped' });
+        return;
       }
 
       const midtransTransactionStatus = midtransStatus.transaction_status;
 
       if (midtransTransactionStatus === 'settlement' || midtransTransactionStatus === 'capture') {
-        continue;
+        results.push({ id: sub.id, status: midtransTransactionStatus, action: 'ok' });
+        return;
       }
 
       if (midtransTransactionStatus === 'cancel' || midtransTransactionStatus === 'expire') {
@@ -197,13 +234,18 @@ async function reconcileActiveSubscriptions() {
         });
 
         reconciled++;
+        results.push({ id: sub.id, status: midtransTransactionStatus, action: 'cancelled' });
+      } else {
+        results.push({ id: sub.id, status: midtransTransactionStatus, action: 'unknown_status' });
       }
     } catch (error) {
       console.error(`Failed to reconcile subscription ${sub.id}:`, error);
+      results.push({ id: sub.id, status: 'error', action: 'failed' });
     }
-  }
+  });
 
-  return { reconciled };
+  console.log(`Reconciliation complete: ${reconciled} cancelled out of ${subscriptions.length} checked`);
+  return { reconciled, details: results };
 }
 
 export async function GET(req: Request) {

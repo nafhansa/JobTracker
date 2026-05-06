@@ -116,24 +116,18 @@ export async function deductCoins(userId: string, amount: number = COINS_PER_GEN
 export async function addPurchasedCoins(userId: string, amount: number, referenceId?: string): Promise<void> {
   console.log('[addPurchasedCoins] called:', { userId, amount, referenceId });
 
-  const balance = await getOrCreateCoins(userId);
-  console.log('[addPurchasedCoins] current balance:', { purchased_coins: balance.purchased_coins, weekly_coins: balance.weekly_coins, total_coins: balance.total_coins });
+  const { data: balance, error: balanceError } = await (supabaseAdmin as any)
+    .rpc("add_purchased_coins_atomic", {
+      p_user_id: userId,
+      p_amount: amount,
+    });
 
-  const newPurchased = balance.purchased_coins + amount;
-  console.log('[addPurchasedCoins] updating purchased_coins to:', newPurchased);
-
-  const { data: updateData, error: updateError } = await (supabaseAdmin as any)
-    .from("ai_coins")
-    .update({ purchased_coins: newPurchased })
-    .eq("user_id", userId)
-    .select()
-    .single();
-
-  if (updateError) {
-    console.error('[addPurchasedCoins] update error:', updateError);
-    throw updateError;
+  if (balanceError) {
+    console.error('[addPurchasedCoins] atomic RPC error:', balanceError);
+    throw balanceError;
   }
-  console.log('[addPurchasedCoins] update result:', updateData);
+
+  console.log('[addPurchasedCoins] atomic update result:', balance);
 
   const { data: txData, error: txError } = await (supabaseAdmin as any).from("coin_transactions").insert({
     user_id: userId,
