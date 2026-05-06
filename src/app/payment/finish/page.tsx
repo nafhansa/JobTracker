@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/firebase/auth-context";
 function PaymentFinishContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { reloadSubscription } = useAuth();
+  const { reloadSubscription, user } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [verifyMessage, setVerifyMessage] = useState("Verifying payment...");
@@ -30,9 +30,13 @@ function PaymentFinishContent() {
       }
 
       try {
+        const token = await user?.getIdToken();
         const response = await fetch('/api/payment/midtrans/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ orderId }),
         });
 

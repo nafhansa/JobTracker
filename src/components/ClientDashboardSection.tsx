@@ -9,14 +9,14 @@ import { useFreelanceJobsPolling } from "@/lib/supabase/freelance-jobs-polling";
 import { FreelanceJob } from "@/types";
 
 interface ClientDashboardSectionProps {
-  userId?: string;
+  user: { getIdToken: () => Promise<string> } | undefined;
   onNavigateToClients?: () => void;
   onAddClientClick?: () => void;
 }
 
-export default function ClientDashboardSection({ userId, onNavigateToClients, onAddClientClick }: ClientDashboardSectionProps) {
+export default function ClientDashboardSection({ user, onNavigateToClients, onAddClientClick }: ClientDashboardSectionProps) {
   const { t } = useLanguage();
-  const { jobs } = useFreelanceJobsPolling(userId);
+  const { jobs } = useFreelanceJobsPolling(user);
 
   const stats = useMemo(() => {
     const totalIncome = jobs.reduce((sum, job) => sum + (job.actualPrice || job.potentialPrice || 0), 0);

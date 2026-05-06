@@ -78,12 +78,14 @@ export const deleteFreelanceJob = async (jobId: string) => {
   }
 };
 
-export const getFreelanceJobCount = async (userId: string): Promise<number> => {
+export const getFreelanceJobCount = async (user: { getIdToken: () => Promise<string> }): Promise<number> => {
   try {
+    const token = await user.getIdToken();
     const response = await fetch('/api/freelance/count', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
 

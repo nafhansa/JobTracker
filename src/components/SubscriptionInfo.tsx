@@ -50,7 +50,7 @@ export function SubscriptionInfo() {
   // Fetch job count for free users - MUST be before early return
   useEffect(() => {
     if (isFreePlan && user) {
-      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
+      getJobCount(user).then(setJobCount).catch(() => setJobCount(0));
     }
   }, [isFreePlan, user]);
 

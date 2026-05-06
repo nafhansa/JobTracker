@@ -14,15 +14,16 @@ import { deleteFreelanceJob } from "@/lib/supabase/freelance-jobs";
 import { useFreelanceJobsPolling } from "@/lib/supabase/freelance-jobs-polling";
 
 interface FreelanceDashboardProps {
-  userId: string;
+  user: { getIdToken: () => Promise<string> } & { uid?: string } | undefined;
   trackerMode?: TrackerMode;
   initialOpenModal?: boolean;
   onModalClose?: () => void;
 }
 
-export default function FreelanceDashboard({ userId, trackerMode, initialOpenModal, onModalClose }: FreelanceDashboardProps) {
+export default function FreelanceDashboard({ user, trackerMode, initialOpenModal, onModalClose }: FreelanceDashboardProps) {
   const { t } = useLanguage();
-  const { jobs, loading, refetch } = useFreelanceJobsPolling(userId);
+  const { jobs, loading, refetch } = useFreelanceJobsPolling(user);
+  const userId = user?.uid || "";
   const isClientMode = trackerMode === "client";
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

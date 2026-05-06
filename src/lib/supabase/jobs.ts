@@ -109,12 +109,14 @@ export const deleteJob = async (jobId: string) => {
  * Get job count for a user
  * Uses API route to bypass CORS (since users authenticate with Firebase, not Supabase)
  */
-export const getJobCount = async (userId: string): Promise<number> => {
+export const getJobCount = async (user: { getIdToken: () => Promise<string> }): Promise<number> => {
   try {
+    const token = await user.getIdToken();
     const response = await fetch('/api/jobs/count', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
 
