@@ -129,7 +129,7 @@ Setiap proyek menampilkan:
 |-------|------|-------------|--------------|
 | Job applications (lamaran) | Maks 10 | Unlimited | Unlimited |
 | Client Tracker (proyek freelance) | Maks 10 | Unlimited | Unlimited |
-| Kanban Board | Basic | Smart Filters | Smart Filters |
+| Application Tracker | Basic | Smart Filters | Smart Filters |
 | Deadline Reminders | - | Auto-Deadline Reminders | Auto-Deadline Reminders |
 | Email Support | - | Priority | Priority |
 | AI Features (mendatang) | - | - | Included |

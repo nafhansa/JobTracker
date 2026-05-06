@@ -144,7 +144,7 @@ function PricingCards({ user }: { user: any }) {
               description="Your current plan"
               features={[
                 "Track up to 10 Applications",
-                "Basic Kanban Board",
+                "Basic Application Tracker",
                 "Basic Filters",
                 "View & Track Status",
               ]}

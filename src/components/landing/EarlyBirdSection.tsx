@@ -135,7 +135,7 @@ export default function EarlyBirdSection({ onCTAClick }: EarlyBirdSectionProps) 
             </div>
 
             <Link
-              href="/pricing"
+              href="/login"
               onClick={onCTAClick}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-primary text-white rounded-lg font-semibold text-base hover:bg-primary/90 transition-all duration-300 shadow-md dark:shadow-primary/20"
             >
@@ -183,7 +183,7 @@ export default function EarlyBirdSection({ onCTAClick }: EarlyBirdSectionProps) 
             </div>
 
             <Link
-              href="/pricing"
+              href="/login"
               onClick={onCTAClick}
               className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all duration-300 shadow-md dark:shadow-primary/20 hover:scale-105"
             >
