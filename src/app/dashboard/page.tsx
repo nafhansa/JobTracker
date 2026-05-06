@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import { logout } from "@/lib/firebase/auth";
-import { JobApplication, FREE_PLAN_JOB_LIMIT } from "@/types";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ShieldCheck, LogOut } from "lucide-react";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
@@ -20,15 +20,16 @@ import GmailConnect from "@/components/GmailConnect";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { CoinsBalance } from "@/lib/ai/types";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
-import { subscribeToJobs as supabaseSubscribeToJobs } from "@/lib/supabase/jobs";
+import { useJobsPolling } from "@/lib/supabase/jobs-polling";
 import { clearTutorialState } from "@/lib/tutorial/context";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, subscription } = useAuth();
   const { t } = useLanguage();
-  const [jobs, setJobs] = useState<JobApplication[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Polling-based job fetching (replaces Supabase Realtime WebSocket)
+  const { jobs, loading: jobsLoading, refetch: refetchJobs } = useJobsPolling(user?.uid);
 
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
   const isAdmin = isAdminUser(user?.email || "");
@@ -95,29 +96,6 @@ export default function DashboardPage() {
       trackDashboard();
     }
   }, [user, authLoading]);
-
-  useEffect(() => {
-    if (user) {
-      let unsubscribe: (() => void) | undefined;
-      let cancelled = false;
-
-      // Always use Supabase for jobs
-      const channel = supabaseSubscribeToJobs(user.uid, (data) => {
-        if (!cancelled) {
-          setJobs(data);
-          setLoading(false);
-        }
-      });
-      unsubscribe = () => {
-        channel.unsubscribe();
-      };
-
-      return () => {
-        cancelled = true;
-        if (unsubscribe) unsubscribe();
-      };
-    }
-  }, [user]);
 
   const handleLogout = async () => {
     if (user?.uid) {
@@ -202,7 +180,7 @@ export default function DashboardPage() {
       </nav>
 
       {/* Main Content */}
-      {loading ? (
+      {jobsLoading ? (
         <main className="relative z-10 w-full p-4 md:p-6 md:py-10">
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">

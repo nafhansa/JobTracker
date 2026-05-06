@@ -171,6 +171,7 @@ export const subscribeToJobs = (
   let currentJobs: JobApplication[] = [];
   let reconnectAttempts = 0;
   let isSubscribed = true;
+  let reconnectTimeoutId: NodeJS.Timeout | null = null;
 
   const createChannel = (): RealtimeChannel => {
     const channel = supabase
@@ -239,7 +240,7 @@ export const subscribeToJobs = (
     reconnectAttempts++;
     const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts - 1), 30000);
 
-    setTimeout(() => {
+    reconnectTimeoutId = setTimeout(() => {
       if (isSubscribed) {
         failedChannel.unsubscribe();
         const newChannel = createChannel();
@@ -271,6 +272,10 @@ export const subscribeToJobs = (
     ...channelRef,
     unsubscribe: async () => {
       isSubscribed = false;
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
       return channelRef.unsubscribe();
     },
   } as RealtimeChannel;

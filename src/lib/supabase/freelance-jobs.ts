@@ -122,6 +122,7 @@ export const subscribeToFreelanceJobs = (
   let currentJobs: FreelanceJob[] = [];
   let reconnectAttempts = 0;
   let isSubscribed = true;
+  let reconnectTimeoutId: NodeJS.Timeout | null = null;
 
   const createChannel = (): RealtimeChannel => {
     const channel = supabase
@@ -190,7 +191,7 @@ export const subscribeToFreelanceJobs = (
     reconnectAttempts++;
     const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts - 1), 30000);
 
-    setTimeout(() => {
+    reconnectTimeoutId = setTimeout(() => {
       if (isSubscribed) {
         failedChannel.unsubscribe();
         const newChannel = createChannel();
@@ -220,6 +221,10 @@ export const subscribeToFreelanceJobs = (
     ...channelRef,
     unsubscribe: async () => {
       isSubscribed = false;
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
       return channelRef.unsubscribe();
     },
   } as RealtimeChannel;
