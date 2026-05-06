@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { Sparkles, FileText, Send, Globe, Coins } from 'lucide-react';
 import { useLanguage } from '@/lib/language/context';
 
-// --- Typewriter Component ---
+// --- Typewriter Component ----
 const TypewriterText = ({ text, delay = 0 }: { text: string; delay?: number }) => {
   const characters = text.split('');
   return (
