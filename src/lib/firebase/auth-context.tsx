@@ -81,48 +81,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('reloadSubscription: Fetching subscription for user:', user.uid);
 
     try {
-      const { supabase } = await import("@/lib/supabase/client");
+      const res = await fetch(`/api/subscription/status?userId=${user.uid}`);
+      const data = await res.json();
 
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, midtrans_payment_method, renews_at, ends_at, created_at, updated_at')
-        .eq('user_id', user.uid)
-        .maybeSingle();
-
-      console.log('reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
-
-      if (subscriptionData && !subscriptionError) {
-        console.log('reloadSubscription: Subscription result:', { subscriptionData, subscriptionError });
+      if (res.ok && data) {
         const transformedSubscription: any = {
-          id: (subscriptionData as any).id,
-          user_id: (subscriptionData as any).user_id,
-          plan: (subscriptionData as any).plan,
-          status: (subscriptionData as any).status,
-          midtransSubscriptionId: (subscriptionData as any).midtrans_subscription_id,
-          midtransSubscriptionToken: (subscriptionData as any).midtrans_subscription_token,
-          midtransPaymentMethod: (subscriptionData as any).midtrans_payment_method,
-          renewsAt: (subscriptionData as any).renews_at ? new Date((subscriptionData as any).renews_at) : undefined,
-          endsAt: (subscriptionData as any).ends_at ? new Date((subscriptionData as any).ends_at) : undefined,
-          lastCancelledAt: (subscriptionData as any).last_cancelled_at,
-          reactivationCount: (subscriptionData as any).reactivation_count || 0,
-          createdAt: (subscriptionData as any).created_at ? new Date((subscriptionData as any).created_at) : undefined,
-          updatedAt: (subscriptionData as any).updated_at ? new Date((subscriptionData as any).updated_at) : undefined,
+          id: data.id || null,
+          user_id: user.uid,
+          plan: data.plan || 'free',
+          status: data.status || 'active',
+          midtransSubscriptionId: data.midtransSubscriptionId,
+          midtransSubscriptionToken: data.midtransSubscriptionToken,
+          midtransPaymentMethod: data.midtransPaymentMethod,
+          renewsAt: data.renewsAt ? new Date(data.renewsAt) : undefined,
+          endsAt: data.endsAt ? new Date(data.endsAt) : undefined,
+          lastCancelledAt: data.lastCancelledAt,
+          reactivationCount: data.reactivationCount || 0,
+          currency: data.currency || 'IDR',
+          billingDay: data.billingDay,
         };
         setSubscription(transformedSubscription);
       } else {
         console.log('reloadSubscription: No subscription data found, setting to free');
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('subscription_plan, subscription_status, is_pro, updated_at, created_at')
-        .eq('id', user.uid)
-        .single();
-
-      if (userData && !userError) {
-        setUpdatedAt((userData as any)?.updated_at || null);
-      } else {
-        setUpdatedAt(null);
       }
     } catch (error) {
       console.error("Failed to reload subscription:", error);

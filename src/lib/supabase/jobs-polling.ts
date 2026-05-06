@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from './client';
 import { JobApplication, JobStatus } from '@/types';
-
-const JOB_COLUMNS = 'id,user_id,job_title,company,industry,recruiter_email,application_url,job_type,location,potential_salary,potential_salary_min,potential_salary_max,salary_type,currency,status_applied,status_emailed,status_cv_responded,status_interview_email,status_contract_email,status_rejected,created_at,updated_at';
 
 const FETCH_LIMIT = 100;
 const POLL_INTERVAL_MS = 30000; // 30 seconds
@@ -38,7 +35,7 @@ const transformJobRow = (row: any): JobApplication => {
 
 /**
  * Polling-based job subscription (replaces Supabase Realtime)
- * - Fetches jobs initially
+ * - Fetches jobs via API route (server-side proxy to avoid CORS)
  * - Polls every 30s for updates
  * - Uses updated_at to detect changes
  * - No WebSocket connections needed
@@ -54,18 +51,22 @@ export function useJobsPolling(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const { data, error: fetchError } = await (supabase
-        .from('jobs') as any)
-        .select(JOB_COLUMNS)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(FETCH_LIMIT);
+      const response = await fetch(`/api/jobs/list?limit=${FETCH_LIMIT}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (fetchError) throw fetchError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch jobs' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      const transformed = (result.jobs || []).map(transformJobRow);
 
       if (!isMountedRef.current) return;
-
-      const transformed = (data || []).map(transformJobRow);
 
       // Only update if data changed (compare count + latest updated_at)
       const latestUpdatedAt = transformed.length > 0 ? transformed[0].updatedAt : null;

@@ -107,16 +107,24 @@ export const deleteJob = async (jobId: string) => {
 
 /**
  * Get job count for a user
+ * Uses API route to bypass CORS (since users authenticate with Firebase, not Supabase)
  */
 export const getJobCount = async (userId: string): Promise<number> => {
   try {
-    const { count, error } = await (supabase
-      .from('jobs') as any)
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+    const response = await fetch('/api/jobs/count', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) throw error;
-    return count || 0;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get job count');
+    }
+
+    const result = await response.json();
+    return result.count;
   } catch (error) {
     console.error('Error getting job count:', error);
     throw error;
