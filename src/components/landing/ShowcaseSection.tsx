@@ -75,7 +75,6 @@ export default function ShowcaseSection() {
       <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-16">
         <div className="flex-1 text-center md:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full mb-6 backdrop-blur-sm">
-            <Zap className="w-3.5 h-3.5 text-yellow-300" />
             <span className="text-xs font-semibold text-white/90 uppercase tracking-wider">
               {t("phone.badge")}
             </span>

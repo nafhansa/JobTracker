@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       windowMs: 60 * 1000,
       maxRequests: 30,
     });
-    const headers = getRateLimitHeaders(rateLimit.remaining, rateLimit.resetAt);
+    const headers = getRateLimitHeaders(30, rateLimit.remaining, rateLimit.resetAt);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(

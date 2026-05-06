@@ -41,11 +41,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    const { data, error } = await (supabaseAdmin as any)
+    const url = new URL(req.url);
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10), 100);
+    const cursor = url.searchParams.get("cursor");
+
+    let query = (supabaseAdmin as any)
       .from("jobs")
       .select(JOB_COLUMNS)
       .eq("user_id", authResult.userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (cursor) {
+      query = query.lt("created_at", cursor);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching jobs:", error);
@@ -53,8 +64,9 @@ export async function GET(req: Request) {
     }
 
     const jobs: JobApplication[] = (data || []).map(transformJobRow);
+    const nextCursor = jobs.length === limit ? jobs[jobs.length - 1].createdAt : null;
 
-    return NextResponse.json({ jobs });
+    return NextResponse.json({ jobs, nextCursor, hasMore: jobs.length === limit });
   } catch (error) {
     console.error("Error in jobs list API:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
