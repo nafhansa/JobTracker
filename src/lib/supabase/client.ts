@@ -99,6 +99,101 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['feedback']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['feedback']['Insert']>;
       };
+      user_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string | null;
+          email: string | null;
+          phone: string | null;
+          linkedin_url: string | null;
+          skills: string[];
+          experience: any;
+          education: any;
+          summary: string | null;
+          resume_url: string | null;
+          extracted_resume_data: any;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['user_profiles']['Insert']>;
+      };
+      ai_coins: {
+        Row: {
+          id: string;
+          user_id: string;
+          weekly_coins: number;
+          purchased_coins: number;
+          weekly_coin_allocation: number;
+          weekly_reset_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['ai_coins']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['ai_coins']['Insert']>;
+      };
+      coin_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          type: string;
+          reference_id: string | null;
+          metadata: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['coin_transactions']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['coin_transactions']['Insert']>;
+      };
+      coin_purchases: {
+        Row: {
+          id: string;
+          user_id: string;
+          order_id: string;
+          package_id: string;
+          coins: number;
+          amount_idr: number;
+          status: string;
+          payment_type: string | null;
+          midtrans_transaction_id: string | null;
+          snap_token: string | null;
+          credited_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['coin_purchases']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['coin_purchases']['Insert']>;
+      };
+      coin_packages: {
+        Row: {
+          id: string;
+          name: string;
+          coins: number;
+          price_idr: number;
+          price_usd: number | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['coin_packages']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['coin_packages']['Insert']>;
+      };
+      generated_documents: {
+        Row: {
+          id: string;
+          user_id: string;
+          job_id: string | null;
+          type: string;
+          target_name: string | null;
+          target_company: string | null;
+          target_role: string | null;
+          content: string;
+          prompt_data: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['generated_documents']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['generated_documents']['Insert']>;
+      };
     };
   };
 };

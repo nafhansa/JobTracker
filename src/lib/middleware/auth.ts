@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase/admin';
 
-export async function verifyAuth(req: Request): Promise<{ userId: string } | { error: string; status: number }> {
+export async function verifyAuth(req: Request): Promise<{ userId: string; email?: string } | { error: string; status: number }> {
   try {
     const authHeader = req.headers.get('Authorization');
     
@@ -18,7 +18,7 @@ export async function verifyAuth(req: Request): Promise<{ userId: string } | { e
 
     const decodedToken = await adminAuth.verifyIdToken(token);
     
-    return { userId: decodedToken.uid };
+    return { userId: decodedToken.uid, email: decodedToken.email };
   } catch (error) {
     console.error('Auth verification failed:', error);
     return { error: 'Invalid or expired token', status: 401 };

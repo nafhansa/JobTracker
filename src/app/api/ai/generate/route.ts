@@ -1,0 +1,128 @@
+import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/middleware/auth";
+import { getOrCreateCoins, deductCoins } from "@/lib/supabase/ai-coins";
+import { getUserProfile } from "@/lib/supabase/user-profile";
+import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
+import { generateContent } from "@/lib/ai/anthropic";
+import { supabaseAdmin } from "@/lib/supabase/server";
+import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage, CompanyInfo } from "@/lib/ai/types";
+import { formatCompanyInfoForPrompt } from "@/lib/ai/company-extraction";
+import { isAdminUser } from "@/lib/supabase/subscriptions";
+
+export async function POST(req: Request) {
+  try {
+    const authResult = await verifyAuth(req);
+    if ("error" in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
+    const isAdmin = isAdminUser(authResult.email || "");
+
+    const body: GenerateRequest = await req.json();
+    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language, companyInfo } = body;
+
+    const validTypes: GenerationType[] = ["cover_letter", "cold_email", "cold_dm_instagram", "cold_wa", "cold_linkedin"];
+    const validStages: ApplicationStage[] = ["applied", "emailed", "responded", "interview", "offer", "rejected"];
+    if (!type || !validTypes.includes(type)) {
+      return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
+    }
+
+    if (!isAdmin) {
+      const coinsDeducted = await deductCoins(authResult.userId);
+      if (!coinsDeducted) {
+        const balance = await getOrCreateCoins(authResult.userId);
+        return NextResponse.json({
+          error: "Insufficient JPs",
+          coins: balance,
+        }, { status: 402 });
+      }
+    }
+
+    let userProfileData;
+    try {
+      userProfileData = await getUserProfile(authResult.userId);
+    } catch {
+      userProfileData = null;
+    }
+
+    const userProfile = userProfileData
+      ? {
+          fullName: userProfileData.full_name || undefined,
+          email: userProfileData.email || undefined,
+          phone: userProfileData.phone || undefined,
+          skills: userProfileData.skills || undefined,
+          experience: userProfileData.experience || undefined,
+          education: userProfileData.education || undefined,
+          summary: userProfileData.summary || undefined,
+        }
+      : undefined;
+
+    const target = (targetName || targetCompany || targetRole)
+      ? { name: targetName, company: targetCompany, role: targetRole }
+      : undefined;
+
+    let companyInfoPrompt: string | undefined;
+    if (companyInfo) {
+      companyInfoPrompt = formatCompanyInfoForPrompt(companyInfo as CompanyInfo, type as GenerationType);
+    }
+
+    let content: string;
+    try {
+      content = await generateContent({
+        type,
+        userProfile,
+        target,
+        targetStage: targetStage as ApplicationStage | undefined,
+        channel,
+        tone: tone || "professional",
+        format: format || (type === "cover_letter" ? "full_letter" : undefined),
+        customContext,
+        language,
+        companyInfoPrompt,
+      });
+    } catch (aiError) {
+      console.error("AI generation failed, refunding coins:", aiError);
+      if (!isAdmin) {
+        try {
+          await (supabaseAdmin as any)
+            .rpc("refund_coins_atomic", {
+              p_user_id: authResult.userId,
+              p_amount: COINS_PER_GENERATION,
+            });
+        } catch (refundError) {
+          console.error("Failed to refund coins:", refundError);
+        }
+      }
+      return NextResponse.json({ error: "AI generation failed. Your JPs have been refunded." }, { status: 500 });
+    }
+
+    const savedDoc = await saveGeneratedDocument({
+      user_id: authResult.userId,
+      job_id: jobId || null,
+      type,
+      target_name: targetName || null,
+      target_company: targetCompany || null,
+      target_role: targetRole || null,
+      content,
+      prompt_data: {
+        tone: tone || "professional",
+        format: format || (type === "cover_letter" ? "full_letter" : undefined),
+        channel,
+        customContext,
+        hadProfile: !!userProfileData,
+      },
+    });
+
+    const updatedBalance = await getOrCreateCoins(authResult.userId);
+
+    return NextResponse.json({
+      content,
+      type,
+      coins: updatedBalance,
+      documentId: savedDoc.id,
+    });
+  } catch (error) {
+    console.error("Error in generate API:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

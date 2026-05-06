@@ -12,52 +12,39 @@ const DEFAULT_CONFIG: RateLimitConfig = {
   maxRequests: 5,
 };
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function cleanupExpiredEntries() {
-  const now = Date.now();
-  for (const [key, value] of rateLimitMap.entries()) {
-    if (value.resetAt < now) {
-      rateLimitMap.delete(key);
-    }
-  }
-}
-
-setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
-
 export async function checkRateLimit(
   identifier: string,
   config: RateLimitConfig = DEFAULT_CONFIG
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const now = Date.now();
-  const existing = rateLimitMap.get(identifier);
+  const resetAt = now + config.windowMs;
 
-  if (!existing || existing.resetAt < now) {
-    rateLimitMap.set(identifier, {
-      count: 1,
-      resetAt: now + config.windowMs,
-    });
+  try {
+    const { data, error } = await (supabaseAdmin as any)
+      .rpc('check_rate_limit', {
+        p_identifier: identifier,
+        p_max_requests: config.maxRequests,
+        p_window_ms: config.windowMs,
+      });
+
+    if (error) {
+      if (error.code === '42P01' || error.message?.includes('does not exist') || error.code === '42883') {
+        console.warn('rate_limits table or function not found. Run migration 028. Allowing request.');
+      } else {
+        console.error('Rate limit check error:', error);
+      }
+      return { allowed: true, remaining: config.maxRequests, resetAt };
+    }
+
     return {
-      allowed: true,
-      remaining: config.maxRequests - 1,
-      resetAt: now + config.windowMs,
+      allowed: data.allowed,
+      remaining: data.remaining,
+      resetAt: data.reset_at ? new Date(data.reset_at).getTime() : resetAt,
     };
+  } catch (err) {
+    console.error('Rate limit check failed:', err);
+    return { allowed: true, remaining: config.maxRequests, resetAt };
   }
-
-  if (existing.count >= config.maxRequests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: existing.resetAt,
-    };
-  }
-
-  existing.count += 1;
-  return {
-    allowed: true,
-    remaining: config.maxRequests - existing.count,
-    resetAt: existing.resetAt,
-  };
 }
 
 export function getRateLimitHeaders(remaining: number, resetAt: number) {

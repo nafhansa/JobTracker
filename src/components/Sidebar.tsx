@@ -1,12 +1,12 @@
 "use client";
 
-import { BarChart3, Briefcase, User, X, Settings, BriefcaseBusiness, Users } from "lucide-react";
+import { BarChart3, Briefcase, User, X, Settings, BriefcaseBusiness, Users, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { Button } from "@/components/ui/button";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
 
-export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "profile" | "settings";
+export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "ai-writer" | "profile" | "settings";
 
 export interface SidebarProps {
   activeSection: SidebarSection;
@@ -29,6 +29,7 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
   }> = [
     { id: "dashboard", label: t("sidebar.dashboard"), icon: BarChart3 },
     { id: "applications", label: t("sidebar.applications"), icon: Briefcase },
+    { id: "ai-writer", label: "AI Writer", icon: Sparkles },
     { id: "profile", label: t("sidebar.profile"), icon: User },
     { id: "settings", label: t("sidebar.settings"), icon: Settings },
   ];
@@ -40,6 +41,7 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
   }> = [
     { id: "dashboard", label: t("sidebar.dashboard"), icon: BarChart3 },
     { id: "clients", label: t("sidebar.clients"), icon: Users },
+    { id: "ai-writer", label: "AI Writer", icon: Sparkles },
     { id: "profile", label: t("sidebar.profile"), icon: User },
     { id: "settings", label: t("sidebar.settings"), icon: Settings },
   ];

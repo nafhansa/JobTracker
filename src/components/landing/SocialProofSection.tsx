@@ -39,7 +39,11 @@ export default function SocialProofSection() {
             </p>
             <div>
               <p className="font-bold text-foreground">{t("social.name")}</p>
-              <p className="text-sm md:text-base text-primary">{t("social.role")}</p>
+              <p className="text-sm md:text-base text-primary">
+                {t("social.role").split(" · ").map((line, i) => (
+                  <span key={i} className="block md:inline">{i > 0 && <span className="hidden md:inline"> · </span>}{line}</span>
+                ))}
+              </p>
             </div>
           </div>
         </div>

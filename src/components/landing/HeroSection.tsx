@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -16,6 +16,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const [showDemoModal, setShowDemoModal] = useState(false);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -161,7 +162,7 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
 
           <div className="hero-content-child flex flex-col sm:flex-row gap-4 relative z-20">
             <button
-              onClick={onInstallClick}
+              onClick={() => setShowDemoModal(true)}
               className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl border-2 border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-700 text-foreground transition-all duration-300 shadow-lg dark:shadow-none"
             >
               <Play className="w-5 h-5 mr-2 text-black dark:text-white" />
@@ -181,6 +182,33 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
           </div>
         </div>
       </div>
+
+      {/* Demo Modal */}
+      {showDemoModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowDemoModal(false)}
+        >
+          <div
+            className="relative bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowDemoModal(false)}
+              className="absolute top-4 right-4 p-1 rounded-md hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+              <Play className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Demo Video Coming Soon</h3>
+            <p className="text-muted-foreground text-sm">
+              We're working on a demo video to show you how JobTracker works. Stay tuned!
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

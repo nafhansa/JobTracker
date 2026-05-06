@@ -99,45 +99,68 @@ export const updateActiveUser = async (userId: string, userEmail?: string) => {
 
 /**
  * Get analytics stats (server-side only, via API)
+ * Fixed: Uses date filtering and aggregation instead of full table scans
  */
-export const getAnalyticsStats = async () => {
+export const getAnalyticsStats = async (daysBack: number = 30) => {
   try {
-    // Get all visits
-    const { data: visits, error: visitsError } = await supabase
-      .from('analytics_visits')
-      .select('*');
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+    const startDateStr = startDate.toISOString();
+
+    // Get visit count with date grouping
+    const { data: visits, error: visitsError } = await (supabase
+      .from('analytics_visits') as any)
+      .select('timestamp')
+      .gte('timestamp', startDateStr);
 
     if (visitsError) throw visitsError;
 
-    // Get all logins
-    const { data: logins, error: loginsError } = await supabase
-      .from('analytics_logins')
-      .select('*');
+    // Get login count with date grouping
+    const { data: logins, error: loginsError } = await (supabase
+      .from('analytics_logins') as any)
+      .select('timestamp')
+      .gte('timestamp', startDateStr);
 
     if (loginsError) throw loginsError;
 
-    // Get all dashboard visits
-    const { data: dashboardVisits, error: dashboardError } = await supabase
-      .from('analytics_dashboard_visits')
-      .select('*');
+    // Get dashboard visit count with date grouping
+    const { data: dashboardVisits, error: dashboardError } = await (supabase
+      .from('analytics_dashboard_visits') as any)
+      .select('timestamp')
+      .gte('timestamp', startDateStr);
 
     if (dashboardError) throw dashboardError;
 
     // Get active users (last seen within last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: activeUsers, error: activeUsersError } = await supabase
+    const { count: activeUsersCount, error: activeUsersError } = await supabase
       .from('analytics_active_users')
-      .select('*')
+      .select('*', { count: 'exact', head: true })
       .gte('last_seen', fiveMinutesAgo);
 
     if (activeUsersError) throw activeUsersError;
 
+    // Get total counts (all time)
+    const { count: totalVisitsCount } = await supabase
+      .from('analytics_visits')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: totalLoginsCount } = await supabase
+      .from('analytics_logins')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: totalDashboardVisitsCount } = await supabase
+      .from('analytics_dashboard_visits')
+      .select('*', { count: 'exact', head: true });
+
     // Calculate conversion rate
     const conversionRate =
-      logins && logins.length > 0 ? (dashboardVisits?.length || 0) / logins.length : 0;
+      totalLoginsCount && totalLoginsCount > 0
+        ? (totalDashboardVisitsCount || 0) / totalLoginsCount
+        : 0;
 
     // Group by date for recent activity
-    const groupByDate = (events: Array<{ timestamp?: string; [key: string]: unknown }>) => {
+    const groupByDate = (events: Array<{ timestamp?: string }>) => {
       const grouped: { [key: string]: number } = {};
       events.forEach((event) => {
         const timestamp = event.timestamp;
@@ -154,10 +177,10 @@ export const getAnalyticsStats = async () => {
     };
 
     return {
-      totalVisitors: visits?.length || 0,
-      loginAttempts: logins?.length || 0,
-      activeUsers: activeUsers?.length || 0,
-      dashboardVisits: dashboardVisits?.length || 0,
+      totalVisitors: totalVisitsCount || 0,
+      loginAttempts: totalLoginsCount || 0,
+      activeUsers: activeUsersCount || 0,
+      dashboardVisits: totalDashboardVisitsCount || 0,
       conversionRate: Math.round(conversionRate * 10000) / 100,
       recentVisits: groupByDate(visits || []),
       recentLogins: groupByDate(logins || []),

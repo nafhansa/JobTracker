@@ -2,6 +2,8 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged as _onAuthStateChanged,
   NextOrObserver,
   User,
@@ -30,8 +32,35 @@ export const loginWithGoogle = async () => {
       { merge: true }
     );
     return user;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "auth/popup-blocked") {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
     console.error("Error logging in with Google:", error);
+    return null;
+  }
+};
+
+export const handleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const { user } = result;
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(
+        userRef,
+        {
+          email: user.email,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      return user;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error handling redirect result:", error);
     return null;
   }
 };
