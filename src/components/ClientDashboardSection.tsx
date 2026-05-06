@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { DollarSign, Users, TrendingUp, Briefcase, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useLanguage } from "@/lib/language/context";
-import { subscribeToFreelanceJobs } from "@/lib/supabase/freelance-jobs";
+import { useFreelanceJobsPolling } from "@/lib/supabase/freelance-jobs-polling";
 import { FreelanceJob } from "@/types";
 
 interface ClientDashboardSectionProps {
@@ -16,18 +16,7 @@ interface ClientDashboardSectionProps {
 
 export default function ClientDashboardSection({ userId, onNavigateToClients, onAddClientClick }: ClientDashboardSectionProps) {
   const { t } = useLanguage();
-  const [jobs, setJobs] = useState<FreelanceJob[]>([]);
-
-  useEffect(() => {
-    if (userId) {
-      const channel = subscribeToFreelanceJobs(userId, (data) => {
-        setJobs(data);
-      });
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [userId]);
+  const { jobs } = useFreelanceJobsPolling(userId);
 
   const stats = useMemo(() => {
     const totalIncome = jobs.reduce((sum, job) => sum + (job.actualPrice || job.potentialPrice || 0), 0);

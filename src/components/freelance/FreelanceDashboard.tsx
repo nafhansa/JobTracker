@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import { useLanguage } from "@/lib/language/context";
-import { subscribeToFreelanceJobs, deleteFreelanceJob } from "@/lib/supabase/freelance-jobs";
+import { deleteFreelanceJob } from "@/lib/supabase/freelance-jobs";
+import { useFreelanceJobsPolling } from "@/lib/supabase/freelance-jobs-polling";
 
 interface FreelanceDashboardProps {
   userId: string;
@@ -21,8 +22,7 @@ interface FreelanceDashboardProps {
 
 export default function FreelanceDashboard({ userId, trackerMode, initialOpenModal, onModalClose }: FreelanceDashboardProps) {
   const { t } = useLanguage();
-  const [jobs, setJobs] = useState<FreelanceJob[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs, loading, refetch } = useFreelanceJobsPolling(userId);
   const isClientMode = trackerMode === "client";
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -42,19 +42,6 @@ export default function FreelanceDashboard({ userId, trackerMode, initialOpenMod
       onModalClose();
     }
   };
-
-  useEffect(() => {
-    if (userId) {
-      setLoading(true);
-      const channel = subscribeToFreelanceJobs(userId, (data) => {
-        setJobs(data);
-        setLoading(false);
-      });
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [userId]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -76,8 +63,7 @@ export default function FreelanceDashboard({ userId, trackerMode, initialOpenMod
   const handleDelete = async (job: FreelanceJob) => {
     try {
       await deleteFreelanceJob(job.id!);
-      // Force an immediate UI update before realtime kicks in
-      setJobs(prevJobs => prevJobs.filter(j => j.id !== job.id));
+      refetch();
     } catch (error) {
       console.error("Failed to delete job:", error);
     }

@@ -65,33 +65,16 @@ export const trackDashboardVisit = async (
 };
 
 /**
- * Update active user status
+ * Update active user status (atomic upsert via RPC)
+ * Prevents race condition when multiple concurrent visits from same user
  */
 export const updateActiveUser = async (userId: string, userEmail?: string) => {
   try {
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from('analytics_active_users')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (existingUser) {
-      // Update existing user's last_seen
-      await (supabase
-        .from('analytics_active_users') as any)
-        .update({
-          last_seen: new Date().toISOString(),
-        })
-        .eq('user_id', userId);
-    } else {
-      // Add new active user
-      await supabase.from('analytics_active_users').insert({
-        user_id: userId,
-        user_email: userEmail || null,
-        last_seen: new Date().toISOString(),
-      } as any);
-    }
+    await (supabase as any)
+      .rpc('update_active_user_atomic', {
+        p_user_id: userId,
+        p_user_email: userEmail || null,
+      });
   } catch (error) {
     console.error('Error updating active user:', error);
   }

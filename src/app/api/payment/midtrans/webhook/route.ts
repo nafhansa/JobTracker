@@ -286,85 +286,73 @@ export async function POST(req: Request) {
       const billingDay = new Date().getDate();
       const subscriptionCurrency = resolvedCurrency || 'IDR';
 
-      const subscriptionData: any = {
-        user_id: resolvedUserId,
-        plan: planType,
-        status: 'active',
-        midtrans_subscription_id: order_id,
-        midtrans_subscription_token: null,
-        midtrans_payment_method: null,
-        midtrans_account_id: null,
-        currency: subscriptionCurrency,
-        billing_day: billingDay,
-        payment_failure_count: 0,
-        updated_at: new Date().toISOString(),
-      };
-
+      let midtransSubscriptionToken: string | null = null;
       if (subscription_id) {
-        subscriptionData.midtrans_subscription_token = subscription_id;
+        midtransSubscriptionToken = subscription_id;
       } else if (saved_token_id) {
-        subscriptionData.midtrans_subscription_token = saved_token_id;
+        midtransSubscriptionToken = saved_token_id;
       }
 
+      let midtransPaymentMethod: string | null = null;
       if (payment_type) {
-        subscriptionData.midtrans_payment_method = payment_type;
+        midtransPaymentMethod = payment_type;
       }
 
+      let midtransAccountId: string | null = null;
       if (masked_card) {
-        subscriptionData.midtrans_account_id = masked_card;
+        midtransAccountId = masked_card;
       } else if (saved_token_id) {
-        subscriptionData.midtrans_account_id = saved_token_id;
+        midtransAccountId = saved_token_id;
       }
+
+      let renewsAt: string | null = null;
+      let endsAt: string | null = null;
+      let recurringFrequency: string | null = null;
 
       if (planType === 'monthly') {
-        subscriptionData.recurring_frequency = 'monthly';
+        recurringFrequency = 'monthly';
         const now = new Date();
         const nextBilling = getNextBillingDate(now, billingDay);
-        subscriptionData.renews_at = nextBilling.toISOString();
-        subscriptionData.ends_at = null;
+        renewsAt = nextBilling.toISOString();
+        endsAt = null;
         console.log('Monthly plan: Set renews_at to:', nextBilling.toISOString());
       } else if (planType === 'lifetime') {
-        subscriptionData.renews_at = null;
-        subscriptionData.ends_at = null;
+        renewsAt = null;
+        endsAt = null;
         console.log('Lifetime plan: Set renews_at and ends_at to null');
       }
 
-      if (!existingSubscription) {
-        subscriptionData.id = generateUUID();
-        subscriptionData.created_at = new Date().toISOString();
-        console.log('Creating new subscription with ID:', subscriptionData.id);
-      } else {
-        console.log('Updating existing subscription with ID:', existingSubscription.id);
+      const subscriptionId = existingSubscription?.id || generateUUID();
+
+      // Use atomic RPC to upsert subscription + user in one transaction
+      const { data: rpcResult, error: rpcError } = await (supabaseAdmin as any)
+        .rpc('upsert_subscription_atomic', {
+          p_user_id: resolvedUserId,
+          p_plan: planType,
+          p_status: 'active',
+          p_midtrans_subscription_id: order_id,
+          p_midtrans_subscription_token: midtransSubscriptionToken,
+          p_midtrans_payment_method: midtransPaymentMethod,
+          p_midtrans_account_id: midtransAccountId,
+          p_currency: subscriptionCurrency,
+          p_billing_day: billingDay,
+          p_renews_at: renewsAt,
+          p_ends_at: endsAt,
+          p_recurring_frequency: recurringFrequency,
+          p_id: subscriptionId,
+        });
+
+      if (rpcError) {
+        console.error('Error upserting subscription atomically:', rpcError);
+        throw new Error(`Subscription upsert failed: ${rpcError.message}`);
       }
 
-      const { error: subscriptionError, data: upsertedData } = await (supabaseAdmin as any)
-        .from('subscriptions')
-        .upsert(subscriptionData, { onConflict: 'user_id' });
-
-      if (subscriptionError) {
-        console.error('Error upserting subscription:', subscriptionError);
-        throw new Error(`Subscription upsert failed: ${subscriptionError.message}`);
+      if (rpcResult?.result === 'lifetime_preserved') {
+        console.warn('Lifetime subscription preserved via RPC:', resolvedUserId);
+        return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
       }
 
-      console.log('Upsert result:', { success: !subscriptionError, data: upsertedData });
-
-      const { error: userError } = await (supabaseAdmin as any)
-        .from('users')
-        .upsert(
-          {
-            id: resolvedUserId,
-            subscription_plan: planType,
-            subscription_status: 'active',
-            is_pro: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        );
-
-      if (userError) {
-        console.error('Error updating user subscription:', userError);
-        throw new Error(`User update failed: ${userError.message}`);
-      }
+      console.log('Atomic upsert result:', rpcResult);
 
       try {
         await updateWeeklyCoinAllocation(resolvedUserId, planType);
