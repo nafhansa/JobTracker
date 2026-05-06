@@ -84,33 +84,11 @@ export async function POST(req: Request) {
       console.error("AI generation failed, refunding coins:", aiError);
       if (!isAdmin) {
         try {
-          const { data: coinData } = await (supabaseAdmin as any)
-            .from("ai_coins")
-            .select("weekly_coins, purchased_coins")
-            .eq("user_id", authResult.userId)
-            .single();
-
-          if (coinData) {
-            const currentWeekly = coinData.weekly_coins || 0;
-            const currentPurchased = coinData.purchased_coins || 0;
-            const weeklyBeforeDeduct = currentWeekly + COINS_PER_GENERATION;
-
-            if (weeklyBeforeDeduct >= COINS_PER_GENERATION) {
-              await (supabaseAdmin as any)
-                .from("ai_coins")
-                .update({ weekly_coins: weeklyBeforeDeduct })
-                .eq("user_id", authResult.userId);
-            } else {
-              const purchasedBeforeDeduct = currentPurchased + (COINS_PER_GENERATION - weeklyBeforeDeduct);
-              await (supabaseAdmin as any)
-                .from("ai_coins")
-                .update({
-                  weekly_coins: Math.max(0, weeklyBeforeDeduct),
-                  purchased_coins: purchasedBeforeDeduct,
-                })
-                .eq("user_id", authResult.userId);
-            }
-          }
+          await (supabaseAdmin as any)
+            .rpc("refund_coins_atomic", {
+              p_user_id: authResult.userId,
+              p_amount: COINS_PER_GENERATION,
+            });
         } catch (refundError) {
           console.error("Failed to refund coins:", refundError);
         }

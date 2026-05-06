@@ -4,6 +4,7 @@ import { checkRateLimit, getRateLimitHeaders } from "@/lib/middleware/rate-limit
 import { checkIdempotencyKey, storeIdempotencyKey, recordSubscriptionHistory } from "@/lib/middleware/subscription-utils";
 import { verifyAuthOrUserId } from "@/lib/middleware/auth";
 import { MIDTRANS_CONFIG } from "@/lib/midtrans-config";
+import { updateWeeklyCoinAllocation } from "@/lib/supabase/ai-coins";
 
 async function cancelInMidtrans(token: string, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
   const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
@@ -164,6 +165,13 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', subscription.user_id);
+
+      // Downgrade weekly coin allocation from 400 to 240 (free tier)
+      try {
+        await updateWeeklyCoinAllocation(subscription.user_id, 'free');
+      } catch (coinError) {
+        console.error('Failed to update weekly coin allocation on cancellation:', coinError);
+      }
 
       await recordSubscriptionHistory(userId, 'cancelled', {
         previousStatus: subscription.status,

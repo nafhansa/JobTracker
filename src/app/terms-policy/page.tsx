@@ -11,7 +11,7 @@ export default function TermsPolicyPage() {
     { id: "acceptable-use", title: "Acceptable Use" },
     { id: "privacy", title: "Privacy Policy" },
     { id: "cookies", title: "Cookie Policy" },
-    { id: "refund", title: "Refund Policy" },
+    { id: "no-refund", title: "No Refund Policy" },
     { id: "contact", title: "Contact Us" },
   ];
 
@@ -35,6 +35,17 @@ export default function TermsPolicyPage() {
 
       <main className="flex-1 relative z-10 pt-24 md:pt-32 pb-20">
         <div className="w-full max-w-6xl mx-auto px-6">
+
+          {/* Back to Home */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M21 12H3" />
+            </svg>
+            Back to Home
+          </Link>
 
           {/* Header Section */}
           <div className="text-center mb-16">
@@ -147,34 +158,34 @@ export default function TermsPolicyPage() {
                 </div>
               </section>
 
-              {/* 5. REFUND POLICY */}
-              <section id="refund" className="scroll-mt-32">
+              {/* 5. NO REFUND POLICY */}
+              <section id="no-refund" className="scroll-mt-32">
                 <h2 className="text-2xl font-bold mb-6 text-foreground border-l-4 border-primary pl-4">
-                  Refund Policy
+                  No Refund Policy
                 </h2>
                 <div className="space-y-4 text-base md:text-lg text-muted-foreground">
-                  <div className="p-5 border border-primary/20 bg-primary/5 rounded-lg shadow-sm">
-                    <p className="font-bold text-primary uppercase tracking-wide text-sm mb-2">
-                      15-Day Money-Back Guarantee
+                  <div className="p-5 border border-red-500/20 bg-red-500/5 rounded-lg shadow-sm">
+                    <p className="font-bold text-red-600 dark:text-red-400 uppercase tracking-wide text-sm mb-2">
+                      All Sales Are Final
                     </p>
                     <p className="font-medium text-foreground/90">
-                      In accordance with our payment provider (Paddle) guidelines, you have the right to cancel your agreement and return the product within 15 days of purchase without giving any reason.
+                      JobTracker does not offer refunds for any purchases, including subscriptions, lifetime access, or JPs (Job Points) top-ups. All payments are non-refundable and non-transferable.
                     </p>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">Right of Withdrawal</h3>
+                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">Subscriptions</h3>
                   <p>
-                    If you are not satisfied with JobTracker for any reason, you may request a full refund within 15 days of your initial transaction. This cooling-off period is designed to ensure you are comfortable with your purchase.
+                    Monthly subscription fees are charged in advance. You may cancel your subscription at any time to prevent future charges, but no partial or full refunds will be issued for the current billing period.
                   </p>
 
-                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">How to Request a Refund</h3>
+                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">Lifetime Access & JPs Top-Ups</h3>
                   <p>
-                    To exercise your right of withdrawal, you must inform us of your decision to cancel this agreement by an unequivocal statement (e.g., via email). Please contact us at <strong className="text-foreground">official.jobtrackerapp@gmail.com</strong>.
+                    One-time purchases such as lifetime access and JPs (Job Points) are final upon completion of payment. Purchased JPs never expire and remain in your account indefinitely.
                   </p>
 
-                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">Effects of Withdrawal</h3>
+                  <h3 className="text-xl font-semibold text-foreground mt-4 mb-2">Contact Us</h3>
                   <p>
-                    If you withdraw from this agreement, we will reimburse all payments received from you without undue delay and in any event not later than 15 days from the day on which we are informed about your decision to withdraw. We will carry out such reimbursement using the same means of payment as you used for the initial transaction, unless you have expressly agreed otherwise.
+                    If you have any concerns or questions about your purchase, please reach out to us at <strong className="text-foreground">official.jobtrackerapp@gmail.com</strong> and we will do our best to assist you.
                   </p>
                 </div>
               </section>
@@ -185,7 +196,7 @@ export default function TermsPolicyPage() {
                   Contact Us
                 </h2>
                 <p className="text-lg text-muted-foreground mb-4">
-                  If you have any questions about these Terms, Privacy Policy, or Refund Policy, please contact us at:
+                  If you have any questions about these Terms, Privacy Policy, or our policies, please contact us at:
                 </p>
                 <a
                   href="mailto:official.jobtrackerapp@gmail.com"

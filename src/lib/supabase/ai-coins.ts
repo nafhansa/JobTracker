@@ -4,52 +4,39 @@ import { WEEKLY_COINS_BY_PLAN, COINS_PER_GENERATION, CoinsBalance } from "../ai/
 export async function getOrCreateCoins(userId: string, plan?: string): Promise<CoinsBalance> {
   console.log('[getOrCreateCoins] called for user:', userId);
 
-  let { data, error } = await (supabaseAdmin as any)
-    .from("ai_coins")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  const allocation = plan ? (WEEKLY_COINS_BY_PLAN[plan] ?? 240) : 240;
 
-  if (error && error.code === "PGRST116") {
-    console.log('[getOrCreateCoins] no row found, creating new for user:', userId);
-    const allocation = plan ? (WEEKLY_COINS_BY_PLAN[plan] ?? 240) : 240;
-    const { data: newData, error: insertError } = await (supabaseAdmin as any)
-      .from("ai_coins")
-      .insert({
-        user_id: userId,
-        weekly_coins: allocation,
-        purchased_coins: 0,
-        weekly_coin_allocation: allocation,
-        weekly_reset_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      })
-      .select()
-      .single();
+  // Use atomic RPC that handles concurrent creation safely via INSERT ... ON CONFLICT
+  const { data, error } = await (supabaseAdmin as any)
+    .rpc("get_or_create_coins_atomic", {
+      p_user_id: userId,
+      p_plan: plan || "free",
+    });
 
-    if (insertError) {
-      console.error('[getOrCreateCoins] insert error:', insertError);
-      throw insertError;
-    }
-    data = newData;
-  } else if (error) {
-    console.error('[getOrCreateCoins] select error:', error);
+  if (error) {
+    console.error('[getOrCreateCoins] RPC error:', error);
     throw error;
   }
 
-  if (!data) throw new Error("Failed to get coins");
+  if (!data || data.length === 0) {
+    throw new Error("Failed to get or create coins");
+  }
+
+  const row = data[0];
 
   let needsReset = false;
   const now = new Date();
-  const resetAt = new Date(data.weekly_reset_at);
+  const resetAt = new Date(row.weekly_reset_at);
 
   if (resetAt <= now) {
     needsReset = true;
     const weeksPassed = Math.max(Math.floor((now.getTime() - resetAt.getTime()) / (7 * 24 * 60 * 60 * 1000)), 1);
-    const newAllocation = data.weekly_coin_allocation;
+    const currentAllocation = row.weekly_coin_allocation;
 
     const { data: updatedData, error: updateError } = await (supabaseAdmin as any)
       .from("ai_coins")
       .update({
-        weekly_coins: newAllocation,
+        weekly_coins: currentAllocation,
         weekly_reset_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .eq("user_id", userId)
@@ -57,17 +44,20 @@ export async function getOrCreateCoins(userId: string, plan?: string): Promise<C
       .single();
 
     if (updateError) throw updateError;
-    data = updatedData;
+    row.weekly_coins = updatedData.weekly_coins;
+    row.weekly_reset_at = updatedData.weekly_reset_at;
 
     await (supabaseAdmin as any).from("coin_transactions").insert({
       user_id: userId,
-      amount: newAllocation,
+      amount: currentAllocation,
       type: "weekly_reset",
       metadata: { weeks_passed: weeksPassed },
     });
   }
 
-  const finalData = needsReset ? (await (supabaseAdmin as any).from("ai_coins").select("*").eq("user_id", userId).single()).data : data;
+  const finalData = needsReset
+    ? (await (supabaseAdmin as any).from("ai_coins").select("*").eq("user_id", userId).single()).data
+    : row;
 
   if (!finalData) throw new Error("Failed to get coins after reset");
 
@@ -81,34 +71,43 @@ export async function getOrCreateCoins(userId: string, plan?: string): Promise<C
 }
 
 export async function deductCoins(userId: string, amount: number = COINS_PER_GENERATION): Promise<boolean> {
-  const balance = await getOrCreateCoins(userId);
+  // Ensure row exists first (atomic RPC handles concurrent creation)
+  await getOrCreateCoins(userId);
 
-  if (balance.weekly_coins >= amount) {
-    const { error } = await (supabaseAdmin as any)
-      .from("ai_coins")
-      .update({ weekly_coins: balance.weekly_coins - amount })
-      .eq("user_id", userId);
+  // Use atomic RPC with SELECT ... FOR UPDATE to prevent race conditions
+  const { data: success, error } = await (supabaseAdmin as any)
+    .rpc("deduct_coins_atomic", {
+      p_user_id: userId,
+      p_amount: amount,
+    });
 
-    if (error) throw error;
-  } else if (balance.total_coins >= amount) {
-    const remaining = amount - balance.weekly_coins;
-    const { error } = await (supabaseAdmin as any)
-      .from("ai_coins")
-      .update({
-        weekly_coins: 0,
-        purchased_coins: balance.purchased_coins - remaining,
-      })
-      .eq("user_id", userId);
+  if (error) throw error;
 
-    if (error) throw error;
-  } else {
+  if (!success) {
     return false;
+  }
+
+  // Record transaction with metadata for accurate refunds
+  const balanceBefore = await getOrCreateCoins(userId);
+  const weeklyBefore = balanceBefore.weekly_coins + amount;
+  let deductSource: string;
+
+  if (weeklyBefore >= amount) {
+    deductSource = "weekly_only";
+  } else if (balanceBefore.purchased_coins >= amount - (weeklyBefore - amount)) {
+    deductSource = "mixed";
+  } else {
+    deductSource = "purchased_only";
   }
 
   await (supabaseAdmin as any).from("coin_transactions").insert({
     user_id: userId,
     amount: -amount,
     type: "usage",
+    metadata: {
+      deducted_from_weekly: deductSource,
+      weekly_before: weeklyBefore >= amount ? amount : weeklyBefore,
+    },
   });
 
   return true;
@@ -153,9 +152,18 @@ export async function addPurchasedCoins(userId: string, amount: number, referenc
 export async function updateWeeklyCoinAllocation(userId: string, plan: string): Promise<void> {
   const allocation = WEEKLY_COINS_BY_PLAN[plan] ?? 240;
 
+  const balance = await getOrCreateCoins(userId);
+
+  // If upgrading, immediately top up weekly_coins to the new allocation
+  // (only if current weekly_coins is less than new allocation)
+  const newWeeklyCoins = Math.max(balance.weekly_coins, allocation);
+
   const { error } = await (supabaseAdmin as any)
     .from("ai_coins")
-    .update({ weekly_coin_allocation: allocation })
+    .update({
+      weekly_coin_allocation: allocation,
+      weekly_coins: newWeeklyCoins,
+    })
     .eq("user_id", userId);
 
   if (error) throw error;

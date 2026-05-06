@@ -11,6 +11,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import EarlyBirdSection from "@/components/landing/EarlyBirdSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
+import AIWriterLandingSection from "@/components/landing/AIWriterLandingSection";
 import SocialProofSection from "@/components/landing/SocialProofSection";
 import FAQSection from "@/components/landing/FAQSection";
 import FooterSection from "@/components/landing/FooterSection";
@@ -201,6 +202,9 @@ export default function LandingPage() {
         </div>
         <div className="relative z-20 w-full">
           <ComparisonSection />
+        </div>
+        <div className="relative z-20 w-full">
+          <AIWriterLandingSection />
         </div>
         <div className="relative z-20 w-full">
           <SocialProofSection />
