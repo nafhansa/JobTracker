@@ -71,16 +71,12 @@ export async function getOrCreateCoins(userId: string, plan?: string): Promise<C
 }
 
 export async function deductCoins(userId: string, amount: number = COINS_PER_GENERATION): Promise<boolean> {
-  // Ensure row exists first (atomic RPC handles concurrent creation)
-  await getOrCreateCoins(userId);
-
-  // Fetch balance BEFORE deduction to accurately record metadata
-  const balanceBefore = await getOrCreateCoins(userId);
-  const weeklyBeforeDeduct = balanceBefore.weekly_coins;
-  const purchasedBeforeDeduct = balanceBefore.purchased_coins;
-
-  // Use atomic RPC with SELECT ... FOR UPDATE to prevent race conditions
-  const { data: success, error } = await (supabaseAdmin as any)
+  // Use enhanced atomic RPC that handles:
+  // 1. Row creation if not exists
+  // 2. Lazy weekly reset (atomic, inside lock)
+  // 3. Balance check + deduction (atomic, inside same lock)
+  // 4. Returns metadata for accurate transaction logging
+  const { data: result, error } = await (supabaseAdmin as any)
     .rpc("deduct_coins_atomic", {
       p_user_id: userId,
       p_amount: amount,
@@ -88,33 +84,23 @@ export async function deductCoins(userId: string, amount: number = COINS_PER_GEN
 
   if (error) throw error;
 
-  if (!success) {
+  if (!result || !result.success) {
     return false;
   }
 
-  // Determine deduction source from PRE-deduct balance
-  let deductSource: string;
-  if (weeklyBeforeDeduct >= amount) {
-    deductSource = "weekly_only";
-  } else if (weeklyBeforeDeduct > 0 && purchasedBeforeDeduct >= amount - weeklyBeforeDeduct) {
-    deductSource = "mixed";
-  } else {
-    deductSource = "purchased_only";
-  }
-
-  // Record accurate metadata based on pre-deduct state
-  const weeklyUsed = deductSource === "weekly_only" ? amount : deductSource === "mixed" ? weeklyBeforeDeduct : 0;
-
+  // Record transaction with accurate metadata from atomic function
   await (supabaseAdmin as any).from("coin_transactions").insert({
     user_id: userId,
     amount: -amount,
     type: "usage",
     metadata: {
-      deducted_from: deductSource,
-      weekly_before: weeklyBeforeDeduct,
-      purchased_before: purchasedBeforeDeduct,
-      weekly_used: weeklyUsed,
-      purchased_used: amount - weeklyUsed,
+      deducted_from: result.deducted_from,
+      weekly_before: result.weekly_before,
+      purchased_before: result.purchased_before,
+      weekly_after: result.weekly_after,
+      purchased_after: result.purchased_after,
+      weekly_used: result.deducted_from === "weekly_only" ? amount : result.deducted_from === "mixed" ? result.weekly_before : 0,
+      purchased_used: result.deducted_from === "purchased_only" ? amount : result.deducted_from === "mixed" ? amount - result.weekly_before : 0,
     },
   });
 
