@@ -42,8 +42,8 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
   const jobCount = jobs.length;
 
   useEffect(() => {
-    if (userId) {
-      getFreelanceJobCount(userId)
+    if (user) {
+      getFreelanceJobCount(user)
         .then(setClientCount)
         .catch(console.error);
     }
@@ -97,7 +97,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
     switch (activeSection) {
       case "dashboard":
         if (trackerMode === "client") {
-          return <ClientDashboardSection userId={userId} onNavigateToClients={() => setActiveSection("clients")} onAddClientClick={handleNavigateToClientsAndAdd} />;
+          return <ClientDashboardSection user={user ?? undefined} onNavigateToClients={() => setActiveSection("clients")} onAddClientClick={handleNavigateToClientsAndAdd} />;
         }
         return <DashboardSection jobs={jobs} userId={userId} plan={plan} onAddJob={handleAddNew} onEditJob={handleEditJob} onNavigateToApplications={handleNavigateToApplications} />;
       case "applications":
@@ -113,9 +113,9 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           </>
         );
       case "freelance":
-        return <FreelanceDashboard userId={userId} />;
+        return <FreelanceDashboard user={user ?? undefined} />;
       case "clients":
-        return <FreelanceDashboard userId={userId} trackerMode="client" initialOpenModal={openClientModal} onModalClose={() => setOpenClientModal(false)} />;
+        return <FreelanceDashboard user={user ?? undefined} trackerMode="client" initialOpenModal={openClientModal} onModalClose={() => setOpenClientModal(false)} />;
       case "ai-writer":
         return <AIWriterSection userId={userId} onNavigateToApplications={handleNavigateToApplications} />;
       case "profile":

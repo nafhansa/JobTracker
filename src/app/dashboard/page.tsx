@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const { t } = useLanguage();
 
   // Polling-based job fetching (replaces Supabase Realtime WebSocket)
-  const { jobs, loading: jobsLoading, refetch: refetchJobs } = useJobsPolling(user?.uid);
+  const { jobs, loading: jobsLoading, refetch: refetchJobs } = useJobsPolling(user ?? undefined);
 
   // Logic: User dianggap "subscribed" jika dia ADMIN atau checkIsPro true (grace period, active, lifetime)
   const isAdmin = isAdminUser(user?.email || "");

@@ -29,7 +29,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (isFreePlan && user) {
-      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
+      getJobCount(user).then(setJobCount).catch(() => setJobCount(0));
     }
   }, [isFreePlan, user]);
 

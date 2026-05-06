@@ -31,7 +31,7 @@ const transformFreelanceJobRow = (row: any): FreelanceJob => {
  * - Uses updated_at to detect changes
  * - No WebSocket connections needed
  */
-export function useFreelanceJobsPolling(userId: string | undefined) {
+export function useFreelanceJobsPolling(user: { getIdToken: () => Promise<string> } | undefined) {
   const [jobs, setJobs] = useState<FreelanceJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +39,15 @@ export function useFreelanceJobsPolling(userId: string | undefined) {
   const isMountedRef = useRef(true);
 
   const fetchJobs = useCallback(async (isPoll = false) => {
-    if (!userId) return;
+    if (!user) return;
 
     try {
+      const token = await user.getIdToken();
       const response = await fetch(`/api/freelance/list?limit=${FETCH_LIMIT}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -76,7 +78,7 @@ export function useFreelanceJobsPolling(userId: string | undefined) {
       if (!isMountedRef.current) return;
       setLoading(false);
     }
-  }, [userId]);
+  }, [user]);
 
   useEffect(() => {
     isMountedRef.current = true;

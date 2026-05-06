@@ -36,7 +36,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
       }).catch(() => setStreak({ current: 0, best: 0 }));
 
       // Load job count
-      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(jobs.length));
+      getJobCount(user).then(setJobCount).catch(() => setJobCount(jobs.length));
     }
   }, [user]);
 

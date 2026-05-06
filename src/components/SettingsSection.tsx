@@ -90,7 +90,7 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
 
   useEffect(() => {
     if (user?.uid) {
-      getJobCount(user.uid).then(setJobCount).catch(() => setJobCount(0));
+      getJobCount(user).then(setJobCount).catch(() => setJobCount(0));
     }
   }, [user]);
 
