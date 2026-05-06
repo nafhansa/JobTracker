@@ -1,16 +1,9 @@
 // next.config.mjs
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const nextPwa = require('next-pwa');
+import withPWA from 'next-pwa';
 
 /** @type {import('next').NextConfig} */
+
 const baseConfig = {
-    typescript: {
-        ignoreBuildErrors: true,
-    },
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
     async headers() {
         return [
             {
@@ -74,20 +67,12 @@ const baseConfig = {
     },
 };
 
-// Inisialisasi PWA menggunakan wrapper terpisah
-const pwaConfig = {
-    dest: 'public',
-    disable: process.env.NODE_ENV === 'development',
-    register: true,
-    skipWaiting: true,
-    buildExcludes: [/middleware-manifest\.json$/],
-    runtimeCaching: [],
-};
-
-const withPWA = typeof nextPwa === 'function' ? nextPwa(pwaConfig) : (config) => config;
-
-const config = process.env.NODE_ENV === 'development' 
-    ? baseConfig 
-    : (typeof withPWA === 'function' ? withPWA(baseConfig) : baseConfig);
-
-export default config;
+export default process.env.NODE_ENV === 'development'
+    ? baseConfig
+    : withPWA({
+        dest: 'public',
+        disable: false,
+        register: true,
+        skipWaiting: true,
+        ...baseConfig,
+    });
