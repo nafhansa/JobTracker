@@ -86,7 +86,9 @@ export default function AIWriterLandingSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight"
           >
-            {t("aiwriter.title")}
+            {t("aiwriter.title").split("\n").map((line, i) => (
+              <span key={i} className="block">{line}</span>
+            ))}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -143,11 +145,11 @@ export default function AIWriterLandingSection() {
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                   >
-                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <Sparkles className="w-4 h-4 text-blue-500" />
                   </motion.div>
                   <span className="font-medium text-slate-700">{t("aiwriter.mockup.generating")}</span>
-                  <span className="ml-auto flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                    -80 JPs
+                  <span className="ml-auto flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                    - 80 JPs
                   </span>
                 </div>
 
