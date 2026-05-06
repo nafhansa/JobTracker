@@ -2,6 +2,10 @@ import { supabase } from './client';
 import { FreelanceJob } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
+const INITIAL_FETCH_LIMIT = 100;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_BASE_DELAY_MS = 1000;
+
 export const addFreelanceJob = async (jobData: Omit<FreelanceJob, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
     const response = await fetch('/api/freelance/add', {
@@ -116,60 +120,93 @@ export const subscribeToFreelanceJobs = (
   callback: (jobs: FreelanceJob[]) => void
 ): RealtimeChannel => {
   let currentJobs: FreelanceJob[] = [];
+  let reconnectAttempts = 0;
+  let isSubscribed = true;
 
-  const channel = supabase
-    .channel(`freelance_jobs:${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'freelance_jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const newJob = transformFreelanceJobRow(payload.new);
-        currentJobs = [newJob, ...currentJobs];
-        callback(currentJobs);
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'freelance_jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const updatedJob = transformFreelanceJobRow(payload.new);
-        currentJobs = currentJobs.map(j => j.id === updatedJob.id ? updatedJob : j);
-        callback(currentJobs);
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'freelance_jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const deletedId = payload.old?.id;
-        if (deletedId) {
-          currentJobs = currentJobs.filter(j => j.id !== deletedId);
+  const createChannel = (): RealtimeChannel => {
+    const channel = supabase
+      .channel(`freelance_jobs:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'freelance_jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newJob = transformFreelanceJobRow(payload.new);
+          currentJobs = [newJob, ...currentJobs].slice(0, INITIAL_FETCH_LIMIT);
           callback(currentJobs);
         }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'freelance_jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const updatedJob = transformFreelanceJobRow(payload.new);
+          currentJobs = currentJobs.map(j => j.id === updatedJob.id ? updatedJob : j);
+          callback(currentJobs);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'freelance_jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            currentJobs = currentJobs.filter(j => j.id !== deletedId);
+            callback(currentJobs);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          reconnectAttempts = 0;
+        } else if (status === 'CHANNEL_ERROR' && isSubscribed) {
+          handleReconnect(channel);
+        }
+      });
+
+    return channel;
+  };
+
+  const handleReconnect = (failedChannel: RealtimeChannel) => {
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS || !isSubscribed) {
+      console.error('Max reconnect attempts reached for freelance jobs subscription');
+      return;
+    }
+
+    reconnectAttempts++;
+    const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts - 1), 30000);
+
+    setTimeout(() => {
+      if (isSubscribed) {
+        failedChannel.unsubscribe();
+        const newChannel = createChannel();
+        (channelRef as any) = newChannel;
       }
-    )
-    .subscribe();
+    }, delay);
+  };
+
+  let channelRef = createChannel();
 
   supabase
     .from('freelance_jobs' as any)
     .select(FREELANCE_JOB_COLUMNS)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
+    .limit(INITIAL_FETCH_LIMIT)
     .then(({ data, error }: { data: any; error: any }) => {
       if (error) {
         console.error('Error fetching initial freelance jobs:', error);
@@ -179,5 +216,11 @@ export const subscribeToFreelanceJobs = (
       callback(currentJobs);
     });
 
-  return channel;
+  return {
+    ...channelRef,
+    unsubscribe: async () => {
+      isSubscribed = false;
+      return channelRef.unsubscribe();
+    },
+  } as RealtimeChannel;
 };
