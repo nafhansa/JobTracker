@@ -75,17 +75,19 @@ const baseConfig = {
 };
 
 // Inisialisasi PWA menggunakan wrapper terpisah
-const withPWA = nextPwa({
+const pwaConfig = {
     dest: 'public',
     disable: process.env.NODE_ENV === 'development',
     register: true,
     skipWaiting: true,
     buildExcludes: [/middleware-manifest\.json$/],
     runtimeCaching: [],
-});
+};
+
+const withPWA = typeof nextPwa === 'function' ? nextPwa(pwaConfig) : (config) => config;
 
 const config = process.env.NODE_ENV === 'development' 
     ? baseConfig 
-    : withPWA(baseConfig);
+    : (typeof withPWA === 'function' ? withPWA(baseConfig) : baseConfig);
 
 export default config;
