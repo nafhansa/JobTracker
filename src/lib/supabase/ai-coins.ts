@@ -74,6 +74,11 @@ export async function deductCoins(userId: string, amount: number = COINS_PER_GEN
   // Ensure row exists first (atomic RPC handles concurrent creation)
   await getOrCreateCoins(userId);
 
+  // Fetch balance BEFORE deduction to accurately record metadata
+  const balanceBefore = await getOrCreateCoins(userId);
+  const weeklyBeforeDeduct = balanceBefore.weekly_coins;
+  const purchasedBeforeDeduct = balanceBefore.purchased_coins;
+
   // Use atomic RPC with SELECT ... FOR UPDATE to prevent race conditions
   const { data: success, error } = await (supabaseAdmin as any)
     .rpc("deduct_coins_atomic", {
@@ -87,26 +92,29 @@ export async function deductCoins(userId: string, amount: number = COINS_PER_GEN
     return false;
   }
 
-  // Record transaction with metadata for accurate refunds
-  const balanceBefore = await getOrCreateCoins(userId);
-  const weeklyBefore = balanceBefore.weekly_coins + amount;
+  // Determine deduction source from PRE-deduct balance
   let deductSource: string;
-
-  if (weeklyBefore >= amount) {
+  if (weeklyBeforeDeduct >= amount) {
     deductSource = "weekly_only";
-  } else if (balanceBefore.purchased_coins >= amount - (weeklyBefore - amount)) {
+  } else if (weeklyBeforeDeduct > 0 && purchasedBeforeDeduct >= amount - weeklyBeforeDeduct) {
     deductSource = "mixed";
   } else {
     deductSource = "purchased_only";
   }
+
+  // Record accurate metadata based on pre-deduct state
+  const weeklyUsed = deductSource === "weekly_only" ? amount : deductSource === "mixed" ? weeklyBeforeDeduct : 0;
 
   await (supabaseAdmin as any).from("coin_transactions").insert({
     user_id: userId,
     amount: -amount,
     type: "usage",
     metadata: {
-      deducted_from_weekly: deductSource,
-      weekly_before: weeklyBefore >= amount ? amount : weeklyBefore,
+      deducted_from: deductSource,
+      weekly_before: weeklyBeforeDeduct,
+      purchased_before: purchasedBeforeDeduct,
+      weekly_used: weeklyUsed,
+      purchased_used: amount - weeklyUsed,
     },
   });
 
