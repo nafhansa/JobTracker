@@ -1,5 +1,7 @@
 // next.config.mjs
-import nextPwa from 'next-pwa';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const nextPwa = require('next-pwa');
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
