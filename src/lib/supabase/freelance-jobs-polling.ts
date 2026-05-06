@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from './client';
 import { FreelanceJob } from '@/types';
-
-const FREELANCE_JOB_COLUMNS = 'id,user_id,client_name,client_contact,service_type,product,potential_price,actual_price,currency,start_date,end_date,duration_days,status,created_at,updated_at';
 
 const FETCH_LIMIT = 100;
 const POLL_INTERVAL_MS = 30000; // 30 seconds
@@ -29,7 +26,7 @@ const transformFreelanceJobRow = (row: any): FreelanceJob => {
 
 /**
  * Polling-based freelance job subscription (replaces Supabase Realtime)
- * - Fetches jobs initially
+ * - Fetches jobs via API route (server-side proxy to avoid CORS)
  * - Polls every 30s for updates
  * - Uses updated_at to detect changes
  * - No WebSocket connections needed
@@ -45,18 +42,22 @@ export function useFreelanceJobsPolling(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const { data, error: fetchError } = await (supabase
-        .from('freelance_jobs') as any)
-        .select(FREELANCE_JOB_COLUMNS)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(FETCH_LIMIT);
+      const response = await fetch(`/api/freelance/list?limit=${FETCH_LIMIT}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (fetchError) throw fetchError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch freelance jobs' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      const transformed = (result.jobs || []).map(transformFreelanceJobRow);
 
       if (!isMountedRef.current) return;
-
-      const transformed = (data || []).map(transformFreelanceJobRow);
 
       // Only update if data changed
       const latestUpdatedAt = transformed.length > 0 ? transformed[0].updatedAt : null;

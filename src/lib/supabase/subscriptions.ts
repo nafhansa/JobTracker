@@ -45,43 +45,25 @@ export interface SubscriptionStatusResponse {
 
 /**
  * Create or update subscription
+ * Uses API route to bypass CORS (since users authenticate with Firebase, not Supabase)
  */
 export const createSubscription = async (userId: string, plan: 'monthly' | 'lifetime') => {
   try {
-    // Upsert subscription
-    const { data: subscriptionData, error: subError } = await (supabase
-      .from('subscriptions') as any)
-      .upsert(
-        {
-          user_id: userId,
-          plan,
-          status: 'active',
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      )
-      .select()
-      .single();
+    const response = await fetch('/api/subscription/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, plan }),
+    });
 
-    if (subError) throw subError;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create subscription');
+    }
 
-    // Update user record
-    const { error: userError } = await (supabase
-      .from('users') as any)
-      .upsert(
-        {
-          id: userId,
-          subscription_plan: plan,
-          subscription_status: 'active',
-          is_pro: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' }
-      );
-
-    if (userError) throw userError;
-
-    return subscriptionData;
+    const result = await response.json();
+    return result.data;
   } catch (error) {
     console.error('Error creating subscription:', error);
     throw error;
@@ -90,76 +72,24 @@ export const createSubscription = async (userId: string, plan: 'monthly' | 'life
 
 /**
  * Get subscription for a user
+ * Uses API route to bypass CORS (since users authenticate with Firebase, not Supabase)
  */
 export const getSubscription = async (userId: string) => {
   try {
-    const { data, error } = await (supabase
-      .from('users') as any)
-      .select(`
-        id,
-        email,
-        subscription_plan,
-        subscription_status,
-        is_pro,
-        updated_at,
-        created_at,
-        subscriptions:user_id(
-          id,
-          user_id,
-          plan,
-          status,
-          midtrans_subscription_id,
-          midtrans_subscription_token,
-          midtrans_payment_method,
-          renews_at,
-          ends_at,
-          last_cancelled_at,
-          reactivation_count,
-          currency,
-          billing_day,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('id', userId)
-      .single();
+    const response = await fetch(`/api/subscription/status?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error && error.code !== 'PGRST116') throw error;
-
-    if (!data) {
-      return null;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get subscription');
     }
 
-    const subscriptionData = Array.isArray(data.subscriptions) ? data.subscriptions[0] : data.subscriptions;
-
-    const subscription = subscriptionData
-      ? {
-          id: subscriptionData.id,
-          plan: subscriptionData.plan,
-          status: subscriptionData.status,
-          renewsAt: subscriptionData.renews_at ? new Date(subscriptionData.renews_at) : undefined,
-          endsAt: subscriptionData.ends_at ? new Date(subscriptionData.ends_at) : undefined,
-          midtransSubscriptionId: subscriptionData.midtrans_subscription_id,
-          midtransSubscriptionToken: subscriptionData.midtrans_subscription_token,
-          midtransPaymentMethod: subscriptionData.midtrans_payment_method,
-          lastCancelledAt: subscriptionData.last_cancelled_at,
-          reactivationCount: subscriptionData.reactivation_count || 0,
-          currency: subscriptionData.currency || 'IDR',
-          billingDay: subscriptionData.billing_day,
-        }
-      : data.subscription_plan
-      ? {
-          plan: data.subscription_plan,
-          status: data.subscription_status || 'active',
-        }
-      : null;
-
-    return {
-      subscription,
-      updatedAt: data.updated_at ? new Date(data.updated_at) : null,
-      createdAt: data.created_at ? new Date(data.created_at) : null,
-      isPro: data.is_pro || false,
-    };
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error getting subscription:', error);
     throw error;
@@ -260,37 +190,21 @@ export const canEditDelete = (plan: string | null | undefined, isAdmin = false):
 
 /**
  * Auto-assign free plan to user if they don't have a subscription
+ * Uses API route to bypass CORS (since users authenticate with Firebase, not Supabase)
  */
 export const ensureFreePlan = async (userId: string, userEmail?: string): Promise<void> => {
   try {
-    const { data: userData } = await (supabase
-      .from('users') as any)
-      .select('id, subscription_plan')
-      .eq('id', userId)
-      .single();
+    const response = await fetch('/api/subscription/ensure-free', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, userEmail }),
+    });
 
-    if (!userData) {
-      await (supabase
-        .from('users') as any)
-        .insert({
-          id: userId,
-          email: userEmail || null,
-          subscription_plan: 'free',
-          subscription_status: 'active',
-          is_pro: false,
-        });
-    } else {
-      if (!userData.subscription_plan) {
-        await (supabase
-          .from('users') as any)
-          .update({
-            subscription_plan: 'free',
-            subscription_status: 'active',
-            is_pro: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', userId);
-      }
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Error ensuring free plan:', error);
     }
   } catch (error) {
     console.error('Error ensuring free plan:', error);

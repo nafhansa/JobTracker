@@ -80,13 +80,20 @@ export const deleteFreelanceJob = async (jobId: string) => {
 
 export const getFreelanceJobCount = async (userId: string): Promise<number> => {
   try {
-    const { count, error } = await supabase
-      .from('freelance_jobs' as any)
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+    const response = await fetch('/api/freelance/count', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) throw error;
-    return count || 0;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get freelance job count');
+    }
+
+    const result = await response.json();
+    return result.count;
   } catch (error) {
     console.error('Error getting freelance job count:', error);
     throw error;
