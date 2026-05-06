@@ -32,6 +32,7 @@ interface GenerateContentParams {
   customContext?: string;
   language?: OutputLanguage;
   companyInfoPrompt?: string;
+  signal?: AbortSignal;
 }
 
 export async function generateContent(params: GenerateContentParams): Promise<string> {
@@ -45,7 +46,7 @@ export async function generateContent(params: GenerateContentParams): Promise<st
     max_tokens: maxTokens,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
-  });
+  }, { signal: params.signal });
 
   const textBlock = response.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
@@ -58,6 +59,7 @@ export async function generateContent(params: GenerateContentParams): Promise<st
 interface ExtractResumeParams {
   fileBuffer: Buffer;
   mimeType: string;
+  signal?: AbortSignal;
 }
 
 interface ExtractResumeTextParams {
@@ -117,7 +119,7 @@ Return ONLY valid JSON, no markdown, no explanation.`;
 export async function extractResumeData(
   params: ExtractResumeParams
 ): Promise<ExtractedResumeData> {
-  const { fileBuffer, mimeType } = params;
+  const { fileBuffer, mimeType, signal } = params;
 
   const isPdf = mimeType === "application/pdf";
   const base64Data = fileBuffer.toString("base64");
@@ -156,7 +158,7 @@ export async function extractResumeData(
         ],
       },
     ],
-  });
+  }, { signal });
 
   const textBlock = response.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {

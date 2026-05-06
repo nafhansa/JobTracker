@@ -8,6 +8,44 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage, CompanyInfo } from "@/lib/ai/types";
 import { formatCompanyInfoForPrompt } from "@/lib/ai/company-extraction";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
+import PQueue from "p-queue";
+
+export const maxDuration = 60;
+
+// Concurrency-controlled queue for Anthropic API calls
+// Prevents hitting Anthropic rate limits (~50 req/min for Haiku)
+// and avoids Vercel serverless timeout (60s max)
+const aiQueue = new PQueue({
+  concurrency: 10,
+  timeout: 55000,
+});
+
+// Per-user cooldown to prevent spam (30 seconds between generations)
+const userCooldowns = new Map<string, number>();
+const USER_COOLDOWN_MS = 30_000;
+
+// Cleanup expired cooldowns periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, timestamp] of userCooldowns.entries()) {
+    if (now - timestamp > USER_COOLDOWN_MS * 2) {
+      userCooldowns.delete(userId);
+    }
+  }
+}, 60_000);
+
+async function refundCoins(userId: string, amount: number, reason: string) {
+  try {
+    await (supabaseAdmin as any)
+      .rpc("refund_coins_atomic", {
+        p_user_id: userId,
+        p_amount: amount,
+      });
+    console.log(`Coins refunded: ${amount} for user ${userId}, reason: ${reason}`);
+  } catch (refundError) {
+    console.error("Failed to refund coins:", refundError);
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +65,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
     }
 
+    // Per-user rate limiting (cooldown)
+    if (!isAdmin) {
+      const lastCall = userCooldowns.get(authResult.userId);
+      if (lastCall && Date.now() - lastCall < USER_COOLDOWN_MS) {
+        const remaining = Math.ceil((USER_COOLDOWN_MS - (Date.now() - lastCall)) / 1000);
+        return NextResponse.json({
+          error: `Please wait ${remaining}s before generating again`,
+        }, { status: 429 });
+      }
+    }
+
+    // Deduct coins before queueing (prevents free usage)
     if (!isAdmin) {
       const coinsDeducted = await deductCoins(authResult.userId);
       if (!coinsDeducted) {
@@ -66,35 +116,47 @@ export async function POST(req: Request) {
       companyInfoPrompt = formatCompanyInfoForPrompt(companyInfo as CompanyInfo, type as GenerationType);
     }
 
+    // Queue the AI generation call with concurrency control
     let content: string;
     try {
-      content = await generateContent({
-        type,
-        userProfile,
-        target,
-        targetStage: targetStage as ApplicationStage | undefined,
-        channel,
-        tone: tone || "professional",
-        format: format || (type === "cover_letter" ? "full_letter" : undefined),
-        customContext,
-        language,
-        companyInfoPrompt,
-      });
+      content = await aiQueue.add(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 50000);
+
+        try {
+          return await generateContent({
+            type,
+            userProfile,
+            target,
+            targetStage: targetStage as ApplicationStage | undefined,
+            channel,
+            tone: tone || "professional",
+            format: format || (type === "cover_letter" ? "full_letter" : undefined),
+            customContext,
+            language,
+            companyInfoPrompt,
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }, { timeout: 55000 });
     } catch (aiError) {
       console.error("AI generation failed, refunding coins:", aiError);
       if (!isAdmin) {
-        try {
-          await (supabaseAdmin as any)
-            .rpc("refund_coins_atomic", {
-              p_user_id: authResult.userId,
-              p_amount: COINS_PER_GENERATION,
-            });
-        } catch (refundError) {
-          console.error("Failed to refund coins:", refundError);
-        }
+        const refundReason = aiError instanceof Error && aiError.name === "TimeoutError"
+          ? "queue_timeout"
+          : "ai_generation_failed";
+        await refundCoins(authResult.userId, COINS_PER_GENERATION, refundReason);
       }
-      return NextResponse.json({ error: "AI generation failed. Your JPs have been refunded." }, { status: 500 });
+      const errorMessage = aiError instanceof Error && aiError.name === "TimeoutError"
+        ? "Generation timed out due to high demand. Your JPs have been refunded. Please try again."
+        : "AI generation failed. Your JPs have been refunded.";
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
+
+    // Set user cooldown after successful generation
+    userCooldowns.set(authResult.userId, Date.now());
 
     const savedDoc = await saveGeneratedDocument({
       user_id: authResult.userId,

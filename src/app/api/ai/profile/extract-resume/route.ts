@@ -3,6 +3,8 @@ import { verifyAuth } from "@/lib/middleware/auth";
 import { extractResumeData } from "@/lib/ai/anthropic";
 import { saveResumeExtraction } from "@/lib/supabase/user-profile";
 
+export const maxDuration = 60;
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const VALID_TYPES = [
@@ -37,15 +39,21 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
+
     let extractedData;
     try {
       extractedData = await extractResumeData({
         fileBuffer: buffer,
         mimeType: file.type,
+        signal: controller.signal,
       });
     } catch (extractError) {
       console.error("Resume extraction failed:", extractError);
       return NextResponse.json({ error: "Failed to extract resume data. Please try again or fill in your profile manually." }, { status: 500 });
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     try {
