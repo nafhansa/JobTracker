@@ -1,9 +1,9 @@
-name: Vercel Production Deployment
+name: VPS Staging Deployment
 
 on:
   push:
     branches:
-      - main 
+      - dev 
 
 jobs:
   check-quality:
@@ -27,13 +27,17 @@ jobs:
     needs: check-quality
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel Action
-        uses: amondnet/vercel-action@v25 # Action populer untuk Vercel
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod' 
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd ~/jobtracker-staging
+            git pull origin dev
+            npm install
+            npm run build
+            pm2 restart jobtracker-staging
