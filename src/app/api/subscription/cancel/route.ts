@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     }
 
     const rateLimit = await checkRateLimit(`cancel:${userId}`);
-    const headers = getRateLimitHeaders(rateLimit.remaining, rateLimit.resetAt);
+    const headers = getRateLimitHeaders(5, rateLimit.remaining, rateLimit.resetAt);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(

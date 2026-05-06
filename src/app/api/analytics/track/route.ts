@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import { getClientIP, getCountryFromIP } from "@/lib/geo-cache";
 
 export async function POST(req: Request) {
@@ -70,36 +70,22 @@ export async function POST(req: Request) {
         eventData.userId = userId;
         if (userEmail) eventData.userEmail = userEmail;
 
-        // Also update active users (only if Firebase Admin is initialized)
-        if (adminDb) {
-          try {
-            const activeUsersRef = adminDb.collection("analytics_active_users");
-            const existingUser = await activeUsersRef
-              .where("userId", "==", userId)
-              .limit(1)
-              .get();
-
-            if (existingUser.empty) {
-              await activeUsersRef.add({
-                userId,
-                userEmail: userEmail || null,
-                lastSeen: timestamp,
-              });
-            } else {
-              const doc = existingUser.docs[0];
-              await doc.ref.update({
-                lastSeen: timestamp,
-              });
-            }
-          } catch (error) {
-            console.warn("⚠️ Failed to update active users:", error);
-          }
+        // Also update active users using atomic Supabase upsert
+        try {
+          await (supabaseAdmin as any)
+            .rpc("update_active_user_atomic", {
+              p_user_id: userId,
+              p_user_email: userEmail || null,
+            });
+        } catch (error) {
+          console.warn("⚠️ Failed to update active users:", error);
         }
         break;
     }
 
     // Add event to Firebase collection (only if Firebase Admin is initialized)
     try {
+      const { adminDb } = await import("@/lib/firebase/admin");
       if (!adminDb) {
         console.warn("⚠️ Firebase Admin not initialized, skipping analytics tracking");
         return NextResponse.json({ success: true, skipped: "Firebase not initialized" });

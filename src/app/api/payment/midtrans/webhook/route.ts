@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG } from '@/lib/midtrans-config';
 import { supabaseAdmin } from '@/lib/supabase/server';
@@ -32,20 +33,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { order_id, transaction_status, status_code, gross_amount, custom_field1, custom_field2, custom_field3, signature_key, payment_type, subscription_id, saved_token_id, masked_card } = body;
 
-    function getStatusCodeFromTransactionStatus(status: string): string {
-      const statusMap: Record<string, string> = {
-        'settlement': '200',
-        'capture': '200',
-        'deny': '202',
-        'cancel': '201',
-        'expire': '202',
-        'pending': '201'
-      };
-      return statusMap[status] || '200';
-    }
-
     console.log('Midtrans webhook received:', { order_id, transaction_status, status_code, gross_amount, custom_field1, custom_field2, custom_field3, payment_type, subscription_id, saved_token_id, masked_card });
 
+    // Quick signature verification (sync, fast)
     const statusCode = status_code || getStatusCodeFromTransactionStatus(transaction_status);
     const stringToSign = `${order_id}${statusCode}${gross_amount}${MIDTRANS_CONFIG.serverKey}`;
     const calculatedSignature = crypto.createHash('sha512').update(stringToSign).digest('hex');
@@ -70,13 +60,70 @@ export async function POST(req: Request) {
 
     console.log('Midtrans webhook verified:', { order_id, transaction_status, custom_field1, custom_field2, custom_field3 });
 
-    // Resolve userId and plan: custom_fields from Midtrans may be missing for e-wallets (GoPay, ShopeePay, etc.)
-    // Always look up pending_midtrans_transactions for JP- orders as the primary source
+    // Return 200 immediately to Midtrans (prevent timeout + retries)
+    const response = NextResponse.json({ status: 'OK' });
+
+    // Process payment asynchronously in background
+    waitUntil(processWebhookAsync({
+      order_id,
+      transaction_status,
+      status_code,
+      gross_amount,
+      custom_field1,
+      custom_field2,
+      custom_field3,
+      payment_type,
+      subscription_id,
+      saved_token_id,
+      masked_card,
+    }));
+
+    return response;
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+function getStatusCodeFromTransactionStatus(status: string): string {
+  const statusMap: Record<string, string> = {
+    'settlement': '200',
+    'capture': '200',
+    'deny': '202',
+    'cancel': '201',
+    'expire': '202',
+    'pending': '201'
+  };
+  return statusMap[status] || '200';
+}
+
+interface WebhookPayload {
+  order_id: string;
+  transaction_status: string;
+  status_code?: string;
+  gross_amount?: string;
+  custom_field1?: string;
+  custom_field2?: string;
+  custom_field3?: string;
+  payment_type?: string;
+  subscription_id?: string;
+  saved_token_id?: string;
+  masked_card?: string;
+  transaction_id?: string;
+}
+
+async function processWebhookAsync(payload: WebhookPayload) {
+  try {
+    const { order_id, transaction_status, status_code, gross_amount, custom_field1, custom_field2, custom_field3, payment_type, subscription_id, saved_token_id, masked_card } = payload;
+
+    // Resolve userId and plan
     let resolvedUserId: string | undefined = custom_field1;
     let resolvedPlan: string | undefined = custom_field2;
     let resolvedCurrency: string | undefined = custom_field3;
 
-    // For coin purchase orders (JP- prefix), look up coin_purchases FIRST, then pending transaction
     const isCoinPurchase = order_id?.startsWith('JP-');
     let coinPurchaseData: { user_id: string; package_id: string; coins: number; amount_idr: number; status: string } | null = null;
 
@@ -87,38 +134,27 @@ export async function POST(req: Request) {
         .eq('order_id', order_id)
         .maybeSingle();
 
-      if (cpError) {
-        console.error('Error looking up coin_purchases:', cpError);
-      }
+      if (cpError) console.error('Error looking up coin_purchases:', cpError);
 
       if (cpData) {
         coinPurchaseData = cpData;
-        console.log('JP order: using coin_purchases data:', { order_id, cpUserId: cpData.user_id, cpPackageId: cpData.package_id, cpStatus: cpData.status });
         resolvedUserId = cpData.user_id;
         resolvedPlan = `coins_${cpData.package_id}`;
       } else {
-        // Fallback to pending_midtrans_transactions
         const { data: pendingTx, error: pendingTxError } = await (supabaseAdmin as any)
           .from('pending_midtrans_transactions')
           .select('user_id, plan, currency')
           .eq('order_id', order_id)
           .maybeSingle();
 
-        if (pendingTxError) {
-          console.error('Error looking up pending transaction:', pendingTxError);
-        }
-
+        if (pendingTxError) console.error('Error looking up pending transaction:', pendingTxError);
         if (pendingTx) {
-          console.log('JP order: using pending transaction fallback:', { order_id, pendingUserId: pendingTx.user_id, pendingPlan: pendingTx.plan });
           if (!resolvedUserId) resolvedUserId = pendingTx.user_id;
           if (!resolvedPlan) resolvedPlan = pendingTx.plan;
           if (!resolvedCurrency) resolvedCurrency = pendingTx.currency;
-        } else {
-          console.warn('JP order: no coin_purchases or pending transaction found, relying on custom_fields:', { order_id, custom_field1, custom_field2 });
         }
       }
     } else {
-      // For subscription orders, prefer custom_fields, fallback to pending tx
       if (!resolvedUserId || !resolvedPlan) {
         const { data: pendingTx, error: pendingTxError } = await (supabaseAdmin as any)
           .from('pending_midtrans_transactions')
@@ -126,10 +162,7 @@ export async function POST(req: Request) {
           .eq('order_id', order_id)
           .maybeSingle();
 
-        if (pendingTxError) {
-          console.error('Error looking up pending transaction:', pendingTxError);
-        }
-
+        if (pendingTxError) console.error('Error looking up pending transaction:', pendingTxError);
         if (pendingTx) {
           if (!resolvedUserId) resolvedUserId = pendingTx.user_id;
           if (!resolvedPlan) resolvedPlan = pendingTx.plan;
@@ -144,22 +177,20 @@ export async function POST(req: Request) {
       const { verified, transactionStatus: verifiedStatus } = await verifyPaymentWithMidtrans(order_id);
       if (!verified || verifiedStatus !== 'settlement') {
         console.error('Recurring payment verification failed:', { verified, verifiedStatus });
-        return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
+        return;
       }
 
       await handleRecurringPayment({
-        subscriptionId: subscription_id,
+        subscriptionId: subscription_id || '',
         userId: resolvedUserId,
         order_id,
-        gross_amount,
+        gross_amount: gross_amount || '',
       });
-      // Clean up pending transaction
       await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-      return NextResponse.json({ status: 'OK' });
+      return;
     }
 
     if (transaction_status === 'deny' || transaction_status === 'cancel' || transaction_status === 'expire') {
-      // Mark coin_purchases as failed/expired for JP orders
       if (isCoinPurchase) {
         const failStatus = transaction_status === 'expire' ? 'expired' : 'failed';
         await (supabaseAdmin as any).from('coin_purchases').update({ status: failStatus, updated_at: new Date().toISOString() }).eq('order_id', order_id);
@@ -168,34 +199,22 @@ export async function POST(req: Request) {
         order_id,
         userId: resolvedUserId,
         transaction_status,
-        payment_type,
-        subscription_id,
-      });
-      // Clean up pending transaction for failed payments
-      await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-      return NextResponse.json({ status: 'OK' });
-    }
-
-    if (body.event === 'subscription.cancelled' || body.event === 'subscription.expired') {
-      await handleSubscriptionCancellation({
-        subscriptionId: subscription_id,
-        userId: resolvedUserId,
+        payment_type: payment_type || '',
+        subscription_id: subscription_id || '',
       });
       await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-      return NextResponse.json({ status: 'OK' });
+      return;
     }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      // === COIN PURCHASE ===
       if (isCoinPurchase || (resolvedPlan && resolvedPlan.startsWith('coins_'))) {
         const packageId = resolvedPlan ? resolvedPlan.replace('coins_', '') : null;
 
         if (!resolvedUserId) {
           console.error('Coin purchase webhook: cannot resolve userId for order:', order_id);
-          return NextResponse.json({ status: 'error', message: 'Missing userId' }, { status: 400 });
+          return;
         }
 
-        // Resolve coin package: from coinPurchaseData, then plan, then gross_amount
         let coinPkg = coinPurchaseData
           ? COIN_PACKAGES.find((p) => p.id === coinPurchaseData.package_id)
           : null;
@@ -203,50 +222,37 @@ export async function POST(req: Request) {
         if (!coinPkg && gross_amount) {
           const amount = parseInt(gross_amount, 10);
           coinPkg = COIN_PACKAGES.find((p) => p.price_idr === amount);
-          console.log('Coin package resolved from gross_amount:', { gross_amount, amount, foundPkg: coinPkg?.id });
         }
 
         if (!coinPkg) {
-          console.error('Coin purchase webhook: cannot resolve coin package for order:', order_id, 'plan:', resolvedPlan, 'gross_amount:', gross_amount);
-          return NextResponse.json({ status: 'error', message: 'Unknown coin package' }, { status: 400 });
+          console.error('Coin purchase webhook: cannot resolve coin package for order:', order_id);
+          return;
         }
 
         const coinsToCredit = coinPurchaseData?.coins || coinPkg.coins;
-        console.log('=== COIN PURCHASE WEBHOOK ===', { order_id, userId: resolvedUserId, packageId: coinPkg.id, coinsToCredit });
 
-        // Use atomic RPC that handles idempotency + coin credit + status update in one transaction
         const { data: processResult, error: processError } = await (supabaseAdmin as any)
           .rpc('process_coin_purchase_atomic', {
             p_user_id: resolvedUserId,
             p_order_id: order_id,
             p_coins: coinsToCredit,
             p_payment_type: payment_type || null,
-            p_midtrans_transaction_id: body.transaction_id || null,
+            p_midtrans_transaction_id: payload.transaction_id || null,
           });
 
         if (processError) {
           console.error('Failed to process coin purchase atomically:', processError);
-          return NextResponse.json({ status: 'error', message: 'Failed to credit coins' }, { status: 500 });
+          return;
         }
 
         console.log('Coin purchase atomic result:', processResult);
-
-        if (processResult.result === 'already_processed' || processResult.result === 'already_paid') {
-          console.log('Coin purchase already processed:', order_id);
-          await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-          return NextResponse.json({ status: 'OK', message: 'Already processed' });
-        }
-
-        // Clean up pending transaction after successful credit
         await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-
-        return NextResponse.json({ status: 'OK' });
+        return;
       }
 
-      // === SUBSCRIPTION ===
       if (!resolvedUserId) {
         console.error('Subscription webhook: cannot resolve userId for order:', order_id);
-        return NextResponse.json({ status: 'error', message: 'Missing userId' }, { status: 400 });
+        return;
       }
 
       const { data: processedOrder } = await (supabaseAdmin as any)
@@ -257,15 +263,10 @@ export async function POST(req: Request) {
 
       if (processedOrder) {
         console.log('Order already processed, skipping:', order_id);
-        return NextResponse.json({ status: 'OK', message: 'Already processed' });
+        return;
       }
 
       const planType = resolvedPlan === 'lifetime' ? 'lifetime' : 'monthly';
-
-      console.log('=== WEBHOOK SUBSCRIPTION CREATION ===');
-      console.log('User ID:', resolvedUserId);
-      console.log('Plan:', planType);
-      console.log('Order ID:', order_id);
 
       const { data: existingSubscription } = await (supabaseAdmin as any)
         .from('subscriptions')
@@ -273,11 +274,9 @@ export async function POST(req: Request) {
         .eq('user_id', resolvedUserId)
         .maybeSingle();
 
-      console.log('Existing subscription found:', existingSubscription);
-
       if (existingSubscription?.plan === 'lifetime' && planType !== 'lifetime') {
         console.warn('Attempted to overwrite lifetime subscription:', resolvedUserId);
-        return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
+        return;
       }
 
       const isReactivation = existingSubscription &&
@@ -287,23 +286,15 @@ export async function POST(req: Request) {
       const subscriptionCurrency = resolvedCurrency || 'IDR';
 
       let midtransSubscriptionToken: string | null = null;
-      if (subscription_id) {
-        midtransSubscriptionToken = subscription_id;
-      } else if (saved_token_id) {
-        midtransSubscriptionToken = saved_token_id;
-      }
+      if (subscription_id) midtransSubscriptionToken = subscription_id;
+      else if (saved_token_id) midtransSubscriptionToken = saved_token_id;
 
       let midtransPaymentMethod: string | null = null;
-      if (payment_type) {
-        midtransPaymentMethod = payment_type;
-      }
+      if (payment_type) midtransPaymentMethod = payment_type;
 
       let midtransAccountId: string | null = null;
-      if (masked_card) {
-        midtransAccountId = masked_card;
-      } else if (saved_token_id) {
-        midtransAccountId = saved_token_id;
-      }
+      if (masked_card) midtransAccountId = masked_card;
+      else if (saved_token_id) midtransAccountId = saved_token_id;
 
       let renewsAt: string | null = null;
       let endsAt: string | null = null;
@@ -311,20 +302,12 @@ export async function POST(req: Request) {
 
       if (planType === 'monthly') {
         recurringFrequency = 'monthly';
-        const now = new Date();
-        const nextBilling = getNextBillingDate(now, billingDay);
+        const nextBilling = getNextBillingDate(new Date(), billingDay);
         renewsAt = nextBilling.toISOString();
-        endsAt = null;
-        console.log('Monthly plan: Set renews_at to:', nextBilling.toISOString());
-      } else if (planType === 'lifetime') {
-        renewsAt = null;
-        endsAt = null;
-        console.log('Lifetime plan: Set renews_at and ends_at to null');
       }
 
       const subscriptionId = existingSubscription?.id || generateUUID();
 
-      // Use atomic RPC to upsert subscription + user in one transaction
       const { data: rpcResult, error: rpcError } = await (supabaseAdmin as any)
         .rpc('upsert_subscription_atomic', {
           p_user_id: resolvedUserId,
@@ -344,12 +327,12 @@ export async function POST(req: Request) {
 
       if (rpcError) {
         console.error('Error upserting subscription atomically:', rpcError);
-        throw new Error(`Subscription upsert failed: ${rpcError.message}`);
+        return;
       }
 
       if (rpcResult?.result === 'lifetime_preserved') {
         console.warn('Lifetime subscription preserved via RPC:', resolvedUserId);
-        return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
+        return;
       }
 
       console.log('Atomic upsert result:', rpcResult);
@@ -391,35 +374,22 @@ export async function POST(req: Request) {
             purchased_at: new Date().toISOString(),
           });
 
-        if (lifetimeError) {
-          if (lifetimeError.code === '23505') {
-            console.log('Lifetime purchase already recorded for order:', order_id);
-          } else {
-            console.error('Error recording lifetime purchase:', lifetimeError);
-          }
+        if (lifetimeError && lifetimeError.code !== '23505') {
+          console.error('Error recording lifetime purchase:', lifetimeError);
         }
       }
 
       console.log('Subscription created successfully for user:', resolvedUserId);
-    } else if (transaction_status === 'pending') {
-      console.log('Transaction pending:', { order_id });
     }
 
-    // Clean up pending transaction after all processing
     if (transaction_status !== 'pending') {
       await (supabaseAdmin as any)
         .from('pending_midtrans_transactions')
         .delete()
         .eq('order_id', order_id);
     }
-
-    return NextResponse.json({ status: 'OK' });
   } catch (error) {
-    console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Webhook async processing error:', error);
   }
 }
 

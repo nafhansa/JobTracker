@@ -71,15 +71,6 @@ export default function AIWriterLandingSection() {
         
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100/50 text-blue-600 text-sm font-semibold mb-6 border border-blue-200"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{t("aiwriter.badge")}</span>
-          </motion.div>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
