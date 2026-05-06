@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { verifyPaymentWithMidtrans } from '@/lib/middleware/webhook-verify';
 import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
 import { COIN_PACKAGES } from '@/lib/ai/types';
-import { updateWeeklyCoinAllocation, addPurchasedCoins } from '@/lib/supabase/ai-coins';
+import { updateWeeklyCoinAllocation } from '@/lib/supabase/ai-coins';
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -214,38 +214,28 @@ export async function POST(req: Request) {
         const coinsToCredit = coinPurchaseData?.coins || coinPkg.coins;
         console.log('=== COIN PURCHASE WEBHOOK ===', { order_id, userId: resolvedUserId, packageId: coinPkg.id, coinsToCredit });
 
-        const { data: existingTx } = await (supabaseAdmin as any)
-          .from('coin_transactions')
-          .select('id')
-          .eq('reference_id', order_id)
-          .maybeSingle();
+        // Use atomic RPC that handles idempotency + coin credit + status update in one transaction
+        const { data: processResult, error: processError } = await (supabaseAdmin as any)
+          .rpc('process_coin_purchase_atomic', {
+            p_user_id: resolvedUserId,
+            p_order_id: order_id,
+            p_coins: coinsToCredit,
+            p_payment_type: payment_type || null,
+            p_midtrans_transaction_id: body.transaction_id || null,
+          });
 
-        if (existingTx) {
-          console.log('Coin purchase already processed:', order_id);
-          // Update coin_purchases status to paid if not already
-          await (supabaseAdmin as any).from('coin_purchases').update({ status: 'paid', payment_type: payment_type || null, updated_at: new Date().toISOString() }).eq('order_id', order_id);
-          await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
-          return NextResponse.json({ status: 'OK', message: 'Already processed' });
-        }
-
-        try {
-          await addPurchasedCoins(resolvedUserId, coinsToCredit, order_id);
-          console.log(`JPs added: ${coinsToCredit} for user ${resolvedUserId}`);
-        } catch (err) {
-          console.error('Failed to add purchased coins:', err);
-          // Update coin_purchases status to failed
-          await (supabaseAdmin as any).from('coin_purchases').update({ status: 'failed', updated_at: new Date().toISOString() }).eq('order_id', order_id);
+        if (processError) {
+          console.error('Failed to process coin purchase atomically:', processError);
           return NextResponse.json({ status: 'error', message: 'Failed to credit coins' }, { status: 500 });
         }
 
-        // Update coin_purchases status to paid + mark credited_at
-        await (supabaseAdmin as any).from('coin_purchases').update({
-          status: 'paid',
-          payment_type: payment_type || null,
-          midtrans_transaction_id: body.transaction_id || null,
-          credited_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }).eq('order_id', order_id);
+        console.log('Coin purchase atomic result:', processResult);
+
+        if (processResult.result === 'already_processed' || processResult.result === 'already_paid') {
+          console.log('Coin purchase already processed:', order_id);
+          await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
+          return NextResponse.json({ status: 'OK', message: 'Already processed' });
+        }
 
         // Clean up pending transaction after successful credit
         await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
@@ -254,179 +244,175 @@ export async function POST(req: Request) {
       }
 
       // === SUBSCRIPTION ===
+      if (!resolvedUserId) {
+        console.error('Subscription webhook: cannot resolve userId for order:', order_id);
+        return NextResponse.json({ status: 'error', message: 'Missing userId' }, { status: 400 });
+      }
+
+      const { data: processedOrder } = await (supabaseAdmin as any)
+        .from('subscriptions')
+        .select('id, midtrans_subscription_id')
+        .eq('midtrans_subscription_id', order_id)
+        .maybeSingle();
+
+      if (processedOrder) {
+        console.log('Order already processed, skipping:', order_id);
+        return NextResponse.json({ status: 'OK', message: 'Already processed' });
+      }
+
+      const planType = resolvedPlan === 'lifetime' ? 'lifetime' : 'monthly';
+
+      console.log('=== WEBHOOK SUBSCRIPTION CREATION ===');
+      console.log('User ID:', resolvedUserId);
+      console.log('Plan:', planType);
+      console.log('Order ID:', order_id);
+
+      const { data: existingSubscription } = await (supabaseAdmin as any)
+        .from('subscriptions')
+        .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, renews_at, ends_at, created_at, updated_at')
+        .eq('user_id', resolvedUserId)
+        .maybeSingle();
+
+      console.log('Existing subscription found:', existingSubscription);
+
+      if (existingSubscription?.plan === 'lifetime' && planType !== 'lifetime') {
+        console.warn('Attempted to overwrite lifetime subscription:', resolvedUserId);
+        return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
+      }
+
+      const isReactivation = existingSubscription &&
+        (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
+
+      const billingDay = new Date().getDate();
+      const subscriptionCurrency = resolvedCurrency || 'IDR';
+
+      const subscriptionData: any = {
+        user_id: resolvedUserId,
+        plan: planType,
+        status: 'active',
+        midtrans_subscription_id: order_id,
+        midtrans_subscription_token: null,
+        midtrans_payment_method: null,
+        midtrans_account_id: null,
+        currency: subscriptionCurrency,
+        billing_day: billingDay,
+        payment_failure_count: 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (subscription_id) {
+        subscriptionData.midtrans_subscription_token = subscription_id;
+      } else if (saved_token_id) {
+        subscriptionData.midtrans_subscription_token = saved_token_id;
+      }
+
+      if (payment_type) {
+        subscriptionData.midtrans_payment_method = payment_type;
+      }
+
+      if (masked_card) {
+        subscriptionData.midtrans_account_id = masked_card;
+      } else if (saved_token_id) {
+        subscriptionData.midtrans_account_id = saved_token_id;
+      }
+
+      if (planType === 'monthly') {
+        subscriptionData.recurring_frequency = 'monthly';
+        const now = new Date();
+        const nextBilling = getNextBillingDate(now, billingDay);
+        subscriptionData.renews_at = nextBilling.toISOString();
+        subscriptionData.ends_at = null;
+        console.log('Monthly plan: Set renews_at to:', nextBilling.toISOString());
+      } else if (planType === 'lifetime') {
+        subscriptionData.renews_at = null;
+        subscriptionData.ends_at = null;
+        console.log('Lifetime plan: Set renews_at and ends_at to null');
+      }
+
+      if (!existingSubscription) {
+        subscriptionData.id = generateUUID();
+        subscriptionData.created_at = new Date().toISOString();
+        console.log('Creating new subscription with ID:', subscriptionData.id);
+      } else {
+        console.log('Updating existing subscription with ID:', existingSubscription.id);
+      }
+
+      const { error: subscriptionError, data: upsertedData } = await (supabaseAdmin as any)
+        .from('subscriptions')
+        .upsert(subscriptionData, { onConflict: 'user_id' });
+
+      if (subscriptionError) {
+        console.error('Error upserting subscription:', subscriptionError);
+        throw new Error(`Subscription upsert failed: ${subscriptionError.message}`);
+      }
+
+      console.log('Upsert result:', { success: !subscriptionError, data: upsertedData });
+
+      const { error: userError } = await (supabaseAdmin as any)
+        .from('users')
+        .upsert(
+          {
+            id: resolvedUserId,
+            subscription_plan: planType,
+            subscription_status: 'active',
+            is_pro: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+      if (userError) {
+        console.error('Error updating user subscription:', userError);
+        throw new Error(`User update failed: ${userError.message}`);
+      }
+
       try {
-        if (!resolvedUserId) {
-          console.error('Subscription webhook: cannot resolve userId for order:', order_id);
-          return NextResponse.json({ status: 'error', message: 'Missing userId' }, { status: 400 });
-        }
+        await updateWeeklyCoinAllocation(resolvedUserId, planType);
+      } catch (allocErr) {
+        console.error('Failed to update weekly coin allocation:', allocErr);
+      }
 
-        const { data: processedOrder } = await (supabaseAdmin as any)
-          .from('subscriptions')
-          .select('id, midtrans_subscription_id')
-          .eq('midtrans_subscription_id', order_id)
-          .maybeSingle();
+      if (isReactivation) {
+        await recordSubscriptionHistory(resolvedUserId, 'reactivated', {
+          previousStatus: existingSubscription.status,
+          newStatus: 'active',
+          previousPlan: existingSubscription.plan,
+          newPlan: planType,
+          reason: 'Reactivated via payment webhook',
+          metadata: { orderId: order_id, paymentType: payment_type },
+        });
+      } else if (!existingSubscription) {
+        await recordSubscriptionHistory(resolvedUserId, 'subscription_created', {
+          previousStatus: null,
+          newStatus: 'active',
+          previousPlan: 'free',
+          newPlan: planType,
+          reason: 'New subscription via payment webhook',
+          metadata: { orderId: order_id, paymentType: payment_type },
+        });
+      }
 
-        if (processedOrder) {
-          console.log('Order already processed, skipping:', order_id);
-          return NextResponse.json({ status: 'OK', message: 'Already processed' });
-        }
-
-        const planType = resolvedPlan === 'lifetime' ? 'lifetime' : 'monthly';
-
-        console.log('=== WEBHOOK SUBSCRIPTION CREATION ===');
-        console.log('User ID:', resolvedUserId);
-        console.log('Plan:', planType);
-        console.log('Order ID:', order_id);
-
-        const { data: existingSubscription } = await (supabaseAdmin as any)
-          .from('subscriptions')
-          .select('id, user_id, plan, status, midtrans_subscription_id, midtrans_subscription_token, renews_at, ends_at, created_at, updated_at')
-          .eq('user_id', resolvedUserId)
-          .maybeSingle();
-
-        console.log('Existing subscription found:', existingSubscription);
-
-        if (existingSubscription?.plan === 'lifetime' && planType !== 'lifetime') {
-          console.warn('Attempted to overwrite lifetime subscription:', resolvedUserId);
-          return NextResponse.json({ status: 'OK', message: 'Lifetime subscription preserved' });
-        }
-
-        const isReactivation = existingSubscription && 
-          (existingSubscription.status === 'cancelled' || existingSubscription.status === 'canceled');
-
-        const billingDay = new Date().getDate();
-        const subscriptionCurrency = resolvedCurrency || 'IDR';
-
-        const subscriptionData: any = {
-          user_id: resolvedUserId,
-          plan: planType,
-          status: 'active',
-          midtrans_subscription_id: order_id,
-          midtrans_subscription_token: null,
-          midtrans_payment_method: null,
-          midtrans_account_id: null,
-          currency: subscriptionCurrency,
-          billing_day: billingDay,
-          payment_failure_count: 0,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (subscription_id) {
-          subscriptionData.midtrans_subscription_token = subscription_id;
-        } else if (saved_token_id) {
-          subscriptionData.midtrans_subscription_token = saved_token_id;
-        }
-
-        if (payment_type) {
-          subscriptionData.midtrans_payment_method = payment_type;
-        }
-
-        if (masked_card) {
-          subscriptionData.midtrans_account_id = masked_card;
-        } else if (saved_token_id) {
-          subscriptionData.midtrans_account_id = saved_token_id;
-        }
-
-        if (planType === 'monthly') {
-          subscriptionData.recurring_frequency = 'monthly';
-          const now = new Date();
-          const nextBilling = getNextBillingDate(now, billingDay);
-          subscriptionData.renews_at = nextBilling.toISOString();
-          subscriptionData.ends_at = null;
-          console.log('Monthly plan: Set renews_at to:', nextBilling.toISOString());
-        } else if (planType === 'lifetime') {
-          subscriptionData.renews_at = null;
-          subscriptionData.ends_at = null;
-          console.log('Lifetime plan: Set renews_at and ends_at to null');
-        }
-
-        if (!existingSubscription) {
-          subscriptionData.id = generateUUID();
-          subscriptionData.created_at = new Date().toISOString();
-          console.log('Creating new subscription with ID:', subscriptionData.id);
-        } else {
-          console.log('Updating existing subscription with ID:', existingSubscription.id);
-        }
-
-        const { error: subscriptionError, data: upsertedData } = await (supabaseAdmin as any)
-          .from('subscriptions')
-          .upsert(subscriptionData, { onConflict: 'user_id' });
-
-        if (subscriptionError) {
-          console.error('Error upserting subscription:', subscriptionError);
-          throw subscriptionError;
-        }
-
-        console.log('Upsert result:', { success: !subscriptionError, data: upsertedData });
-
-        const { error: userError } = await (supabaseAdmin as any)
-          .from('users')
-          .upsert(
-            {
-              id: resolvedUserId,
-              subscription_plan: planType,
-              subscription_status: 'active',
-              is_pro: true,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'id' }
-          );
-
-        if (userError) {
-          console.error('Error updating user subscription:', userError);
-          throw userError;
-        }
-
-        try {
-          await updateWeeklyCoinAllocation(resolvedUserId, planType);
-        } catch (allocErr) {
-          console.error('Failed to update weekly coin allocation:', allocErr);
-        }
-
-        if (isReactivation) {
-          await recordSubscriptionHistory(resolvedUserId, 'reactivated', {
-            previousStatus: existingSubscription.status,
-            newStatus: 'active',
-            previousPlan: existingSubscription.plan,
-            newPlan: planType,
-            reason: 'Reactivated via payment webhook',
-            metadata: { orderId: order_id, paymentType: payment_type },
+      if (resolvedPlan === 'lifetime') {
+        const { error: lifetimeError } = await (supabaseAdmin as any)
+          .from('lifetime_access_purchases')
+          .insert({
+            user_id: resolvedUserId,
+            order_id: order_id,
+            amount: gross_amount,
+            currency: subscriptionCurrency,
+            purchased_at: new Date().toISOString(),
           });
-        } else if (!existingSubscription) {
-          await recordSubscriptionHistory(resolvedUserId, 'subscription_created', {
-            previousStatus: null,
-            newStatus: 'active',
-            previousPlan: 'free',
-            newPlan: planType,
-            reason: 'New subscription via payment webhook',
-            metadata: { orderId: order_id, paymentType: payment_type },
-          });
-        }
 
-        if (resolvedPlan === 'lifetime') {
-          const { error: lifetimeError } = await (supabaseAdmin as any)
-            .from('lifetime_access_purchases')
-            .insert({
-              user_id: resolvedUserId,
-              order_id: order_id,
-              amount: gross_amount,
-              currency: subscriptionCurrency,
-              purchased_at: new Date().toISOString(),
-            });
-
-          if (lifetimeError) {
-            if (lifetimeError.code === '23505') {
-              console.log('Lifetime purchase already recorded for order:', order_id);
-            } else {
-              console.error('Error recording lifetime purchase:', lifetimeError);
-            }
+        if (lifetimeError) {
+          if (lifetimeError.code === '23505') {
+            console.log('Lifetime purchase already recorded for order:', order_id);
+          } else {
+            console.error('Error recording lifetime purchase:', lifetimeError);
           }
         }
-
-        console.log('Subscription created successfully for user:', resolvedUserId);
-      } catch (error) {
-        console.error('Error creating subscription:', error);
       }
+
+      console.log('Subscription created successfully for user:', resolvedUserId);
     } else if (transaction_status === 'pending') {
       console.log('Transaction pending:', { order_id });
     }

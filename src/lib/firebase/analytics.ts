@@ -1,4 +1,4 @@
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp, getCountFromServer } from "firebase/firestore";
 import { db } from "./config";
 
 const VISITS_COLLECTION = "analytics_visits";
@@ -89,49 +89,71 @@ export const updateActiveUser = async (userId: string, userEmail?: string) => {
 
 /**
  * Get analytics stats (server-side only, via API)
+ * Fixed: Uses count queries and date filtering instead of full table scans
  */
-export const getAnalyticsStats = async () => {
+export const getAnalyticsStats = async (daysBack: number = 30) => {
   try {
-    // Get all visits
-    const visitsSnapshot = await getDocs(collection(db, VISITS_COLLECTION));
-    const visits = visitsSnapshot.docs.map(doc => ({
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+
+    // Get total counts using efficient count queries
+    const visitsCollection = collection(db, VISITS_COLLECTION);
+    const loginsCollection = collection(db, LOGINS_COLLECTION);
+    const dashboardVisitsCollection = collection(db, DASHBOARD_VISITS_COLLECTION);
+
+    const [visitsCountSnap, loginsCountSnap, dashboardVisitsCountSnap] = await Promise.all([
+      getCountFromServer(visitsCollection),
+      getCountFromServer(loginsCollection),
+      getCountFromServer(dashboardVisitsCollection),
+    ]);
+
+    // Get recent events for date grouping (last 30 days max)
+    const recentVisitsQuery = query(
+      collection(db, VISITS_COLLECTION),
+      where("timestamp", ">=", startDate)
+    );
+    const recentLoginsQuery = query(
+      collection(db, LOGINS_COLLECTION),
+      where("timestamp", ">=", startDate)
+    );
+    const recentDashboardVisitsQuery = query(
+      collection(db, DASHBOARD_VISITS_COLLECTION),
+      where("timestamp", ">=", startDate)
+    );
+
+    const [recentVisitsSnap, recentLoginsSnap, recentDashboardVisitsSnap] = await Promise.all([
+      getDocs(recentVisitsQuery),
+      getDocs(recentLoginsQuery),
+      getDocs(recentDashboardVisitsQuery),
+    ]);
+
+    const recentVisits = recentVisitsSnap.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Get all logins
-    const loginsSnapshot = await getDocs(collection(db, LOGINS_COLLECTION));
-    const logins = loginsSnapshot.docs.map(doc => ({
+    const recentLogins = recentLoginsSnap.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
-    // Get all dashboard visits
-    const dashboardVisitsSnapshot = await getDocs(collection(db, DASHBOARD_VISITS_COLLECTION));
-    const dashboardVisits = dashboardVisitsSnapshot.docs.map(doc => ({
+    const recentDashboardVisits = recentDashboardVisitsSnap.docs.map(doc => ({
       ...doc.data(),
       id: doc.id,
     }));
 
     // Get active users (last seen within last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const activeUsersRef = collection(db, ACTIVE_USERS_COLLECTION);
-    const activeUsersSnapshot = await getDocs(activeUsersRef);
-    const now = Date.now();
-    const fiveMinutesAgo = now - 5 * 60 * 1000;
-    
-    const activeUsers = activeUsersSnapshot.docs.filter(doc => {
-      const data = doc.data();
-      const lastSeen = data.lastSeen;
-      if (!lastSeen) return false;
-      
-      // Handle Firestore Timestamp
-      const lastSeenTime = lastSeen.toMillis ? lastSeen.toMillis() : new Date(lastSeen).getTime();
-      return lastSeenTime > fiveMinutesAgo;
-    });
+    const activeUsersQuery = query(activeUsersRef, where("lastSeen", ">=", fiveMinutesAgo));
+    const activeUsersSnapshot = await getDocs(activeUsersQuery);
+    const activeUsers = activeUsersSnapshot.docs.map(doc => doc.data());
 
     // Calculate conversion rate
-    const conversionRate = logins.length > 0 
-      ? (dashboardVisits.length / logins.length) * 100 
+    const totalLogins = loginsCountSnap.data().count;
+    const totalDashboardVisits = dashboardVisitsCountSnap.data().count;
+    const conversionRate = totalLogins > 0
+      ? (totalDashboardVisits / totalLogins) * 100
       : 0;
 
     // Group by date for recent activity
@@ -140,9 +162,9 @@ export const getAnalyticsStats = async () => {
       events.forEach(event => {
         const timestamp = event.timestamp;
         if (!timestamp) return;
-        
+
         let date: string;
-        
+
         // Check if it's a Date object
         if (timestamp instanceof Date) {
           date = timestamp.toISOString().split('T')[0];
@@ -157,10 +179,10 @@ export const getAnalyticsStats = async () => {
         } else {
           return;
         }
-        
+
         grouped[date] = (grouped[date] || 0) + 1;
       });
-      
+
       return Object.entries(grouped)
         .map(([timestamp, count]) => ({ timestamp, count }))
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
@@ -168,14 +190,14 @@ export const getAnalyticsStats = async () => {
     };
 
     return {
-      totalVisitors: visits.length,
-      loginAttempts: logins.length,
+      totalVisitors: visitsCountSnap.data().count,
+      loginAttempts: totalLogins,
       activeUsers: activeUsers.length,
-      dashboardVisits: dashboardVisits.length,
+      dashboardVisits: totalDashboardVisits,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      recentVisits: groupByDate(visits),
-      recentLogins: groupByDate(logins),
-      recentDashboardVisits: groupByDate(dashboardVisits),
+      recentVisits: groupByDate(recentVisits),
+      recentLogins: groupByDate(recentLogins),
+      recentDashboardVisits: groupByDate(recentDashboardVisits),
     };
   } catch (error) {
     console.error("Error getting analytics stats:", error);

@@ -99,17 +99,21 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       let unsubscribe: (() => void) | undefined;
+      let cancelled = false;
 
       // Always use Supabase for jobs
       const channel = supabaseSubscribeToJobs(user.uid, (data) => {
-        setJobs(data);
-        setLoading(false);
+        if (!cancelled) {
+          setJobs(data);
+          setLoading(false);
+        }
       });
       unsubscribe = () => {
         channel.unsubscribe();
       };
 
       return () => {
+        cancelled = true;
         if (unsubscribe) unsubscribe();
       };
     }

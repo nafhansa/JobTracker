@@ -2,6 +2,10 @@ import { supabase } from './client';
 import { JobApplication, JobStatus } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
+const INITIAL_FETCH_LIMIT = 100;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_BASE_DELAY_MS = 1000;
+
 /**
  * Add a new job application
  * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
@@ -155,67 +159,104 @@ const JOB_COLUMNS = 'id,user_id,job_title,company,industry,recruiter_email,appli
 
 /**
  * Subscribe to jobs for a user (real-time) with incremental updates
+ * Features:
+ * - Pagination on initial fetch (LIMIT 100)
+ * - Reconnection with exponential backoff
+ * - Proper cleanup on unsubscribe
  */
 export const subscribeToJobs = (
   userId: string,
   callback: (jobs: JobApplication[]) => void
 ): RealtimeChannel => {
   let currentJobs: JobApplication[] = [];
+  let reconnectAttempts = 0;
+  let isSubscribed = true;
 
-  const channel = supabase
-    .channel(`jobs:${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const newJob = transformJobRow(payload.new);
-        currentJobs = [newJob, ...currentJobs];
-        callback(currentJobs);
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const updatedJob = transformJobRow(payload.new);
-        currentJobs = currentJobs.map(j => j.id === updatedJob.id ? updatedJob : j);
-        callback(currentJobs);
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'jobs',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const deletedId = payload.old?.id;
-        if (deletedId) {
-          currentJobs = currentJobs.filter(j => j.id !== deletedId);
+  const createChannel = (): RealtimeChannel => {
+    const channel = supabase
+      .channel(`jobs:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newJob = transformJobRow(payload.new);
+          currentJobs = [newJob, ...currentJobs].slice(0, INITIAL_FETCH_LIMIT);
           callback(currentJobs);
         }
-      }
-    )
-    .subscribe();
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const updatedJob = transformJobRow(payload.new);
+          currentJobs = currentJobs.map(j => j.id === updatedJob.id ? updatedJob : j);
+          callback(currentJobs);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'jobs',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            currentJobs = currentJobs.filter(j => j.id !== deletedId);
+            callback(currentJobs);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          reconnectAttempts = 0;
+        } else if (status === 'CHANNEL_ERROR' && isSubscribed) {
+          handleReconnect(channel);
+        }
+      });
 
-  // Initial fetch
+    return channel;
+  };
+
+  const handleReconnect = (failedChannel: RealtimeChannel) => {
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS || !isSubscribed) {
+      console.error('Max reconnect attempts reached for jobs subscription');
+      return;
+    }
+
+    reconnectAttempts++;
+    const delay = Math.min(RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectAttempts - 1), 30000);
+
+    setTimeout(() => {
+      if (isSubscribed) {
+        failedChannel.unsubscribe();
+        const newChannel = createChannel();
+        (channelRef as any) = newChannel;
+      }
+    }, delay);
+  };
+
+  let channelRef = createChannel();
+
+  // Initial fetch with pagination
   (supabase
     .from('jobs') as any)
     .select(JOB_COLUMNS)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
+    .limit(INITIAL_FETCH_LIMIT)
     .then(({ data, error }: { data: any; error: any }) => {
       if (error) {
         console.error('Error fetching initial jobs:', error);
@@ -225,5 +266,12 @@ export const subscribeToJobs = (
       callback(currentJobs);
     });
 
-  return channel;
+  // Return a wrapper that properly cleans up
+  return {
+    ...channelRef,
+    unsubscribe: async () => {
+      isSubscribed = false;
+      return channelRef.unsubscribe();
+    },
+  } as RealtimeChannel;
 };
