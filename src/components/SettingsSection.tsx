@@ -5,7 +5,7 @@ import { LogOut, ShieldCheck, Moon, Sun, Languages, Download, Check, Smartphone,
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
-import { useTheme } from "@/lib/theme/context";
+import { useTheme, themeLabels, type ColorTheme } from "@/lib/theme/context";
 import { logout } from "@/lib/firebase/auth";
 import { Button } from "@/components/ui/button";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
@@ -34,7 +34,7 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
   const router = useRouter();
   const { user, subscription } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const { mode, toggleMode, mounted } = useTheme();
+  const { colorTheme, mode, setColorTheme, toggleMode, mounted } = useTheme();
 
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -169,6 +169,26 @@ export default function SettingsSection({ isAdmin }: SettingsSectionProps) {
               <span className="text-xs capitalize">{mode}</span>
             </div>
           </button>
+
+          <div className="p-4 bg-muted/30 rounded-lg">
+            <span className="text-sm font-medium text-foreground">Color Theme</span>
+            <div className="grid grid-cols-4 gap-2 mt-3">
+              {(Object.entries(themeLabels) as [ColorTheme, { name: string; emoji: string }][]).map(([key, { name, emoji }]) => (
+                <button
+                  key={key}
+                  onClick={() => setColorTheme(key)}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                    colorTheme === key
+                      ? "bg-primary/10 border-2 border-primary"
+                      : "border-2 border-transparent hover:bg-accent"
+                  }`}
+                >
+                  <span className="text-lg">{emoji}</span>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">{name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
