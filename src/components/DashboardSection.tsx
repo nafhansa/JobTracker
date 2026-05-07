@@ -283,11 +283,11 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
         return (
           <>
             {/* Mobile carousel */}
-            <div className="md:hidden overflow-hidden">
+            <div className="md:hidden relative z-10">
               <div
                 ref={carouselRef}
                 onScroll={handleScroll}
-                className="carousel-track flex overflow-x-auto snap-x snap-mandatory gap-3 px-6 pb-1"
+                className="carousel-track flex overflow-x-auto snap-x snap-mandatory gap-3 px-6 py-4 pb-1"
                 style={{
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
@@ -318,7 +318,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
               </div>
 
               {/* Dot indicators */}
-              <div className="flex justify-center gap-1.5 mt-1">
+              <div className="flex justify-center gap-1.5 mt-4">
                 {statuses.map((s, i) => (
                   <div
                     key={s.key}
