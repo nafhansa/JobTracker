@@ -440,44 +440,55 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         </DialogHeader>
 
         {isEditMode && !canEdit && (
-          <div className="p-2.5 sm:p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
-            <Lock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
-            <div className="text-xs sm:text-sm">
-              <p className="font-semibold mb-0.5">{t("form.warning.editLocked")}</p>
-              <p className="text-[10px] sm:text-xs">{t("form.warning.editUpgrade")}</p>
+          <div className="p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-3">
+            <Lock className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm sm:text-base mb-1">
+                {t("form.warning.editLocked")}
+              </p>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 mb-3">
+                {t("form.warning.editUpgrade")}
+              </p>
+              <Button
+                onClick={() => router.push("/upgrade")}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm py-2 px-4"
+              >
+                Upgrade to Pro
+              </Button>
             </div>
           </div>
         )}
 
         {!isEditMode && !canAdd && (
-          <div className="p-2.5 sm:p-3 bg-yellow-100 border border-yellow-400 rounded-lg flex items-start gap-2 text-yellow-800">
-            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
-            <div className="text-xs sm:text-sm">
-              <p className="font-semibold mb-0.5">{t("form.warning.limitReached")}</p>
-              <p className="text-[10px] sm:text-xs">{t("form.warning.limitUpgrade").replace("{limit}", FREE_PLAN_JOB_LIMIT.toString())}</p>
+          <div className="p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm sm:text-base mb-1">
+                {t("form.warning.limitReached")}
+              </p>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 mb-3">
+                You&apos;re tracking {currentJobCount} jobs. Free plan allows up to {FREE_PLAN_JOB_LIMIT} jobs. Delete some jobs or upgrade to Pro to add more.
+              </p>
+              <Button
+                onClick={() => router.push("/upgrade")}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm py-2 px-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Upgrade to Pro — Unlimited Jobs
+              </Button>
             </div>
           </div>
         )}
 
-        {isFreeUser && !isEditMode && (
-          <div className="p-1.5 sm:p-2 bg-muted/50 border border-border rounded text-[10px] sm:text-xs text-muted-foreground">
-            {t("form.usage").replace("{current}", currentJobCount.toString()).replace("{limit}", FREE_PLAN_JOB_LIMIT.toString())}
+        {isFreeUser && !isEditMode && !canAdd && (
+          <div className="p-2 sm:p-2.5 bg-muted/50 border border-border rounded text-xs sm:text-sm text-muted-foreground text-center">
+            {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs used
           </div>
         )}
 
         <form onSubmit={(e) => e.preventDefault()}>
           {step === 1 ? renderStep1() : renderStep2()}
         </form>
-
-        {((isEditMode && !canEdit) || (!isEditMode && !canAdd)) && step === 2 && (
-          <Button
-            type="button"
-            onClick={() => router.push("/upgrade")}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 sm:py-2.5 shadow-lg text-sm"
-          >
-            {t("dashboard.upgrade")}
-          </Button>
-        )}
       </DialogContent>
     </Dialog>
   );

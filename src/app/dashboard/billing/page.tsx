@@ -26,12 +26,13 @@ export default function BillingPage() {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<string | null>(null);
 
   const isFreePlan = subscription?.plan === "free";
+  const isOverLimit = isFreePlan && jobCount !== null && jobCount > FREE_PLAN_JOB_LIMIT;
 
   useEffect(() => {
-    if (isFreePlan && user) {
+    if (user) {
       getJobCount(user).then(setJobCount).catch(() => setJobCount(0));
     }
-  }, [isFreePlan, user]);
+  }, [user]);
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -262,9 +263,33 @@ export default function BillingPage() {
                 {isFreePlan && jobCount !== null && (
                   <div className="flex justify-between items-center py-3 border-b border-border">
                     <span className="text-muted-foreground">Jobs Used</span>
-                    <span className="font-semibold text-foreground">
+                    <span className={`font-semibold ${isOverLimit ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'}`}>
                       {jobCount}/{FREE_PLAN_JOB_LIMIT}
                     </span>
+                  </div>
+                )}
+
+                {/* Over-limit Warning for Downgraded Users */}
+                {isOverLimit && (
+                  <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-1">
+                          Job Limit Exceeded
+                        </p>
+                        <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                          You have {jobCount} tracked jobs from your Pro plan. The free plan allows up to {FREE_PLAN_JOB_LIMIT} jobs. You can still view and manage all your jobs, but you need to delete some or upgrade to Pro to add new ones.
+                        </p>
+                        <Button
+                          onClick={() => router.push("/upgrade")}
+                          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm"
+                        >
+                          <ArrowUpRight className="w-4 h-4 mr-2" />
+                          Upgrade to Pro — Unlimited Jobs
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
