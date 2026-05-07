@@ -27,9 +27,10 @@ interface DashboardLayoutProps {
   jobs: JobApplication[];
   userId: string;
   plan?: string;
+  onJobChanged?: () => void;
 }
 
-export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutProps) {
+export default function DashboardLayout({ jobs, userId, plan, onJobChanged }: DashboardLayoutProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [trackerMode, setTrackerMode] = useState<TrackerMode>("job");
@@ -109,6 +110,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
               plan={plan}
               onAddJob={handleAddNew}
               onEditJob={handleEditJob}
+              onJobChanged={onJobChanged}
             />
           </>
         );
@@ -255,6 +257,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           plan={plan}
           currentJobCount={jobs.length}
           isAdmin={isAdmin}
+          onJobChanged={onJobChanged}
         />
       </div>
       <TutorialManager onNavigateToApplications={handleNavigateToApplications} />

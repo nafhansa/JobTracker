@@ -1,41 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { JobApplication, JobStatus } from '@/types';
+import { JobApplication } from '@/types';
 
 const FETCH_LIMIT = 100;
 const POLL_INTERVAL_MS = 30000; // 30 seconds
 
-const transformJobRow = (row: any): JobApplication => {
-  return {
-    id: row.id,
-    userId: row.user_id,
-    jobTitle: row.job_title,
-    company: row.company,
-    industry: row.industry,
-    recruiterEmail: row.recruiter_email || undefined,
-    applicationUrl: row.application_url || undefined,
-    jobType: row.job_type || undefined,
-    location: row.location || undefined,
-    potentialSalary: row.potential_salary || undefined,
-    potentialSalaryMin: row.potential_salary_min || undefined,
-    potentialSalaryMax: row.potential_salary_max || undefined,
-    salaryType: row.salary_type || undefined,
-    currency: row.currency || 'IDR',
-    status: {
-      applied: row.status_applied || false,
-      emailed: row.status_emailed || false,
-      cvResponded: row.status_cv_responded || false,
-      interviewEmail: row.status_interview_email || false,
-      contractEmail: row.status_contract_email || false,
-      rejected: row.status_rejected || false,
-    } as JobStatus,
-    createdAt: new Date(row.created_at).getTime(),
-    updatedAt: new Date(row.updated_at).getTime(),
-  };
-};
-
 /**
  * Polling-based job subscription (replaces Supabase Realtime)
- * - Fetches jobs via API route (server-side proxy to avoid CORS)
+ * - Fetches jobs via API route (server-side proxy that already transforms data)
  * - Polls every 30s for updates
  * - Uses updated_at to detect changes
  * - No WebSocket connections needed
@@ -66,12 +37,13 @@ export function useJobsPolling(user: { getIdToken: () => Promise<string> } | und
       }
 
       const result = await response.json();
-      const transformed = (result.jobs || []).map(transformJobRow);
+      // API already returns transformed JobApplication[] (camelCase)
+      const transformed: JobApplication[] = result.jobs || [];
 
       if (!isMountedRef.current) return;
 
       // Only update if data changed (compare count + latest updated_at)
-      const latestUpdatedAt = transformed.length > 0 ? transformed[0].updatedAt : null;
+      const latestUpdatedAt = transformed.length > 0 ? String(transformed[0].updatedAt) : null;
       if (isPoll && latestUpdatedAt === lastUpdatedAtRef.current) {
         return; // No changes
       }

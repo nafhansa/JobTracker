@@ -471,7 +471,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-foreground text-sm mb-1 truncate">
-                      {job.jobTitle}
+                      {job.jobTitle || 'Unknown Job Title'}
                     </h4>
                     <p className="text-muted-foreground text-sm truncate">
                       {job.company}

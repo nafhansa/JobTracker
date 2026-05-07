@@ -23,9 +23,10 @@ interface DashboardClientProps {
   plan?: string;
   onAddJob?: () => void;
   onEditJob?: (job: JobApplication) => void;
+  onJobChanged?: () => void;
 }
 
-export default function DashboardClient({ initialJobs, userId, plan, onAddJob, onEditJob }: DashboardClientProps) {
+export default function DashboardClient({ initialJobs, userId, plan, onAddJob, onEditJob, onJobChanged }: DashboardClientProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -322,13 +323,14 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
                 </p>
               </div>
             ) : (
-paginatedJobs.map((job) => (
+ paginatedJobs.map((job) => (
                   <JobCard
                     key={job.id}
                     job={job}
                     onEdit={(job) => onEditJob?.(job)}
                     isFreeUser={isFreeUser}
                     isAdmin={isAdmin}
+                    onJobChanged={onJobChanged}
                   />
                 ))
             )}

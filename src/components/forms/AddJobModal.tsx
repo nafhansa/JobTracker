@@ -25,13 +25,15 @@ interface JobModalProps {
   plan?: string;
   currentJobCount?: number;
   isAdmin?: boolean;
+  onJobChanged?: () => void;
 }
 
-export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, plan, currentJobCount = 0, isAdmin = false }: JobModalProps) {
+export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, plan, currentJobCount = 0, isAdmin = false, onJobChanged }: JobModalProps) {
   const router = useRouter();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [formError, setFormError] = useState<string | null>(null);
   
   const isFreeUser = plan === "free" && !isAdmin;
   const isEditMode = !!jobToEdit;
@@ -55,6 +57,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
+      setFormError(null);
     }
   }, [isOpen]);
   
@@ -81,12 +84,13 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
 
   useEffect(() => {
     if (jobToEdit) {
+      setFormError(null);
       const jobSalaryType = jobToEdit.salaryType || 
         (jobToEdit.potentialSalaryMin && jobToEdit.potentialSalaryMax ? 'range' : 
         (jobToEdit.potentialSalary || jobToEdit.potentialSalaryMin ? 'exact' : 'unspecified'));
       
       setFormData({
-        jobTitle: jobToEdit.jobTitle,
+        jobTitle: jobToEdit.jobTitle || '',
         industry: jobToEdit.company || jobToEdit.industry,
         potentialSalary: jobToEdit.potentialSalary?.toString() || "",
         potentialSalaryMin: jobToEdit.potentialSalaryMin?.toString() || jobToEdit.potentialSalary?.toString() || "",
@@ -139,11 +143,17 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
       const min = Number(formData.potentialSalaryMin);
       const max = Number(formData.potentialSalaryMax);
       if (min > max) {
-        alert("Minimum salary cannot be greater than maximum salary.");
+        setFormError("Minimum salary cannot be greater than maximum salary.");
         return;
       }
     }
-    
+
+    if (!formData.jobTitle.trim() || !formData.industry.trim()) {
+      setFormError("Job title and company are required.");
+      return;
+    }
+
+    setFormError(null);
     setLoading(true);
     try {
       let salaryPayload: {
@@ -181,6 +191,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         await supabaseAddJob(payload as Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>);
       }
       
+      onJobChanged?.();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
@@ -500,6 +511,27 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         {isFreeUser && !isEditMode && !canAdd && (
           <div className="p-2 sm:p-2.5 bg-muted/50 border border-border rounded text-xs sm:text-sm text-muted-foreground text-center">
             {currentJobCount}/{FREE_PLAN_JOB_LIMIT} jobs used
+          </div>
+        )}
+
+        {formError && (
+          <div className="p-3 sm:p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-4 h-4 text-destructive" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-destructive text-sm mb-0.5">Validation Error</p>
+              <p className="text-xs text-destructive/80">{formError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormError(null)}
+              className="text-destructive/50 hover:text-destructive transition-colors flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 
