@@ -86,7 +86,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         (jobToEdit.potentialSalary || jobToEdit.potentialSalaryMin ? 'exact' : 'unspecified'));
       
       setFormData({
-        jobTitle: jobToEdit.jobTitle,
+        jobTitle: jobToEdit.jobTitle || '',
         industry: jobToEdit.company || jobToEdit.industry,
         potentialSalary: jobToEdit.potentialSalary?.toString() || "",
         potentialSalaryMin: jobToEdit.potentialSalaryMin?.toString() || jobToEdit.potentialSalary?.toString() || "",
@@ -143,7 +143,12 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         return;
       }
     }
-    
+
+    if (!formData.jobTitle.trim() || !formData.industry.trim()) {
+      alert("Job title and company are required.");
+      return;
+    }
+
     setLoading(true);
     try {
       let salaryPayload: {

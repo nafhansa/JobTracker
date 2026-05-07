@@ -137,7 +137,7 @@ return (
           }}>
             <div className="flex items-start gap-2">
               <h3 className={`font-bold text-base line-clamp-2 tracking-wide transition-colors ${isRejected && !hasReachedResponseOrInterview ? "text-muted-foreground line-through decoration-red-400/50" : "text-foreground group-hover:text-primary"}`}>
-                {job.jobTitle}
+                {job.jobTitle || 'Unknown Job Title'}
               </h3>
             </div>
             <div className="flex items-center text-muted-foreground text-xs uppercase tracking-widest mt-1 gap-2 font-medium">

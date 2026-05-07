@@ -1,4 +1,5 @@
 import { supabase } from './client';
+import { auth } from '@/lib/firebase/config';
 import { JobApplication, JobStatus } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -6,16 +7,24 @@ const INITIAL_FETCH_LIMIT = 100;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BASE_DELAY_MS = 1000;
 
+async function getAuthToken(): Promise<string> {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('User not authenticated');
+  return token;
+}
+
 /**
  * Add a new job application
  * Uses API route to bypass RLS (since users authenticate with Firebase, not Supabase)
  */
 export const addJob = async (jobData: Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
+    const token = await getAuthToken();
     const response = await fetch('/api/jobs/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         userId: jobData.userId,
@@ -54,10 +63,12 @@ export const addJob = async (jobData: Omit<JobApplication, 'id' | 'createdAt' | 
  */
 export const updateJob = async (jobId: string, data: Partial<JobApplication>) => {
   try {
+    const token = await getAuthToken();
     const response = await fetch('/api/jobs/update', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         jobId,
@@ -83,10 +94,12 @@ export const updateJob = async (jobId: string, data: Partial<JobApplication>) =>
  */
 export const deleteJob = async (jobId: string) => {
   try {
+    const token = await getAuthToken();
     const response = await fetch('/api/jobs/delete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         jobId,
@@ -140,7 +153,7 @@ const transformJobRow = (row: any): JobApplication => {
   return {
     id: row.id,
     userId: row.user_id,
-    jobTitle: row.job_title,
+    jobTitle: row.job_title || 'Unknown Job Title',
     company: row.company,
     industry: row.industry,
     recruiterEmail: row.recruiter_email || undefined,
