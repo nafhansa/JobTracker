@@ -114,7 +114,7 @@ export const checkIsPro = (subscription: SubscriptionData | null | undefined): b
   if (status === 'active' && plan !== 'free') return true;
 
   // Status Cancelled = Check Grace Period using endsAt (priority) or renewsAt
-  if (status === 'cancelled' || status === 'canceled') {
+  if (status === 'cancelled' || status === 'canceled' || status === 'expired') {
     const candidate = endsAt || renewsAt;
     if (!candidate) return false;
 

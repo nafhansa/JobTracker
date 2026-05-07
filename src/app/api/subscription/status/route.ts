@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       endsAt: subData.ends_at,
     });
 
-    const isCancelled = subData.status === 'cancelled' || subData.status === 'canceled';
+    const isCancelled = subData.status === 'cancelled' || subData.status === 'canceled' || subData.status === 'expired';
     const now = new Date();
 
     let gracePeriodEndsAt: string | null = null;

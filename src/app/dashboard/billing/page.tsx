@@ -106,6 +106,11 @@ export default function BillingPage() {
       return;
     }
 
+    if (rawEndsAt && new Date(rawEndsAt) > new Date()) {
+      alert("You still have Pro access until the end of your billing period. Reactivation will be available after your access ends.");
+      return;
+    }
+
     setReactivating(true);
     try {
       const planToReactivate = subscription.plan || "monthly";
@@ -157,7 +162,7 @@ export default function BillingPage() {
 
   const isLifetime = subscription?.plan === "lifetime";
   const isActive = subscription?.status === "active";
-  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
+  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled" || subscription?.status === "expired";
   const pricing = isIndonesia ? PRICING_IDR : PRICING_USD;
 
   const rawRenewsAt = subscription?.renewsAt;
@@ -166,6 +171,8 @@ export default function BillingPage() {
   const endsAt = subscription?.endsAt
     ? formatDate(subscription.endsAt)
     : null;
+
+  const isInGracePeriod = isCancelled && rawEndsAt && new Date(rawEndsAt) > new Date();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -340,6 +347,12 @@ export default function BillingPage() {
                         <CheckCircle className="w-5 h-5 text-emerald-600" />
                         <p className="text-emerald-700">
                           Subscription reactivated successfully!
+                        </p>
+                      </div>
+                    ) : isInGracePeriod ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          You still have Pro access until {endsAt}. Reactivation will be available after your access ends.
                         </p>
                       </div>
                     ) : cooldownEndsAt ? (
