@@ -67,13 +67,21 @@ export default function DashboardLayout({ jobs, userId, plan, onJobChanged }: Da
 
   const handlePlusButtonClick = () => {
     setIsPlusLoading(true);
-    setActiveSection("applications");
     setEditingJob(null);
     
-    requestAnimationFrame(() => {
-      setIsModalOpen(true);
-      setIsPlusLoading(false);
-    });
+    if (trackerMode === "client") {
+      setActiveSection("clients");
+      requestAnimationFrame(() => {
+        setOpenClientModal(true);
+        setIsPlusLoading(false);
+      });
+    } else {
+      setActiveSection("applications");
+      requestAnimationFrame(() => {
+        setIsModalOpen(true);
+        setIsPlusLoading(false);
+      });
+    }
   };
 
   const handleEditJob = (job: JobApplication) => {
