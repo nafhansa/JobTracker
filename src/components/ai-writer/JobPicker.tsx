@@ -58,8 +58,8 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
       const q = search.toLowerCase();
       result = result.filter(
         (j) =>
-          j.jobTitle.toLowerCase().includes(q) ||
-          j.company.toLowerCase().includes(q) ||
+          (j.jobTitle || "").toLowerCase().includes(q) ||
+          (j.company || "").toLowerCase().includes(q) ||
           (j.recruiterEmail || "").toLowerCase().includes(q)
       );
     }

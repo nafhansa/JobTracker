@@ -56,8 +56,8 @@ export default function DashboardClient({ initialJobs, userId, plan, onAddJob, o
 
   const filteredJobs = jobs.filter((job) => {
     const matchSearch = 
-      job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.industry.toLowerCase().includes(searchQuery.toLowerCase());
+      (job.jobTitle || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.industry || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchSearch) return false;
     
