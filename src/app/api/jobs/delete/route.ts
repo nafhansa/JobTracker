@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 /**
@@ -6,6 +7,11 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  */
 export async function POST(req: Request) {
   try {
+    const authResult = await verifyAuth(req);
+    if ("error" in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
     const body = await req.json();
     const { jobId } = body;
 
@@ -13,6 +19,20 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Missing jobId" },
         { status: 400 }
+      );
+    }
+
+    // Ownership check: verify job belongs to authenticated user
+    const { data: existingJob } = await (supabaseAdmin as any)
+      .from('jobs')
+      .select('user_id')
+      .eq('id', jobId)
+      .single();
+
+    if (!existingJob || existingJob.user_id !== authResult.userId) {
+      return NextResponse.json(
+        { error: "Job not found or access denied" },
+        { status: 403 }
       );
     }
 

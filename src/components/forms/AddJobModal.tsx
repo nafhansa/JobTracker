@@ -75,6 +75,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
       cvResponded: false,
       interviewEmail: false,
       contractEmail: false,
+      rejected: false,
     } as JobStatus
   });
 
@@ -95,7 +96,14 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         jobType: jobToEdit.jobType || "",
         location: jobToEdit.location || "",
         recruiterEmail: jobToEdit.recruiterEmail || "",
-        status: jobToEdit.status,
+        status: {
+          applied: jobToEdit.status.applied ?? false,
+          emailed: jobToEdit.status.emailed ?? false,
+          cvResponded: jobToEdit.status.cvResponded ?? false,
+          interviewEmail: jobToEdit.status.interviewEmail ?? false,
+          contractEmail: jobToEdit.status.contractEmail ?? false,
+          rejected: jobToEdit.status.rejected ?? false,
+        },
       });
     } else {
       setFormData({
@@ -109,7 +117,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         jobType: "",
         location: "",
         recruiterEmail: "",
-        status: { applied: true, emailed: false, cvResponded: false, interviewEmail: false, contractEmail: false }
+        status: { applied: true, emailed: false, cvResponded: false, interviewEmail: false, contractEmail: false, rejected: false }
       });
     }
   }, [jobToEdit, isOpen]);
@@ -125,6 +133,15 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
     if (!isEditMode && !canAdd) {
       router.push("/upgrade");
       return;
+    }
+    
+    if (formData.salaryType === 'range') {
+      const min = Number(formData.potentialSalaryMin);
+      const max = Number(formData.potentialSalaryMax);
+      if (min > max) {
+        alert("Minimum salary cannot be greater than maximum salary.");
+        return;
+      }
     }
     
     setLoading(true);
