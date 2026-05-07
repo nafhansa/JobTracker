@@ -1,9 +1,9 @@
-name: VPS Production Deployment
+name: VPS Staging Deployment
 
 on:
   push:
     branches:
-      - main 
+      - dev
 
 jobs:
   check-quality:
@@ -36,9 +36,8 @@ jobs:
           script: |
             export NVM_DIR=~/.nvm
             source ~/.nvm/nvm.sh
-            cd ~/jobtracker-prod
-            git pull origin main
+            cd ~/jobtracker-staging
+            git pull origin dev
             npm install
-            NODE_OPTIONS="--max-old-space-size=4096" npm run build
-            pm2 restart jobtracker-prod
+            pm2 restart jobtracker-staging
             sudo rm -rf /var/cache/nginx/*

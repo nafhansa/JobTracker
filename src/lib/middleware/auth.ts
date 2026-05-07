@@ -33,7 +33,7 @@ export async function verifyAuthOrUserId(req: Request): Promise<{ userId: string
   }
 
   try {
-    const body = await req.json();
+    const body = await req.clone().json();
     const userIdFromBody = body.userId;
     
     if (userIdFromBody && typeof userIdFromBody === 'string') {

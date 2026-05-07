@@ -423,6 +423,7 @@ async function handleRecurringPayment({
   await (supabaseAdmin as any)
     .from('subscriptions')
     .update({
+      status: 'active',
       renews_at: nextBilling.toISOString(),
       payment_failure_count: 0,
       last_payment_attempt_at: new Date().toISOString(),
