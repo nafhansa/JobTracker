@@ -12,7 +12,9 @@ import {
   Pencil,
   Mail,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,20 +26,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { deleteJob as supabaseDeleteJob, updateJob as supabaseUpdateJob } from "@/lib/supabase/jobs";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import StatusProgressSelector from "./StatusProgressSelector";
 
 interface JobCardProps {
   job: JobApplication;
-  onEdit: (job: JobApplication) => void; // <--- Props baru buat oper data ke parent
+  onEdit: (job: JobApplication) => void;
   isFreeUser?: boolean;
   isAdmin?: boolean;
+  onJobChanged?: () => void;
 }
 
-export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardProps) {
+export default function JobCard({ job, onEdit, isFreeUser, isAdmin, onJobChanged }: JobCardProps) {
   const [isExpanded, setIsExpanded] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth >= 768;
   });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ... (Kode StatusKeys, Labels, dan Logic Status SAMA PERSIS seperti sebelumnya) ...
   // Biar pendek, saya skip bagian yang tidak berubah. 
@@ -79,8 +94,14 @@ export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardPro
   const salaryDisplay = getSalaryDisplay();
 
   const handleDelete = async () => {
-    if (!confirm("Delete this application permanently?")) return;
-    await supabaseDeleteJob(job.id!);
+    setIsDeleting(true);
+    try {
+      await supabaseDeleteJob(job.id!);
+      onJobChanged?.();
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   const handleEditClick = () => {
@@ -90,6 +111,7 @@ export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardPro
   const handleToggleReject = async () => {
     const newStatus = { ...job.status, rejected: !isRejected };
     await supabaseUpdateJob(job.id!, { status: newStatus });
+    onJobChanged?.();
   };
 
   const toggleExpand = () => {
@@ -97,7 +119,6 @@ export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardPro
   };
 
   const handleToggleStatus = async (clickedKey: keyof JobStatus) => {
-    // Allow status changes even if rejected (user can update progress)
     const clickedIndex = statusKeys.indexOf(clickedKey);
     const isCurrentlyOn = job.status[clickedKey];
     const newStatus = { ...job.status };
@@ -107,10 +128,12 @@ export default function JobCard({ job, onEdit, isFreeUser, isAdmin }: JobCardPro
       for (let i = clickedIndex; i < statusKeys.length; i++) newStatus[statusKeys[i]] = false;
     }
     await supabaseUpdateJob(job.id!, { status: newStatus });
+    onJobChanged?.();
   };
 
   const handleStatusChange = async (newStatus: JobStatus) => {
     await supabaseUpdateJob(job.id!, { status: newStatus });
+    onJobChanged?.();
   };
 
 return (
@@ -188,7 +211,7 @@ return (
               <DropdownMenuSeparator className="bg-border" />
 
               <DropdownMenuItem
-                onClick={handleDelete}
+                onClick={() => setShowDeleteDialog(true)}
                 className={`text-red-500 focus:text-red-400 focus:bg-red-50 cursor-pointer`}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -283,6 +306,44 @@ return (
           </>
         )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-foreground">Delete Application?</AlertDialogTitle>
+                <AlertDialogDescription className="mt-1">
+                  Are you sure you want to delete <span className="font-medium text-foreground">{job.jobTitle}</span> at <span className="font-medium text-foreground">{job.company}</span>? This action cannot be undone.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-border text-foreground hover:bg-accent">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }

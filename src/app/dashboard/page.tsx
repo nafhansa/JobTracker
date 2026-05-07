@@ -191,7 +191,7 @@ export default function DashboardPage() {
           </div>
         </main>
       ) : isSubscribed || isFreeUser ? (
-        <DashboardLayout jobs={jobs} userId={user.uid} plan={plan} />
+        <DashboardLayout jobs={jobs} userId={user.uid} plan={plan} onJobChanged={refetchJobs} />
       ) : (
         <main className="relative z-10 w-full p-4 md:p-6 md:py-10">
           <div className="max-w-6xl mx-auto">
