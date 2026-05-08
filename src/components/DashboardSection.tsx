@@ -277,7 +277,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
             const dist = Math.abs(cardCenter - center);
             if (dist < minDist) { minDist = dist; closest = i; }
           });
-          setActiveStatusIdx(closest);
+          setActiveStatusIdx(Math.max(0, Math.min(closest - 1, statuses.length - 1)));
         };
 
         return (
@@ -294,6 +294,9 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                   msOverflowStyle: "none",
                 }}
               >
+                {/* Spacer start */}
+                <div className="flex-shrink-0 snap-center" style={{ width: "calc(50vw - 100px)" }} />
+
                 {statuses.map((s, i) => {
                   const Icon = s.icon;
                   const isActive = i === activeStatusIdx;
@@ -315,6 +318,9 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     </div>
                   );
                 })}
+
+                {/* Spacer end */}
+                <div className="flex-shrink-0 snap-center" style={{ width: "calc(50vw - 100px)" }} />
               </div>
 
               {/* Dot indicators */}
