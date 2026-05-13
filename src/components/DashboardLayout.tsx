@@ -11,6 +11,7 @@ import SettingsSection from "@/components/SettingsSection";
 import JobFormModal from "@/components/forms/AddJobModal";
 import FreelanceDashboard from "@/components/freelance/FreelanceDashboard";
 import AIWriterSection from "@/components/ai-writer/AIWriterSection";
+import ContactFinderSection from "@/components/contact-finder/ContactFinderSection";
 import MobileCoins from "@/components/ai-writer/MobileCoins";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
@@ -128,6 +129,8 @@ export default function DashboardLayout({ jobs, userId, plan, onJobChanged }: Da
         return <FreelanceDashboard user={user ?? undefined} trackerMode="client" initialOpenModal={openClientModal} onModalClose={() => setOpenClientModal(false)} />;
       case "ai-writer":
         return <AIWriterSection userId={userId} onNavigateToApplications={handleNavigateToApplications} />;
+      case "contact-finder":
+        return <ContactFinderSection />;
       case "profile":
         return <ProfileSection isAdmin={isAdmin} />;
       case "settings":
@@ -211,6 +214,16 @@ export default function DashboardLayout({ jobs, userId, plan, onJobChanged }: Da
                   </div>
                   <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
                     Generate personalized cover letters<br className="sm:hidden" /> and cold outreach messages
+                  </p>
+                </>
+              )}
+              {activeSection === "contact-finder" && (
+                <>
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-0.5 tracking-tight">
+                    Contact Finder
+                  </h1>
+                  <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-4">
+                    Find HR and founder emails from any company
                   </p>
                 </>
               )}
