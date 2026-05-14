@@ -28,6 +28,7 @@ import CustomizeStep from "./CustomizeStep";
 import GeneratingView from "./GeneratingView";
 import GenerationOutput from "./GenerationOutput";
 import { ArrowLeft } from "lucide-react";
+import { trackAIGenerationStarted, trackAIGenerationCompleted, trackAIWriterOpened } from "@/lib/posthog/events";
 
 type AIWriterView =
   | "home"
@@ -177,6 +178,10 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     fetchProfile();
   }, [fetchCoins, fetchProfile]);
 
+  useEffect(() => {
+    trackAIWriterOpened();
+  }, []);
+
   const resetFormAndGoHome = useCallback(() => {
     setView("home");
     setFormData({ ...INITIAL_FORM_DATA });
@@ -203,6 +208,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
     }
 
     navigate("generating");
+    trackAIGenerationStarted(formData.type as "cover_letter" | "cold_outreach");
 
     try {
       const token = await user.getIdToken();
@@ -246,6 +252,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
       setGeneratedTargetRole(formData.targetRole || undefined);
       setGeneratedDocId(data.documentId);
       fetchCoins();
+      trackAIGenerationCompleted(formData.type!, coins?.total_coins ?? 0);
       navigate("result");
     } catch (err) {
       console.error("Generation failed:", err);

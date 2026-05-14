@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 /**
  * Delete job via API route (bypasses RLS using service role)
@@ -48,6 +49,11 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    getServerPostHog().capture({
+      distinctId: authResult.userId,
+      event: 'job_deleted',
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

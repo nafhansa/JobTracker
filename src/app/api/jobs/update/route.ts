@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 /**
  * Update job via API route (bypasses RLS using service role)
@@ -72,6 +73,26 @@ export async function POST(req: Request) {
       if (data.status.interviewEmail !== undefined) updateData.status_interview_email = data.status.interviewEmail;
       if (data.status.contractEmail !== undefined) updateData.status_contract_email = data.status.contractEmail;
       if (data.status.rejected !== undefined) updateData.status_rejected = data.status.rejected;
+    }
+
+    if (data.status) {
+      const statusLabels: Record<string, string> = {
+        applied: 'applied',
+        emailed: 'emailed',
+        cvResponded: 'cv_responded',
+        interviewEmail: 'interview',
+        contractEmail: 'contract',
+        rejected: 'rejected',
+      };
+      for (const [key, value] of Object.entries(data.status)) {
+        if (value === true) {
+          getServerPostHog().capture({
+            distinctId: authResult.userId,
+            event: 'job_status_changed',
+            properties: { from_status: 'tracked', to_status: statusLabels[key] || key },
+          });
+        }
+      }
     }
 
     const { error } = await (supabaseAdmin

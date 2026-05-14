@@ -9,6 +9,7 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
 import { UserProfile, ExperienceEntry, EducationEntry } from "@/lib/ai/types";
 import { Save, Loader2, Upload, Plus, Trash2, FileText, CheckCircle2, AlertCircle, Pencil, X, Briefcase, GraduationCap, User, Mail, Phone, Linkedin } from "lucide-react";
 import { toast } from "sonner";
+import { trackResumeUploaded } from "@/lib/posthog/events";
 
 interface ProfessionalProfileProps {
   userId: string;
@@ -152,19 +153,20 @@ export default function ProfessionalProfile({ userId }: ProfessionalProfileProps
 
       const data = await res.json();
 
-      if (res.ok) {
-        if (data.extracted) {
-          const ex = data.extracted;
-          if (ex.fullName) setFullName(ex.fullName);
-          if (ex.email) setEmail(ex.email);
-          if (ex.phone) setPhone(ex.phone);
-          if (ex.linkedinUrl) setLinkedinUrl(ex.linkedinUrl);
-          if (ex.summary) setSummary(ex.summary);
-          if (Array.isArray(ex.skills)) setSkills(ex.skills);
-          if (Array.isArray(ex.experience)) setExperience(ex.experience);
-          if (Array.isArray(ex.education)) setEducation(ex.education);
-          setEditing(true);
-          toast.success("Resume extracted", {
+if (res.ok) {
+          if (data.extracted) {
+            const ex = data.extracted;
+            if (ex.fullName) setFullName(ex.fullName);
+            if (ex.email) setEmail(ex.email);
+            if (ex.phone) setPhone(ex.phone);
+            if (ex.linkedinUrl) setLinkedinUrl(ex.linkedinUrl);
+            if (ex.summary) setSummary(ex.summary);
+            if (Array.isArray(ex.skills)) setSkills(ex.skills);
+            if (Array.isArray(ex.experience)) setExperience(ex.experience);
+            if (Array.isArray(ex.education)) setEducation(ex.education);
+            setEditing(true);
+            trackResumeUploaded();
+            toast.success("Resume extracted", {
             description: "Fields auto-filled. Review and save your profile.",
             icon: <CheckCircle2 className="w-4 h-4" />,
           });
