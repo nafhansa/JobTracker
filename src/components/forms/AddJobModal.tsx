@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Briefcase, Building, Wallet, Link as LinkIcon, Mail, Loader2, Pencil, Lock, AlertCircle, Clock, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { JobApplication, JobStatus, FREE_PLAN_JOB_LIMIT, SalaryType } from "@/types";
 import { checkCanAddJob, canEditDelete } from "@/lib/supabase/subscriptions";
+import { metaSubmitApplication } from "@/lib/meta-pixel/events";
 
 interface JobModalProps {
   userId: string;
@@ -189,6 +190,7 @@ export default function JobFormModal({ userId, isOpen, onOpenChange, jobToEdit, 
         await supabaseUpdateJob(jobToEdit.id, payload);
       } else {
         await supabaseAddJob(payload as Omit<JobApplication, 'id' | 'createdAt' | 'updatedAt'>);
+        metaSubmitApplication({ content_name: formData.jobTitle });
       }
       
       onJobChanged?.();

@@ -3,7 +3,11 @@ name: VPS Staging Deployment
 on:
   push:
     branches:
+<<<<<<< HEAD
+      - dev 
+=======
       - dev
+>>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71
 
 jobs:
   check-quality:
@@ -39,5 +43,17 @@ jobs:
             cd ~/jobtracker-staging
             git pull origin dev
             npm install
+<<<<<<< HEAD
+<<<<<<<< HEAD:.github/workflows/deploy-staging.yml
+            npm run build
+            pm2 restart jobtracker-staging
+========
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
+            pm2 restart jobtracker-prod
+            sudo rm -rf /var/cache/nginx/*
+            sleep 10
+>>>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71:.github/workflows/deploy-prod.yml
+=======
             pm2 restart jobtracker-staging
             sudo rm -rf /var/cache/nginx/*
+>>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71

@@ -13,11 +13,11 @@ const baseConfig = {
                         key: 'Content-Security-Policy',
                         value: `
               default-src 'self';
-              script-src 'self' 'unsafe-eval' 'unsafe-inline' https://core.spreedly.com https://global.localizecdn.com https://js.stripe.com https://applepay.cdn-apple.com https://effectivelyassets.com https://vercel.live https://apis.google.com https://accounts.google.com https://app.sandbox.midtrans.com https://app.midtrans.com https://snap-assets.al-pc-id-b.cdn.gtflabs.io https://api.sandbox.midtrans.com https://pay.google.com https://js-agent.newrelic.com https://bam.nr-data.net https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://us.i.posthog.com https://us-assets.i.posthog.com;
+              script-src 'self' 'unsafe-eval' 'unsafe-inline' https://core.spreedly.com https://global.localizecdn.com https://js.stripe.com https://applepay.cdn-apple.com https://effectivelyassets.com https://vercel.live https://apis.google.com https://accounts.google.com https://app.sandbox.midtrans.com https://app.midtrans.com https://snap-assets.al-pc-id-b.cdn.gtflabs.io https://api.sandbox.midtrans.com https://pay.google.com https://js-agent.newrelic.com https://bam.nr-data.net https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://us.i.posthog.com https://us-assets.i.posthog.com https://connect.facebook.net;
               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live;
               font-src 'self' https://fonts.gstatic.com https://vercel.live;
-              img-src 'self' data: https://*.googleusercontent.com https://grainy-gradients.vercel.app https://vercel.live https://us.i.posthog.com;
-              connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.com https://vercel.live https://accounts.google.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com https://us-assets.i.posthog.com;
+              img-src 'self' data: https://*.googleusercontent.com https://grainy-gradients.vercel.app https://vercel.live https://us.i.posthog.com https://www.facebook.com;
+              connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.com https://vercel.live https://accounts.google.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com https://us-assets.i.posthog.com https://graph.facebook.com;
               frame-src 'self' https://vercel.live https://accounts.google.com https://*.firebaseapp.com https://app.sandbox.midtrans.com https://app.midtrans.com;
               object-src 'none';
               base-uri 'self';
@@ -67,15 +67,12 @@ const baseConfig = {
     },
 };
 
-const config = process.env.NODE_ENV === 'development' 
-    ? baseConfig 
+export default process.env.NODE_ENV === 'development'
+    ? baseConfig
     : withPWA({
         dest: 'public',
-        disable: process.env.NODE_ENV === 'development',
+        disable: false,
         register: true,
         skipWaiting: true,
-        buildExcludes: [/middleware-manifest\.json$/],
-        runtimeCaching: [],
-    })(baseConfig);
-
-export default config;
+        ...baseConfig,
+    });
