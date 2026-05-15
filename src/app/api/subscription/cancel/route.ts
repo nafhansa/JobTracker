@@ -5,6 +5,7 @@ import { checkIdempotencyKey, storeIdempotencyKey, recordSubscriptionHistory } f
 import { verifyAuthOrUserId } from "@/lib/middleware/auth";
 import { MIDTRANS_CONFIG } from "@/lib/midtrans-config";
 import { updateWeeklyCoinAllocation } from "@/lib/supabase/ai-coins";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 async function cancelInMidtrans(token: string, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
   const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
@@ -184,6 +185,12 @@ export async function POST(req: Request) {
           provider: effectiveProvider,
           endsAt: endDate,
         },
+      });
+
+      getServerPostHog().capture({
+        distinctId: userId,
+        event: 'subscription_cancelled',
+        properties: { plan: subscription.plan, reason: 'user_initiated' },
       });
     } else {
       throw new Error("Provider not supported");

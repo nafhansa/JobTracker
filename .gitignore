@@ -49,3 +49,5 @@ next-env.d.ts
 .opencode
 graphify-out
 AGENTS.md
+POSTHOG_IMPLEMENTATION.md
+posthog-simulate.js

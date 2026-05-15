@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { detectLocation } from "@/lib/utils/location";
 import { PRICING_USD, PRICING_IDR, LIFETIME_ACCESS_LIMIT } from "@/lib/pricing-config";
 import { MIDTRANS_PRICES } from "@/lib/midtrans-config";
+import { trackPricingViewed } from "@/lib/posthog/events";
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -22,6 +23,10 @@ export default function UpgradePage() {
       router.push("/login");
     }
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    trackPricingViewed();
+  }, []);
 
   if (authLoading) {
     return (
