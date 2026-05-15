@@ -13,9 +13,11 @@ export function initPostHog() {
       respect_dnt: true,
       loaded: (ph) => {
         if (process.env.NODE_ENV === "development") ph.debug();
+        (window as any).posthog = ph;
       },
     });
     (posthog as any).__loaded = true;
+    (window as any).posthog = posthog;
   }
   return posthog;
 }

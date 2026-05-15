@@ -50,3 +50,4 @@ next-env.d.ts
 graphify-out
 AGENTS.md
 POSTHOG_IMPLEMENTATION.md
+posthog-simulate.js
