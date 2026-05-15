@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { FreelanceJob } from "@/types";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 export async function POST(req: Request) {
   try {
@@ -53,6 +54,12 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    getServerPostHog().capture({
+      distinctId: userId,
+      event: 'client_added',
+      properties: { service_type: serviceType },
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

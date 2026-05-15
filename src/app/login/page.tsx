@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
+import { trackLoginCompleted, trackSignUpCompleted } from "@/lib/posthog/events";
 
 export default function LoginPage() {
   const router = useRouter(); 
@@ -22,6 +23,13 @@ export default function LoginPage() {
       if (cancelled || !user) return;
       const sessionId = getOrCreateSessionId();
       const deviceInfo = getDeviceInfo();
+
+      const isNewUser = user.metadata && (user.metadata as any).creationTime === (user.metadata as any).lastSignInTime;
+      if (isNewUser) {
+        trackSignUpCompleted("google");
+      } else {
+        trackLoginCompleted("google");
+      }
 
       fetch(`/api/onboarding?userId=${user.uid}`)
         .then((res) => res.json())
@@ -90,6 +98,13 @@ export default function LoginPage() {
 
       const user = await loginWithGoogle();
       if (user) {
+        const isNewUser = (user.metadata as any).creationTime === (user.metadata as any).lastSignInTime;
+        if (isNewUser) {
+          trackSignUpCompleted("google");
+        } else {
+          trackLoginCompleted("google");
+        }
+
         try {
           const onboardingRes = await fetch(`/api/onboarding?userId=${user.uid}`);
           const onboardingData = await onboardingRes.json();

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, forceReloadSubscription } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
+import { trackPaymentCompleted, trackPaymentFailed } from "@/lib/posthog/events";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -107,6 +108,11 @@ function PaymentPage() {
         onSuccess: async (result: any) => {
           console.log('Payment success:', result);
           setPaymentSuccess(true);
+          trackPaymentCompleted(
+            paymentData?.plan || 'unknown',
+            paymentData?.amount || 0,
+            result.payment_type || 'unknown'
+          );
 
           setTimeout(async () => {
             if (user) {
@@ -132,6 +138,7 @@ function PaymentPage() {
           setError('Payment failed. Please try again.');
           setIsLoading(false);
           setPaymentSuccess(false);
+          trackPaymentFailed(paymentData?.plan || 'unknown', result.status_message || 'midtrans_error');
         },
         onClose: () => {
           console.log('Payment popup closed');

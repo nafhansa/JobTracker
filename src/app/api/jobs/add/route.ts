@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
 import { isAdminUser, checkIsPro, getSubscriptionStatus } from "@/lib/supabase/subscriptions";
 import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
@@ -138,7 +139,6 @@ export async function POST(req: Request) {
       if (streakRpcError) {
         console.error("Failed to increment streak via RPC:", streakRpcError);
 
-        // Fallback: try the API endpoint
         try {
           await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/streaks/increment`, {
             method: 'POST',
@@ -152,6 +152,12 @@ export async function POST(req: Request) {
     } catch (streakError) {
       console.error("Failed to increment streak:", streakError);
     }
+
+    getServerPostHog().capture({
+      distinctId: userId,
+      event: 'job_added',
+      properties: { source: 'manual' },
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

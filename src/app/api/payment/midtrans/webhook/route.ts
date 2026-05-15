@@ -7,6 +7,7 @@ import { verifyPaymentWithMidtrans } from '@/lib/middleware/webhook-verify';
 import { recordSubscriptionHistory } from '@/lib/middleware/subscription-utils';
 import { COIN_PACKAGES } from '@/lib/ai/types';
 import { updateWeeklyCoinAllocation } from '@/lib/supabase/ai-coins';
+import { getServerPostHog } from '@/lib/posthog/server';
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -202,6 +203,11 @@ async function processWebhookAsync(payload: WebhookPayload) {
         payment_type: payment_type || '',
         subscription_id: subscription_id || '',
       });
+      getServerPostHog().capture({
+        distinctId: resolvedUserId || order_id,
+        event: 'payment_failed',
+        properties: { plan: resolvedPlan || 'unknown', reason: transaction_status },
+      });
       await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
       return;
     }
@@ -246,6 +252,11 @@ async function processWebhookAsync(payload: WebhookPayload) {
         }
 
         console.log('Coin purchase atomic result:', processResult);
+        getServerPostHog().capture({
+          distinctId: resolvedUserId,
+          event: 'jps_purchased',
+          properties: { package_name: coinPkg.name, coins: coinsToCredit, amount: parseInt(gross_amount || '0', 10), currency: 'IDR' },
+        });
         await (supabaseAdmin as any).from('pending_midtrans_transactions').delete().eq('order_id', order_id);
         return;
       }
@@ -380,6 +391,12 @@ async function processWebhookAsync(payload: WebhookPayload) {
       }
 
       console.log('Subscription created successfully for user:', resolvedUserId);
+
+      getServerPostHog().capture({
+        distinctId: resolvedUserId,
+        event: 'payment_completed',
+        properties: { plan: planType, amount: parseInt(gross_amount || '0', 10), currency: subscriptionCurrency, payment_method: payment_type || 'unknown' },
+      });
     }
 
     if (transaction_status !== 'pending') {

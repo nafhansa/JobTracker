@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/firebase/auth-context";
 import { LanguageProvider } from "@/lib/language/context";
 import { ThemeProvider } from "@/lib/theme/context";
+import { PostHogProvider, PostHogIdentify } from "@/lib/posthog/PostHogProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -34,12 +35,15 @@ export default function RootLayout({
         <ErrorBoundary>
           <ThemeProvider>
             <LanguageProvider>
-              <AuthProvider>
-                <SplashScreen />
-                {children}
-                <PWAInstallPrompt />
-                <Toaster />
-              </AuthProvider>
+              <PostHogProvider>
+                <AuthProvider>
+                  <PostHogIdentify />
+                  <SplashScreen />
+                  {children}
+                  <PWAInstallPrompt />
+                  <Toaster />
+                </AuthProvider>
+              </PostHogProvider>
             </LanguageProvider>
           </ThemeProvider>
         </ErrorBoundary>

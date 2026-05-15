@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CoinsBalance, COIN_PACKAGES, WEEKLY_COINS_BY_PLAN, COINS_PER_GENERATION } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import { useRouter } from "next/navigation";
+import { trackCheckoutStarted } from "@/lib/posthog/events";
 
 const PACKAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "jalur-doa": Zap,
@@ -198,6 +199,7 @@ export default function JpsShopSection({ userId, onNavigateBack }: JpsShopSectio
 
   const handlePurchase = async (pkg: typeof COIN_PACKAGES[0]) => {
     setPurchasing(pkg.id);
+    trackCheckoutStarted(pkg.name, pkg.price_idr);
     try {
       const token = await user?.getIdToken();
       if (!token) return;
