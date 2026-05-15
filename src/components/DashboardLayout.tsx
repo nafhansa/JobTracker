@@ -27,9 +27,10 @@ interface DashboardLayoutProps {
   jobs: JobApplication[];
   userId: string;
   plan?: string;
+  onJobChanged?: () => void;
 }
 
-export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutProps) {
+export default function DashboardLayout({ jobs, userId, plan, onJobChanged }: DashboardLayoutProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [trackerMode, setTrackerMode] = useState<TrackerMode>("job");
@@ -66,13 +67,21 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
 
   const handlePlusButtonClick = () => {
     setIsPlusLoading(true);
-    setActiveSection("applications");
     setEditingJob(null);
     
-    requestAnimationFrame(() => {
-      setIsModalOpen(true);
-      setIsPlusLoading(false);
-    });
+    if (trackerMode === "client") {
+      setActiveSection("clients");
+      requestAnimationFrame(() => {
+        setOpenClientModal(true);
+        setIsPlusLoading(false);
+      });
+    } else {
+      setActiveSection("applications");
+      requestAnimationFrame(() => {
+        setIsModalOpen(true);
+        setIsPlusLoading(false);
+      });
+    }
   };
 
   const handleEditJob = (job: JobApplication) => {
@@ -109,6 +118,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
               plan={plan}
               onAddJob={handleAddNew}
               onEditJob={handleEditJob}
+              onJobChanged={onJobChanged}
             />
           </>
         );
@@ -255,6 +265,7 @@ export default function DashboardLayout({ jobs, userId, plan }: DashboardLayoutP
           plan={plan}
           currentJobCount={jobs.length}
           isAdmin={isAdmin}
+          onJobChanged={onJobChanged}
         />
       </div>
       <TutorialManager onNavigateToApplications={handleNavigateToApplications} />

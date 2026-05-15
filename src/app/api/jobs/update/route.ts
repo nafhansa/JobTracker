@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 /**
  * Update job via API route (bypasses RLS using service role)
  */
 export async function POST(req: Request) {
   try {
+    const authResult = await verifyAuth(req);
+    if ("error" in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
     const body = await req.json();
     const { jobId, data } = body;
 
@@ -14,6 +21,30 @@ export async function POST(req: Request) {
         { error: "Missing jobId" },
         { status: 400 }
       );
+    }
+
+    // Ownership check: verify job belongs to authenticated user
+    const { data: existingJob } = await (supabaseAdmin as any)
+      .from('jobs')
+      .select('user_id')
+      .eq('id', jobId)
+      .single();
+
+    if (!existingJob || existingJob.user_id !== authResult.userId) {
+      return NextResponse.json(
+        { error: "Job not found or access denied" },
+        { status: 403 }
+      );
+    }
+
+    // Validate salary range if being updated
+    if (data.salaryType === 'range' && data.potentialSalaryMin != null && data.potentialSalaryMax != null) {
+      if (Number(data.potentialSalaryMin) > Number(data.potentialSalaryMax)) {
+        return NextResponse.json(
+          { error: "Minimum salary cannot exceed maximum salary" },
+          { status: 400 }
+        );
+      }
     }
 
     const updateData: Record<string, unknown> = {
@@ -42,6 +73,26 @@ export async function POST(req: Request) {
       if (data.status.interviewEmail !== undefined) updateData.status_interview_email = data.status.interviewEmail;
       if (data.status.contractEmail !== undefined) updateData.status_contract_email = data.status.contractEmail;
       if (data.status.rejected !== undefined) updateData.status_rejected = data.status.rejected;
+    }
+
+    if (data.status) {
+      const statusLabels: Record<string, string> = {
+        applied: 'applied',
+        emailed: 'emailed',
+        cvResponded: 'cv_responded',
+        interviewEmail: 'interview',
+        contractEmail: 'contract',
+        rejected: 'rejected',
+      };
+      for (const [key, value] of Object.entries(data.status)) {
+        if (value === true) {
+          getServerPostHog().capture({
+            distinctId: authResult.userId,
+            event: 'job_status_changed',
+            properties: { from_status: 'tracked', to_status: statusLabels[key] || key },
+          });
+        }
+      }
     }
 
     const { error } = await (supabaseAdmin

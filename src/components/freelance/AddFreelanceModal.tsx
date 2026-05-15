@@ -248,7 +248,24 @@ export default function AddFreelanceModal({ userId, isOpen, onOpenChange, jobToE
     endDate: "",
   });
 
-  useState(() => {
+  const resetForm = () => {
+    setFormData({
+      clientName: "",
+      clientContact: "",
+      serviceType: "",
+      product: "",
+      potentialPrice: "",
+      actualPrice: "",
+      status: "ongoing",
+      startDate: "",
+      endDate: "",
+    });
+    setCustomServiceType("");
+    setCustomProduct("");
+    setStep(1);
+  };
+
+  useEffect(() => {
     if (jobToEdit) {
       setFormData({
         clientName: jobToEdit.clientName,
@@ -261,8 +278,17 @@ export default function AddFreelanceModal({ userId, isOpen, onOpenChange, jobToE
         startDate: jobToEdit.startDate || "",
         endDate: jobToEdit.endDate || "",
       });
+      setCustomServiceType(
+        SERVICE_TYPES.includes(jobToEdit.serviceType) ? "" : jobToEdit.serviceType
+      );
+      setCustomProduct(
+        PRODUCTS.includes(jobToEdit.product) ? "" : jobToEdit.product
+      );
+      setStep(1);
+    } else if (!isOpen) {
+      resetForm();
     }
-  });
+  }, [jobToEdit, isOpen]);
 
   const sanitizeNumber = (value: string) => value.replace(/[^0-9]/g, "");
 
@@ -336,23 +362,6 @@ export default function AddFreelanceModal({ userId, isOpen, onOpenChange, jobToE
     } finally {
       setLoading(false);
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      clientName: "",
-      clientContact: "",
-      serviceType: "",
-      product: "",
-      potentialPrice: "",
-      actualPrice: "",
-      status: "ongoing",
-      startDate: "",
-      endDate: "",
-    });
-    setCustomServiceType("");
-    setCustomProduct("");
-    setStep(1);
   };
 
   const renderStep1 = () => (

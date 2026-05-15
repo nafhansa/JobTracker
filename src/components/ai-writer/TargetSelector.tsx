@@ -104,7 +104,7 @@ export default function TargetSelector({
     } else {
       onJobIdChange(job.id || "");
       onTargetCompanyChange(job.company);
-      onTargetRoleChange(job.jobTitle);
+      onTargetRoleChange(job.jobTitle || '');
       onTargetStageChange(getApplicationStage(job.status));
     }
   };

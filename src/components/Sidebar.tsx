@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/language/context";
 import { Button } from "@/components/ui/button";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
 import TrackerModeSwitcher from "@/components/TrackerModeSwitcher";
+import { trackSidebarSection } from "@/lib/posthog/events";
 
 export type SidebarSection = "dashboard" | "applications" | "freelance" | "clients" | "ai-writer" | "profile" | "settings";
 
@@ -100,6 +101,7 @@ export default function Sidebar({ activeSection, onSectionChange, isMobileOpen, 
               <button
                 key={item.id}
                 onClick={() => {
+                  trackSidebarSection(item.id);
                   onSectionChange(item.id);
                   onMobileClose();
                 }}

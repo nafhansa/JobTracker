@@ -21,7 +21,7 @@ export function SubscriptionBanner({ isLimitReached = false, currentJobCount = 0
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isFreeUser = subscription?.plan === "free";
-  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled";
+  const isCancelled = subscription?.status === "cancelled" || subscription?.status === "canceled" || subscription?.status === "expired";
   const showLimitMessage = isFreeUser && isLimitReached;
 
   const isInGracePeriod = isCancelled && subscription?.endsAt && new Date() < new Date(subscription.endsAt);

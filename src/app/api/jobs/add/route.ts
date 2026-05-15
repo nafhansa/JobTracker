@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/middleware/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
+import { isAdminUser, checkIsPro, getSubscriptionStatus } from "@/lib/supabase/subscriptions";
+import { FREE_PLAN_JOB_LIMIT } from "@/types";
 
 /**
  * Add job via API route (bypasses RLS using service role)
@@ -7,15 +11,22 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  */
 export async function POST(req: Request) {
   try {
+    const authResult = await verifyAuth(req);
+    if ("error" in authResult) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
     const body = await req.json();
-    console.log("Received job data:", body); // Debug log
+    console.log("Received job data:", body);
     
-    const { userId, jobTitle, company, industry, recruiterEmail, applicationUrl, jobType, location, potentialSalary, potentialSalaryMin, potentialSalaryMax, salaryType, currency, status } = body;
+    const { jobTitle, company, industry, recruiterEmail, applicationUrl, jobType, location, potentialSalary, potentialSalaryMin, potentialSalaryMax, salaryType, currency, status } = body;
+
+    // Use authenticated userId, ignore body.userId
+    const userId = authResult.userId;
 
     // Debug: Check what we received
-    if (!userId || !jobTitle || !company) {
+    if (!jobTitle || !company) {
       console.error("Missing fields:", { 
-        hasUserId: !!userId, 
         hasJobTitle: !!jobTitle, 
         hasCompany: !!company, 
         bodyKeys: Object.keys(body),
@@ -23,16 +34,52 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { 
-          error: "Missing required fields: userId, jobTitle, company", 
+          error: "Missing required fields: jobTitle, company", 
           received: body,
           missing: {
-            userId: !userId,
             jobTitle: !jobTitle,
             company: !company
           }
         },
         { status: 400 }
       );
+    }
+
+    // Validate salary range
+    if (salaryType === 'range' && potentialSalaryMin != null && potentialSalaryMax != null) {
+      if (Number(potentialSalaryMin) > Number(potentialSalaryMax)) {
+        return NextResponse.json(
+          { error: "Minimum salary cannot exceed maximum salary" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check free plan limit (server-side enforcement)
+    const isAdmin = isAdminUser(authResult.email);
+    let isPro = false;
+    
+    try {
+      const subStatus = await getSubscriptionStatus(userId);
+      if (subStatus) {
+        isPro = subStatus.isPro;
+      }
+    } catch {
+      // If subscription check fails, default to free plan
+    }
+
+    if (!isPro && !isAdmin) {
+      const { count } = await (supabaseAdmin as any)
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      
+      if ((count || 0) >= FREE_PLAN_JOB_LIMIT) {
+        return NextResponse.json(
+          { error: `Free plan limit reached (${FREE_PLAN_JOB_LIMIT} jobs). Upgrade to add more.` },
+          { status: 403 }
+        );
+      }
     }
 
     // Generate Firebase-like ID
@@ -92,7 +139,6 @@ export async function POST(req: Request) {
       if (streakRpcError) {
         console.error("Failed to increment streak via RPC:", streakRpcError);
 
-        // Fallback: try the API endpoint
         try {
           await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/streaks/increment`, {
             method: 'POST',
@@ -106,6 +152,12 @@ export async function POST(req: Request) {
     } catch (streakError) {
       console.error("Failed to increment streak:", streakError);
     }
+
+    getServerPostHog().capture({
+      distinctId: userId,
+      event: 'job_added',
+      properties: { source: 'manual' },
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

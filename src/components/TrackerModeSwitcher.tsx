@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/lib/language/context";
+import { trackTrackerModeSwitched } from "@/lib/posthog/events";
 
 export type TrackerMode = "job" | "client";
 
@@ -69,7 +70,10 @@ export default function TrackerModeSwitcher({
           return (
             <DropdownMenuItem
               key={m.id}
-              onClick={() => onModeChange(m.id)}
+              onClick={() => {
+                trackTrackerModeSwitched(m.id);
+                onModeChange(m.id);
+              }}
               className="flex items-center gap-3 cursor-pointer py-3"
             >
               <div

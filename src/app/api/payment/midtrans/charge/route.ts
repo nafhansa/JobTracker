@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from 'crypto';
 import { MIDTRANS_CONFIG, MIDTRANS_PRICES } from "@/lib/midtrans-config";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getServerPostHog } from "@/lib/posthog/server";
 
 export async function GET(req: Request) {
   try {
@@ -116,6 +117,12 @@ export async function POST(req: Request) {
 
     const billingDay = new Date().getDate();
 
+    getServerPostHog().capture({
+      distinctId: userId,
+      event: 'checkout_started',
+      properties: { plan: planType, amount, currency },
+    });
+
     return await createSnapTransaction({
       userId,
       planType,
@@ -127,7 +134,6 @@ export async function POST(req: Request) {
       billingDay,
     });
   } catch (error) {
-    console.error('Midtrans charge error:', error);
     const err = error as { message?: string; code?: string };
     return NextResponse.json(
       { error: err.message || 'Failed to create transaction' },

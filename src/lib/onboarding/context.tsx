@@ -7,6 +7,7 @@ import {
   INITIAL_FORM_DATA,
   Language,
 } from "./types";
+import { trackOnboardingCompleted, trackOnboardingStep } from "@/lib/posthog/events";
 
 interface OnboardingContextType {
   currentStep: number;
@@ -43,8 +44,9 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const nextStep = useCallback(() => {
+    trackOnboardingStep(`step_${currentStep}`);
     setCurrentStep((prev) => Math.min(prev + 1, 4));
-  }, []);
+  }, [currentStep]);
 
   const prevStep = useCallback(() => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -76,6 +78,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         return { success: false, error: result.error || "Failed to save" };
       }
 
+      trackOnboardingCompleted(language);
       return { success: true };
     } catch (error) {
       console.error("Error submitting onboarding:", error);

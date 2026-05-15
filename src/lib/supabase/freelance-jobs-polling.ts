@@ -4,29 +4,9 @@ import { FreelanceJob } from '@/types';
 const FETCH_LIMIT = 100;
 const POLL_INTERVAL_MS = 30000; // 30 seconds
 
-const transformFreelanceJobRow = (row: any): FreelanceJob => {
-  return {
-    id: row.id,
-    userId: row.user_id,
-    clientName: row.client_name,
-    clientContact: row.client_contact || '',
-    serviceType: row.service_type,
-    product: row.product,
-    potentialPrice: row.potential_price || 0,
-    actualPrice: row.actual_price || undefined,
-    currency: row.currency || 'IDR',
-    startDate: row.start_date || undefined,
-    endDate: row.end_date || undefined,
-    durationDays: row.duration_days || undefined,
-    status: row.status,
-    createdAt: new Date(row.created_at).getTime(),
-    updatedAt: new Date(row.updated_at).getTime(),
-  };
-};
-
 /**
  * Polling-based freelance job subscription (replaces Supabase Realtime)
- * - Fetches jobs via API route (server-side proxy to avoid CORS)
+ * - Fetches jobs via API route (server-side proxy that already transforms data)
  * - Polls every 30s for updates
  * - Uses updated_at to detect changes
  * - No WebSocket connections needed
@@ -57,12 +37,13 @@ export function useFreelanceJobsPolling(user: { getIdToken: () => Promise<string
       }
 
       const result = await response.json();
-      const transformed = (result.jobs || []).map(transformFreelanceJobRow);
+      // API already returns transformed FreelanceJob[] (camelCase)
+      const transformed: FreelanceJob[] = result.jobs || [];
 
       if (!isMountedRef.current) return;
 
       // Only update if data changed
-      const latestUpdatedAt = transformed.length > 0 ? transformed[0].updatedAt : null;
+      const latestUpdatedAt = transformed.length > 0 ? String(transformed[0].updatedAt) : null;
       if (isPoll && latestUpdatedAt === lastUpdatedAtRef.current) {
         return; // No changes
       }

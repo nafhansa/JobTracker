@@ -9,7 +9,7 @@ function transformJobRow(row: Record<string, unknown>): JobApplication {
   return {
     id: row.id as string,
     userId: row.user_id as string,
-    jobTitle: row.job_title as string,
+    jobTitle: (row.job_title as string) || 'Unknown Job Title',
     company: row.company as string,
     industry: row.industry as string,
     recruiterEmail: (row.recruiter_email as string) || undefined,

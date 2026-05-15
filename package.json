@@ -45,6 +45,8 @@
     "next": "^16.2.5",
     "next-pwa": "^2.0.2",
     "p-queue": "^9.2.0",
+    "posthog-js": "^1.373.4",
+    "posthog-node": "^5.34.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",

@@ -277,23 +277,26 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
             const dist = Math.abs(cardCenter - center);
             if (dist < minDist) { minDist = dist; closest = i; }
           });
-          setActiveStatusIdx(closest);
+          setActiveStatusIdx(Math.max(0, Math.min(closest - 1, statuses.length - 1)));
         };
 
         return (
           <>
             {/* Mobile carousel */}
-            <div className="md:hidden overflow-hidden">
+            <div className="md:hidden relative z-10">
               <div
                 ref={carouselRef}
                 onScroll={handleScroll}
-                className="carousel-track flex overflow-x-auto snap-x snap-mandatory gap-3 px-6 pb-1"
+                className="carousel-track flex overflow-x-auto snap-x snap-mandatory gap-3 px-6 py-4 pb-1"
                 style={{
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
                 }}
               >
+                {/* Spacer start */}
+                <div className="flex-shrink-0 snap-center" style={{ width: "calc(50vw - 100px)" }} />
+
                 {statuses.map((s, i) => {
                   const Icon = s.icon;
                   const isActive = i === activeStatusIdx;
@@ -315,10 +318,13 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     </div>
                   );
                 })}
+
+                {/* Spacer end */}
+                <div className="flex-shrink-0 snap-center" style={{ width: "calc(50vw - 100px)" }} />
               </div>
 
               {/* Dot indicators */}
-              <div className="flex justify-center gap-1.5 mt-1">
+              <div className="flex justify-center gap-1.5 mt-4">
                 {statuses.map((s, i) => (
                   <div
                     key={s.key}
@@ -471,7 +477,7 @@ export default function DashboardSection({ jobs, userId, plan, onAddJob, onEditJ
                     </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-foreground text-sm mb-1 truncate">
-                      {job.jobTitle}
+                      {job.jobTitle || 'Unknown Job Title'}
                     </h4>
                     <p className="text-muted-foreground text-sm truncate">
                       {job.company}

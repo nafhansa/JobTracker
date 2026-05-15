@@ -58,8 +58,8 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
       const q = search.toLowerCase();
       result = result.filter(
         (j) =>
-          j.jobTitle.toLowerCase().includes(q) ||
-          j.company.toLowerCase().includes(q) ||
+          (j.jobTitle || "").toLowerCase().includes(q) ||
+          (j.company || "").toLowerCase().includes(q) ||
           (j.recruiterEmail || "").toLowerCase().includes(q)
       );
     }
@@ -135,7 +135,7 @@ export default function JobPicker({ jobs, selectedJobId, onSelectJob, onAddJob }
                   <div className="flex items-center gap-1.5">
                     <Briefcase className="w-3 h-3 text-muted-foreground shrink-0" />
                     <span className="text-sm font-medium text-foreground truncate">
-                      {job.jobTitle}
+                      {job.jobTitle || 'Unknown Job Title'}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
