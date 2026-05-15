@@ -8,6 +8,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
+import { MetaPixel } from "@/lib/meta-pixel/MetaPixel";
 import type { Viewport } from "next";
 
 export const metadata = {
@@ -32,6 +33,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
+        <MetaPixel />
         <ErrorBoundary>
           <ThemeProvider>
             <LanguageProvider>

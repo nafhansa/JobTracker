@@ -6,6 +6,7 @@ import { useAuth, forceReloadSubscription } from "@/lib/firebase/auth-context";
 import { useLanguage } from "@/lib/language/context";
 import Navbar from "@/components/Navbar";
 import { trackPaymentCompleted, trackPaymentFailed } from "@/lib/posthog/events";
+import { metaAddPaymentInfo, metaPurchase, metaSubscribe } from "@/lib/meta-pixel/events";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -71,6 +72,7 @@ function PaymentPage() {
             amount: data.amount,
           });
           setIsLoading(false);
+          metaAddPaymentInfo({ value: data.amount, currency: data.currency || "IDR" });
         } else {
           setError(data.error || "Failed to fetch payment data");
           setIsLoading(false);
@@ -113,6 +115,17 @@ function PaymentPage() {
             paymentData?.amount || 0,
             result.payment_type || 'unknown'
           );
+
+          metaPurchase({
+            value: paymentData?.amount || 0,
+            currency: "IDR",
+          });
+
+          metaSubscribe({
+            value: paymentData?.amount || 0,
+            currency: "IDR",
+            subscription_id: paymentData?.orderId,
+          });
 
           setTimeout(async () => {
             if (user) {

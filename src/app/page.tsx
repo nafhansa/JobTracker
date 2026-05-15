@@ -7,6 +7,7 @@ import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 import { getOrCreateSessionId, getDeviceInfo } from "@/lib/utils/analytics";
 import { useLanguage } from "@/lib/language/context";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { metaViewContent } from "@/lib/meta-pixel/events";
 import HeroSection from "@/components/landing/HeroSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import EarlyBirdSection from "@/components/landing/EarlyBirdSection";
@@ -51,6 +52,7 @@ export default function LandingPage() {
       }
     };
     trackVisit();
+    metaViewContent({ content_name: "landing_page", content_category: "marketing" });
   }, []);
 
   useEffect(() => {

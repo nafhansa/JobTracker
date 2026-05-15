@@ -12,6 +12,7 @@ import { detectLocation } from "@/lib/utils/location";
 import { PRICING_USD, PRICING_IDR, LIFETIME_ACCESS_LIMIT } from "@/lib/pricing-config";
 import { MIDTRANS_PRICES } from "@/lib/midtrans-config";
 import { trackPricingViewed } from "@/lib/posthog/events";
+import { metaViewContent, metaInitiateCheckout } from "@/lib/meta-pixel/events";
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function UpgradePage() {
 
   useEffect(() => {
     trackPricingViewed();
+    metaViewContent({ content_name: "pricing_page", content_category: "upgrade" });
   }, []);
 
   if (authLoading) {
@@ -222,6 +224,11 @@ function PricingCards({ user }: { user: any }) {
               setShowTwitterModal(false);
               if (user) {
                 const planType = pendingPlanType;
+
+                metaInitiateCheckout({
+                  content_name: planType === 'lifetime' ? 'lifetime_plan' : 'monthly_plan',
+                });
+
                 const response = await fetch('/api/payment/midtrans/charge', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -309,6 +316,10 @@ function PricingCards({ user }: { user: any }) {
 
     if (user) {
       const planType = isLifetime ? 'lifetime' : 'monthly';
+
+      metaInitiateCheckout({
+        content_name: planType === 'lifetime' ? 'lifetime_plan' : 'monthly_plan',
+      });
 
       const response = await fetch('/api/payment/midtrans/charge', {
         method: 'POST',

@@ -11,6 +11,7 @@ import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { ResetThemeToDefault } from "@/components/ResetThemeToDefault";
 import { trackLoginCompleted, trackSignUpCompleted } from "@/lib/posthog/events";
+import { metaCompleteRegistration, metaLead } from "@/lib/meta-pixel/events";
 
 export default function LoginPage() {
   const router = useRouter(); 
@@ -27,8 +28,10 @@ export default function LoginPage() {
       const isNewUser = user.metadata && (user.metadata as any).creationTime === (user.metadata as any).lastSignInTime;
       if (isNewUser) {
         trackSignUpCompleted("google");
+        metaCompleteRegistration();
       } else {
         trackLoginCompleted("google");
+        metaLead();
       }
 
       fetch(`/api/onboarding?userId=${user.uid}`)
@@ -101,8 +104,10 @@ export default function LoginPage() {
         const isNewUser = (user.metadata as any).creationTime === (user.metadata as any).lastSignInTime;
         if (isNewUser) {
           trackSignUpCompleted("google");
+          metaCompleteRegistration();
         } else {
           trackLoginCompleted("google");
+          metaLead();
         }
 
         try {
