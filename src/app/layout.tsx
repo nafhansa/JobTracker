@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/firebase/auth-context";
 import { LanguageProvider } from "@/lib/language/context";
 import { ThemeProvider } from "@/lib/theme/context";
 import { PostHogProvider, PostHogIdentify } from "@/lib/posthog/PostHogProvider";
+import { PostHogPageView } from "@/lib/posthog/PostHogPageView";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -31,13 +32,14 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <MetaPixel />
       </head>
       <body>
-        <MetaPixel />
         <ErrorBoundary>
           <ThemeProvider>
             <LanguageProvider>
               <PostHogProvider>
+                <PostHogPageView />
                 <AuthProvider>
                   <PostHogIdentify />
                   <SplashScreen />

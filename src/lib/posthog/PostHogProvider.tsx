@@ -15,9 +15,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function PostHogIdentify() {
-  const { user, isPro, subscription } = useAuth();
+  const { user, isPro, subscription, loading } = useAuth();
 
   useEffect(() => {
+    if (loading) return;
+
     if (user) {
       posthog.identify(user.uid, {
         email: user.email,
@@ -33,7 +35,7 @@ export function PostHogIdentify() {
     } else {
       posthog.reset();
     }
-  }, [user, isPro, subscription]);
+  }, [user, isPro, subscription, loading]);
 
   return null;
 }
