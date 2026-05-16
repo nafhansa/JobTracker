@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { MetaPixel } from "@/lib/meta-pixel/MetaPixel";
 import type { Viewport } from "next";
+import { Suspense } from "react";
 
 export const metadata = {
   manifest: "/manifest.json",
@@ -39,7 +40,9 @@ export default function RootLayout({
           <ThemeProvider>
             <LanguageProvider>
               <PostHogProvider>
-                <PostHogPageView />
+                <Suspense fallback={null}>
+                  <PostHogPageView />
+                </Suspense>
                 <AuthProvider>
                   <PostHogIdentify />
                   <SplashScreen />
