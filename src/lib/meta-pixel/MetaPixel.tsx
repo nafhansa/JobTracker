@@ -1,6 +1,3 @@
-"use client";
-
-import Script from "next/script";
 import { META_PIXEL_ID } from "./client";
 
 export function MetaPixel() {
@@ -8,9 +5,8 @@ export function MetaPixel() {
 
   return (
     <>
-      <Script
+      <script
         id="meta-pixel"
-        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)
