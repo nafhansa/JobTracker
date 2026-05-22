@@ -51,3 +51,8 @@ graphify-out
 AGENTS.md
 POSTHOG_IMPLEMENTATION.md
 posthog-simulate.js
+trial-form/
+extension/dist/
+extension/node_modules/
+extension/.env
+sopan-extension-main/

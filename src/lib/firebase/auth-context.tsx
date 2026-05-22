@@ -113,6 +113,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          localStorage.setItem("jt_ext_id_token", idToken);
+          localStorage.setItem("jt_ext_uid", user.uid);
+          localStorage.setItem("jt_ext_email", user.email || "");
+        } catch {}
+
         // Sync Firebase user to Supabase (dual storage)
         // Run sync and subscription queries in parallel where possible
         try {
@@ -172,6 +179,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } else {
         // User logged out
+        localStorage.removeItem("jt_ext_id_token");
+        localStorage.removeItem("jt_ext_uid");
+        localStorage.removeItem("jt_ext_email");
         setSubscription(null);
         setUpdatedAt(null);
       }
