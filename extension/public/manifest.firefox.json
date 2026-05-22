@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "JobTracker Autofill",
+  "version": "0.1.0",
+  "description": "Auto-fill job application forms using your JobTracker profile",
+  "permissions": ["storage", "activeTab", "tabs"],
+  "host_permissions": ["https://jobtracker.id/*", "http://localhost:*/*"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "JobTracker Autofill",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "autofill@jobtracker.id",
+      "strict_min_version": "109.0"
+    }
+  }
+}
