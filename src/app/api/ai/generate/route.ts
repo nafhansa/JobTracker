@@ -5,7 +5,7 @@ import { getUserProfile } from "@/lib/supabase/user-profile";
 import { saveGeneratedDocument } from "@/lib/supabase/generated-docs";
 import { generateContent } from "@/lib/ai/anthropic";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage, CompanyInfo } from "@/lib/ai/types";
+import { GenerateRequest, GenerationType, COINS_PER_GENERATION, ApplicationStage, CompanyInfo, MessageIntent } from "@/lib/ai/types";
 import { formatCompanyInfoForPrompt } from "@/lib/ai/company-extraction";
 import { isAdminUser } from "@/lib/supabase/subscriptions";
 import PQueue from "p-queue";
@@ -57,12 +57,16 @@ export async function POST(req: Request) {
     const isAdmin = isAdminUser(authResult.email || "");
 
     const body: GenerateRequest = await req.json();
-    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language, companyInfo } = body;
+    const { type, targetName, targetCompany, targetRole, targetStage, jobId, channel, tone, format, customContext, language, companyInfo, intent } = body;
 
     const validTypes: GenerationType[] = ["cover_letter", "cold_email", "cold_dm_instagram", "cold_wa", "cold_linkedin"];
     const validStages: ApplicationStage[] = ["applied", "emailed", "responded", "interview", "offer", "rejected"];
+    const validIntents: MessageIntent[] = ["opportunistic_reach", "follow_up", "quick_call", "interview_thank_you", "keep_warm"];
     if (!type || !validTypes.includes(type)) {
       return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
+    }
+    if (intent && !validIntents.includes(intent)) {
+      return NextResponse.json({ error: "Invalid intent" }, { status: 400 });
     }
 
     // Per-user rate limiting (cooldown)
@@ -135,6 +139,7 @@ export async function POST(req: Request) {
             customContext,
             language,
             companyInfoPrompt,
+            intent: intent as MessageIntent | undefined,
             signal: controller.signal,
           });
         } finally {
@@ -172,7 +177,9 @@ export async function POST(req: Request) {
         channel,
         customContext,
         hadProfile: !!userProfileData,
+        intent: intent || null,
       },
+      intent: intent || null,
     });
 
     const updatedBalance = await getOrCreateCoins(authResult.userId);

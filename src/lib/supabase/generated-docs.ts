@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "./server";
-import { GeneratedDocument, GenerationType } from "../ai/types";
+import { GeneratedDocument, GenerationType, MessageIntent } from "../ai/types";
 
 export async function saveGeneratedDocument(doc: {
   user_id: string;
@@ -10,6 +10,7 @@ export async function saveGeneratedDocument(doc: {
   target_role?: string | null;
   content: string;
   prompt_data?: Record<string, unknown>;
+  intent?: MessageIntent | null;
 }): Promise<GeneratedDocument> {
   const { data, error } = await (supabaseAdmin as any)
     .from("generated_documents")

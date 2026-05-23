@@ -95,6 +95,13 @@ export interface GeneratedDocument {
 
 export type ApplicationStage = "applied" | "emailed" | "responded" | "interview" | "offer" | "rejected";
 
+export type MessageIntent =
+  | "opportunistic_reach"
+  | "follow_up"
+  | "quick_call"
+  | "interview_thank_you"
+  | "keep_warm";
+
 export const STAGE_LABELS: Record<ApplicationStage, string> = {
   applied: "Applied",
   emailed: "Emailed",
@@ -103,6 +110,14 @@ export const STAGE_LABELS: Record<ApplicationStage, string> = {
   offer: "Offer",
   rejected: "Rejected",
 };
+
+export const INTENT_OPTIONS: { value: MessageIntent; label: string; description: string; coldOnly?: boolean }[] = [
+  { value: "opportunistic_reach", label: "Initial Reach", description: "First contact — make a strong impression" },
+  { value: "follow_up", label: "Follow Up", description: "Following up after applying or an event" },
+  { value: "quick_call", label: "Quick Call", description: "Goal is to secure a brief call or meeting", coldOnly: true },
+  { value: "interview_thank_you", label: "Interview Thank You", description: "Post-interview gratitude and reinforcement" },
+  { value: "keep_warm", label: "Keep Warm", description: "Stay on their radar after silence or rejection" },
+];
 
 export interface CompanyInfo {
   description: string;
@@ -130,6 +145,7 @@ export interface GenerateRequest {
   language?: OutputLanguage;
   companyUrl?: string;
   companyInfo?: CompanyInfo;
+  intent?: MessageIntent;
 }
 
 export interface CoinsBalance {

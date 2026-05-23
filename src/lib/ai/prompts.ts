@@ -1,4 +1,4 @@
-import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage, MessageIntent } from "./types";
 
 const LANGUAGE_INSTRUCTIONS: Record<OutputLanguage, string> = {
   en: "Write the entire output in English.",
@@ -14,7 +14,15 @@ const STAGE_CONTEXT: Record<ApplicationStage, string> = {
   rejected: "The user was rejected for this position. Write a graceful, professional follow-up message — thank them for the opportunity, ask for constructive feedback, and keep the door open for future opportunities. Be humble, not desperate.",
 };
 
-export function buildSystemPrompt(type: GenerationType, language?: OutputLanguage, targetStage?: ApplicationStage): string {
+const INTENT_CONTEXT: Record<MessageIntent, string> = {
+  opportunistic_reach: "This is initial outreach — no prior interaction with the recipient. Lead with a strong value proposition, make a memorable first impression, and express genuine interest in the role/company.",
+  follow_up: "This is a follow-up message — the user has already had some contact with the recipient. Reference the prior interaction briefly, add new value or context, and gently push the conversation forward.",
+  quick_call: "The primary goal is to secure a brief call or meeting. Keep the message short, low-pressure, and action-oriented. Make it easy for the recipient to say yes to a quick chat.",
+  interview_thank_you: "This is a post-interview thank-you message. Reference specific conversation points from the interview, reinforce the candidate's fit, and express continued enthusiasm for the role.",
+  keep_warm: "Stay on their radar professionally. Reiterate interest without being repetitive, share something new or timely, and keep the door open for future opportunities. Be warm but not pushy.",
+};
+
+export function buildSystemPrompt(type: GenerationType, language?: OutputLanguage, targetStage?: ApplicationStage, intent?: MessageIntent): string {
   const langInstruction = language ? LANGUAGE_INSTRUCTIONS[language] : "";
 
   const basePrompt = `You are an expert professional writer specializing in career outreach and cover letters. You write compelling, personalized content that helps job seekers stand out. Your writing should be:
@@ -26,9 +34,14 @@ export function buildSystemPrompt(type: GenerationType, language?: OutputLanguag
 
 ${langInstruction}
 
-IMPORTANT: Do NOT use em dashes (the long dash character). Use commas, periods, or rephrase instead. For example, do NOT write "I am writing to you - a leader in..." Instead use "I am writing to you, a leader in..." or "I am writing to you because you are a leader in..." Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.
+IMPORTANT FORMATTING RULES:
+- Do NOT use markdown formatting. No asterisks for bold/italic (no *text* or **text**), no hash headers, no markdown bullet points, no horizontal rules with ---.
+- Use plain text only. For emphasis, rely on word choice and sentence structure, not formatting.
+- For bullet points in cover letters, use simple paragraphs instead.
+- Do NOT use em dashes (the long dash character). Use commas, periods, or rephrase instead. For example, do NOT write "I am writing to you - a leader in..." Instead use "I am writing to you, a leader in..." or "I am writing to you because you are a leader in..." Always write in the same language as the user's input context. If the job/target details suggest a specific region, adapt the tone and language accordingly.
 
-${targetStage ? `APPLICATION STAGE CONTEXT: The user's job application is at the "${targetStage}" stage. ${STAGE_CONTEXT[targetStage]}` : ""}`;
+${targetStage ? `APPLICATION STAGE CONTEXT: The user's job application is at the "${targetStage}" stage. ${STAGE_CONTEXT[targetStage]}` : ""}
+${intent ? `MESSAGE INTENT: ${INTENT_CONTEXT[intent]}` : ""}`;
 
   switch (type) {
     case "cover_letter":
@@ -133,31 +146,33 @@ interface BuildUserPromptParams {
   customContext?: string;
   language?: OutputLanguage;
   companyInfoPrompt?: string;
+  intent?: MessageIntent;
 }
 
 export function buildUserPrompt(params: BuildUserPromptParams): string {
-  const { type, userProfile, target, tone, format, customContext, language, companyInfoPrompt, targetStage } = params;
+  const { type, userProfile, target, tone, format, customContext, language, companyInfoPrompt, targetStage, intent } = params;
 
   const senderInfo = userProfile
     ? `SENDER PROFILE:
-* Name: ${userProfile.fullName || "Not provided"}
-* Email: ${userProfile.email || "Not provided"}
-* Phone: ${userProfile.phone || "Not provided"}
-* Skills: ${userProfile.skills?.join(", ") || "Not provided"}
-* Summary: ${userProfile.summary || "Not provided"}
-* Experience: ${userProfile.experience?.map((e) => `${e.role} at ${e.company} (${e.duration}). ${e.description}`).join("\n") || "Not provided"}
-* Education: ${userProfile.education?.map((e) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join("\n") || "Not provided"}`
+- Name: ${userProfile.fullName || "Not provided"}
+- Email: ${userProfile.email || "Not provided"}
+- Phone: ${userProfile.phone || "Not provided"}
+- Skills: ${userProfile.skills?.join(", ") || "Not provided"}
+- Summary: ${userProfile.summary || "Not provided"}
+- Experience: ${userProfile.experience?.map((e) => `${e.role} at ${e.company} (${e.duration}). ${e.description}`).join("\n") || "Not provided"}
+- Education: ${userProfile.education?.map((e) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join("\n") || "Not provided"}`
     : "";
 
   const targetInfo = target
     ? `TARGET:
-* Recipient Name: ${target.recruiterName || target.name || "Not provided"}
-* Company: ${target.company || "Not provided"}
-* Role: ${target.role || "Not provided"}${targetStage ? `\n* Application Stage: ${targetStage} — ${STAGE_CONTEXT[targetStage]}` : ""}`
+- Recipient Name: ${target.recruiterName || target.name || "Not provided"}
+- Company: ${target.company || "Not provided"}
+- Role: ${target.role || "Not provided"}${targetStage ? `\n- Application Stage: ${targetStage} — ${STAGE_CONTEXT[targetStage]}` : ""}`
     : "";
 
   const toneInstruction = tone ? `TONE: ${tone}` : "TONE: professional";
   const formatInstruction = type === "cover_letter" && format ? `FORMAT: ${format}` : "";
+  const intentInstruction = intent ? `INTENT: ${INTENT_CONTEXT[intent]}` : "";
 
   switch (type) {
     case "cover_letter":
@@ -171,11 +186,10 @@ ${companyInfoPrompt || ""}
 ${toneInstruction}
 ${formatInstruction}
 ${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
+${intentInstruction}
 ${customContext ? `ADDITIONAL CONTEXT: ${customContext}` : ""}
 
-IMPORTANT: Do NOT use em dashes. Use commas, periods, or rephrase instead.
-
-Write the complete cover letter now.`;
+Write the complete cover letter now. Remember: plain text only, no markdown formatting, no asterisks, no em dashes.`;
 
     case "cold_email":
     case "cold_dm_instagram":
@@ -190,11 +204,10 @@ ${targetInfo}
 ${companyInfoPrompt || ""}
 ${toneInstruction}
 ${language ? `LANGUAGE: ${LANGUAGE_INSTRUCTIONS[language]}` : ""}
+${intentInstruction}
 ${customContext ? `ADDITIONAL CONTEXT: ${customContext}` : ""}
 
-IMPORTANT: Do NOT use em dashes. Use commas, periods, or rephrase instead.
-
-Write the message now.`;
+Write the message now. Remember: plain text only, no markdown formatting, no asterisks, no em dashes.`;
 
     default:
       return `Write a professional outreach message.`;

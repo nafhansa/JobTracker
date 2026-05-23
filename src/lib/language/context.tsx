@@ -536,8 +536,8 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Early Bird Section
     "early.badge": "Promo Early Bird",
-    "early.title": "Limited: Akses Seumur Hidup Hanya $7.99",
-    "early.subtitle": "Harga Normal $17.99 • Hemat 44% • Bayar Sekali, Milik Selamanya",
+    "early.title": "Limited: Akses Seumur Hidup Hanya Rp51.988",
+    "early.subtitle": "Harga Normal Rp58.000 • Hemat 44% • Bayar Sekali, Milik Selamanya",
     "early.timer": "Promo berakhir dalam:",
     "early.days": "Hari",
     "early.hours": "Jam",
@@ -546,7 +546,7 @@ const translations: Record<Language, Record<string, string>> = {
     "early.cta": "Dapatkan Promo Early Bird",
     "early.title.mobile": "Penawaran Terbatas",
     "early.price.mobile": "Dapatkan Akses Seumur Hidup",
-    "early.regular": "Harga Normal: $17.99",
+    "early.regular": "Harga Normal: Rp58.000",
     
     // Comparison Section
     "comparison.title": "Kenapa Harus JobTracker App?",

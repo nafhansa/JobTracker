@@ -15,6 +15,7 @@ import {
   ApplicationStage,
   COINS_PER_GENERATION,
   CompanyInfo,
+  MessageIntent,
 } from "@/lib/ai/types";
 import { checkIsPro, isAdminUser } from "@/lib/supabase/subscriptions";
 import StepIndicator from "./StepIndicator";
@@ -56,6 +57,7 @@ interface CreationFormData {
   customContext: string;
   companyUrl: string;
   companyInfo: CompanyInfo | null;
+  intent: MessageIntent | null;
 }
 
 const INITIAL_FORM_DATA: CreationFormData = {
@@ -73,6 +75,7 @@ const INITIAL_FORM_DATA: CreationFormData = {
   customContext: "",
   companyUrl: "",
   companyInfo: null,
+  intent: null,
 };
 
 function getSteps(type: GenerationType | null, view: AIWriterView): { label: string }[] {
@@ -231,6 +234,7 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           language: formData.language,
           customContext: formData.customContext || undefined,
           companyInfo: formData.companyInfo || undefined,
+          intent: formData.intent || undefined,
         }),
       });
 
@@ -370,10 +374,12 @@ export default function AIWriterSection({ userId, onNavigateToApplications }: { 
           profile={profile}
           coins={coins}
           isAdmin={isAdmin}
+          intent={formData.intent}
           onLanguageChange={(l) => setFormData((prev) => ({ ...prev, language: l }))}
           onToneChange={(t) => setFormData((prev) => ({ ...prev, tone: t }))}
           onFormatChange={(f) => setFormData((prev) => ({ ...prev, format: f }))}
           onCustomContextChange={(c) => setFormData((prev) => ({ ...prev, customContext: c }))}
+          onIntentChange={(i) => setFormData((prev) => ({ ...prev, intent: i }))}
           onGenerate={handleGenerate}
           onBack={() => navigate("target")}
         />

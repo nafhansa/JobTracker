@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts";
-import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage } from "./types";
+import { GenerationType, ToneType, ColdChannel, GenerationFormat, OutputLanguage, ApplicationStage, MessageIntent } from "./types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -32,11 +32,12 @@ interface GenerateContentParams {
   customContext?: string;
   language?: OutputLanguage;
   companyInfoPrompt?: string;
+  intent?: MessageIntent;
   signal?: AbortSignal;
 }
 
 export async function generateContent(params: GenerateContentParams): Promise<string> {
-  const systemPrompt = buildSystemPrompt(params.type, params.language, params.targetStage);
+  const systemPrompt = buildSystemPrompt(params.type, params.language, params.targetStage, params.intent);
   const userPrompt = buildUserPrompt(params);
 
   const maxTokens = params.type === "cover_letter" ? COVER_LETTER_MAX_TOKENS : MAX_TOKENS;
