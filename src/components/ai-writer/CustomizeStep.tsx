@@ -11,9 +11,11 @@ import {
   OutputLanguage,
   LANGUAGE_OPTIONS,
   TONE_OPTIONS,
+  INTENT_OPTIONS,
   CoinsBalance,
   COINS_PER_GENERATION,
   UserProfile,
+  MessageIntent,
 } from "@/lib/ai/types";
 
 interface CustomizeStepProps {
@@ -26,10 +28,12 @@ interface CustomizeStepProps {
   profile: UserProfile | null;
   coins: CoinsBalance | null;
   isAdmin: boolean;
+  intent: MessageIntent | null;
   onLanguageChange: (l: OutputLanguage) => void;
   onToneChange: (t: ToneType) => void;
   onFormatChange: (f: GenerationFormat) => void;
   onCustomContextChange: (c: string) => void;
+  onIntentChange: (i: MessageIntent | null) => void;
   onGenerate: () => void;
   onBack: () => void;
 }
@@ -44,10 +48,12 @@ export default function CustomizeStep({
   profile,
   coins,
   isAdmin,
+  intent,
   onLanguageChange,
   onToneChange,
   onFormatChange,
   onCustomContextChange,
+  onIntentChange,
   onGenerate,
   onBack,
 }: CustomizeStepProps) {
@@ -56,6 +62,9 @@ export default function CustomizeStep({
   const typeLabel = type === "cover_letter" ? "Cover Letter" : channel
     ? ({ email: "Cold Email", linkedin: "LinkedIn Message", instagram: "Instagram DM", whatsapp: "WhatsApp Message" } as Record<string, string>)[channel] || "Cold Outreach"
     : "Cold Outreach";
+
+  const isColdType = type !== "cover_letter";
+  const filteredIntents = INTENT_OPTIONS.filter((opt) => !opt.coldOnly || isColdType);
 
   return (
     <div className="space-y-4">
@@ -100,6 +109,32 @@ export default function CustomizeStep({
               }`}
             >
               {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <label className="text-xs font-medium text-muted-foreground">Purpose</label>
+        <div className="flex flex-col gap-2">
+          {filteredIntents.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onIntentChange(intent === opt.value ? null : opt.value)}
+              className={`flex items-start gap-2.5 px-3.5 py-2 rounded-xl text-left transition-all ${
+                intent === opt.value
+                  ? "bg-primary/10 border-2 border-primary text-foreground"
+                  : "bg-muted/50 border-2 border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <div className="flex-1">
+                <span className="text-xs font-semibold">{opt.label}</span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{opt.description}</p>
+              </div>
+              {intent === opt.value && (
+                <span className="text-primary text-xs mt-0.5">&#10003;</span>
+              )}
             </button>
           ))}
         </div>

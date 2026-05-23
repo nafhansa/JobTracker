@@ -1,4 +1,4 @@
-import type { AutofillData } from "@/lib/types";
+import type { AutofillData } from "../storage";
 import type { MappedField, MappedField as MF } from "../mapper";
 import type { ATSAdapter } from "./index";
 

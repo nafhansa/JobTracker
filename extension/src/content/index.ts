@@ -1,4 +1,4 @@
-import type { AutofillData } from "@/lib/types";
+import type { AutofillData } from "./storage";
 import { detectATS, detectJobForm } from "./detector";
 import { mapFields, mapSingleField } from "./mapper";
 import { fillFields, insertFillBadge } from "./filler";
@@ -7,11 +7,13 @@ import { leverAdapter } from "./ats/lever";
 import { workdayAdapter } from "./ats/workday";
 import type { ATSAdapter } from "./ats/index";
 import { readProfileFromStorage, watchStorageChanges } from "./storage";
-import { showSuggestion, hideSuggestion, setProfile } from "./inline-suggest";
+import { showSuggestion, hideSuggestion, setProfile, getProfile } from "./inline-suggest";
 
 const atsAdapters: ATSAdapter[] = [greenhouseAdapter, leverAdapter, workdayAdapter];
 
 let currentFormDetected = false;
+let inlineInitialized = false;
+let fillingField = false;
 
 function checkForJobForm(): void {
   const ats = detectATS(window.location.href);
@@ -27,6 +29,7 @@ async function handleFillForm(data: AutofillData): Promise<{
   filledCount: number;
   fields: string[];
 }> {
+  fillingField = true;
   let adapter: ATSAdapter | null = null;
 
   for (const a of atsAdapters) {
@@ -69,6 +72,7 @@ async function handleFillForm(data: AutofillData): Promise<{
     insertFillBadge(bestResult.filledCount);
   }
 
+  setTimeout(() => { fillingField = false; }, 500);
   return bestResult;
 }
 
@@ -110,11 +114,12 @@ function isFillableInput(
   return true;
 }
 
+let lastFocusInTime = 0;
+
 function handleFocusIn(e: FocusEvent): void {
+  lastFocusInTime = Date.now();
   const target = e.target;
   if (!isFillableInput(target)) return;
-
-  const profile = showSuggestion.length > 0 ? readProfileFromStorage : null;
 
   const input = target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
@@ -123,10 +128,12 @@ function handleFocusIn(e: FocusEvent): void {
     return;
   }
 
-  const data = getInlineProfile();
+  const data = getProfile();
   if (!data) return;
 
   const match = mapSingleField(input, data);
+  if (!match) return;
+
   if (!match) return;
 
   const value = (data[match.profileKey] as string) || "";
@@ -135,17 +142,13 @@ function handleFocusIn(e: FocusEvent): void {
   showSuggestion(input, value);
 }
 
-function handleFocusOut(e: FocusEvent): void {
-  if (e.relatedTarget) {
-    const host = document.getElementById("jt-autofill-pill-host");
-    if (host && host.shadowRoot && host.shadowRoot.contains(e.relatedTarget as Node)) {
-      return;
-    }
-  }
+function handleFocusOut(_e: FocusEvent): void {
   setTimeout(() => {
+    if (Date.now() - lastFocusInTime < 200) return;
     const host = document.getElementById("jt-autofill-pill-host");
     if (!host) return;
-    if (host.shadowRoot && host.shadowRoot.contains(document.activeElement)) return;
+    const active = document.activeElement;
+    if (active && host.contains(active)) return;
     hideSuggestion();
   }, 150);
 }
@@ -157,22 +160,28 @@ function handleKeyDown(e: KeyboardEvent): void {
 }
 
 function handleInput(): void {
+  if (fillingField) return;
   hideSuggestion();
 }
 
-let _inlineProfile: AutofillData | null = null;
-
-function getInlineProfile(): AutofillData | null {
-  return _inlineProfile;
-}
+window.addEventListener("jt-autofill-filling", ((e: CustomEvent) => {
+  fillingField = e.detail as boolean;
+}) as EventListener);
 
 async function initInlineSuggestions(): Promise<void> {
+  if (inlineInitialized) return;
+  if (document.getElementById("jt-autofill-initialized")) return;
+  inlineInitialized = true;
+
+  const marker = document.createElement("div");
+  marker.id = "jt-autofill-initialized";
+  marker.style.display = "none";
+  document.body.appendChild(marker);
+
   const profile = await readProfileFromStorage();
-  _inlineProfile = profile;
   setProfile(profile);
 
   watchStorageChanges((updated) => {
-    _inlineProfile = updated;
     setProfile(updated);
   });
 

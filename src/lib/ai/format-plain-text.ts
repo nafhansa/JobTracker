@@ -12,6 +12,15 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function escapeAndConvertMarkdown(text: string): string {
+  const escaped = escapeHtml(text);
+  return escaped
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/_(.+?)_/g, "<em>$1</em>");
+}
+
 export function formatPlainTextToHtml(content: string, type: GenerationType): string {
   const lines = content.split("\n");
   const htmlLines: string[] = [];
@@ -34,31 +43,37 @@ export function formatPlainTextToHtml(content: string, type: GenerationType): st
       continue;
     }
 
+    if (/^---+$/.test(trimmed)) {
+      closeList();
+      htmlLines.push("<hr/>");
+      continue;
+    }
+
     const isCoverLetter = type === "cover_letter";
     const isEmail = type === "cold_email";
 
     if (isEmail && trimmed.toLowerCase().startsWith("subject:")) {
       closeList();
-      htmlLines.push(`<h2>${escapeHtml(trimmed)}</h2>`);
+      htmlLines.push(`<h2>${escapeAndConvertMarkdown(trimmed)}</h2>`);
       continue;
     }
 
     if (isCoverLetter) {
       if (i === 0 && /^\w+\s+\d{1,2},?\s+\d{4}/i.test(trimmed)) {
         closeList();
-        htmlLines.push(`<p style="text-align: right">${escapeHtml(trimmed)}</p>`);
+        htmlLines.push(`<p style="text-align: right">${escapeAndConvertMarkdown(trimmed)}</p>`);
         continue;
       }
 
       if (/^(dear\s|to whom|hiring team|hiring manager|dear sir|dear madam)/i.test(trimmed) && trimmed.endsWith(":")) {
         closeList();
-        htmlLines.push(`<p>${escapeHtml(trimmed)}</p>`);
+        htmlLines.push(`<p>${escapeAndConvertMarkdown(trimmed)}</p>`);
         continue;
       }
 
       if (/^(sincerely|best regards|kind regards|regards|warmly|cheers|yours truly|respectfully|with best regards)/i.test(trimmed) && trimmed.length < 50) {
         closeList();
-        htmlLines.push(`<p><br></p><p>${escapeHtml(trimmed)}</p>`);
+        htmlLines.push(`<p><br></p><p>${escapeAndConvertMarkdown(trimmed)}</p>`);
         continue;
       }
 
@@ -71,23 +86,23 @@ export function formatPlainTextToHtml(content: string, type: GenerationType): st
       const emailMatch = trimmed.match(/^[\w.-]+@[\w.-]+\.\w+$/);
       if (emailMatch) {
         closeList();
-        htmlLines.push(`<p style="text-align: right">${escapeHtml(trimmed)}</p>`);
+        htmlLines.push(`<p style="text-align: right">${escapeAndConvertMarkdown(trimmed)}</p>`);
         continue;
       }
 
       const phoneMatch = trimmed.match(/^(\+?\d[\d\s-]{7,}|\(\d{3}\)[\s\d-]+)$/);
       if (phoneMatch && i < 6) {
         closeList();
-        htmlLines.push(`<p style="text-align: right">${escapeHtml(trimmed)}</p>`);
+        htmlLines.push(`<p style="text-align: right">${escapeAndConvertMarkdown(trimmed)}</p>`);
         continue;
       }
     }
 
-    if (/^[•\-]\s/.test(trimmed)) {
-      const bulletText = trimmed.replace(/^[•\-]\s*/, "");
+    if (/^[•\-\*]\s/.test(trimmed)) {
+      const bulletText = trimmed.replace(/^[•\-\*]\s*/, "");
       if (inOl) { htmlLines.push("</ol>"); inOl = false; }
       if (!inUl) { htmlLines.push("<ul>"); inUl = true; }
-      htmlLines.push(`<li>${escapeHtml(bulletText)}</li>`);
+      htmlLines.push(`<li>${escapeAndConvertMarkdown(bulletText)}</li>`);
       continue;
     }
 
@@ -95,12 +110,12 @@ export function formatPlainTextToHtml(content: string, type: GenerationType): st
       const numberedText = trimmed.replace(/^\d+\.\s*/, "");
       if (inUl) { htmlLines.push("</ul>"); inUl = false; }
       if (!inOl) { htmlLines.push("<ol>"); inOl = true; }
-      htmlLines.push(`<li>${escapeHtml(numberedText)}</li>`);
+      htmlLines.push(`<li>${escapeAndConvertMarkdown(numberedText)}</li>`);
       continue;
     }
 
     closeList();
-    htmlLines.push(`<p>${escapeHtml(trimmed)}</p>`);
+    htmlLines.push(`<p>${escapeAndConvertMarkdown(trimmed)}</p>`);
   }
 
   closeList();

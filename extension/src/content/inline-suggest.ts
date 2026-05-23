@@ -1,4 +1,4 @@
-import type { AutofillData } from "@/lib/types";
+import type { AutofillData } from "./storage";
 import { setNativeValue, highlightElement } from "./filler";
 
 const PILL_ID = "jt-autofill-pill";
@@ -31,7 +31,12 @@ export function showSuggestion(
   input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
   value: string
 ): void {
-  hideSuggestion();
+  if (dismissTimer) {
+    clearTimeout(dismissTimer);
+    dismissTimer = null;
+  }
+  const existing = document.getElementById(SHADOW_HOST_ID);
+  if (existing) existing.remove();
   currentInput = input;
 
   const host = document.createElement("div");
@@ -39,7 +44,7 @@ export function showSuggestion(
   host.style.cssText = "position:fixed;z-index:2147483647;pointer-events:none;top:0;left:0;width:0;height:0;";
   document.body.appendChild(host);
 
-  const shadow = host.attachShadow({ mode: "closed" });
+  const shadow = host.attachShadow({ mode: "open" });
 
   const style = document.createElement("style");
   style.textContent = `
@@ -157,12 +162,11 @@ function positionPill(
   const pillHeight = 36;
   const gap = 4;
 
-  let top = rect.bottom + gap + window.scrollY;
-  let left = rect.left + window.scrollX;
+  let top = rect.bottom + gap;
+  let left = rect.left;
 
-  const viewportBottom = window.innerHeight;
-  if (rect.bottom + pillHeight + gap > viewportBottom) {
-    top = rect.top - pillHeight - gap + window.scrollY;
+  if (rect.bottom + pillHeight + gap > window.innerHeight) {
+    top = rect.top - pillHeight - gap;
   }
 
   if (left + 280 > window.innerWidth) {
@@ -171,7 +175,7 @@ function positionPill(
 
   left = Math.max(8, left);
 
-  pill.style.position = "absolute";
+  pill.style.position = "fixed";
   pill.style.top = `${top}px`;
   pill.style.left = `${left}px`;
 }
@@ -180,6 +184,7 @@ function fillFromSuggestion(
   input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
   value: string
 ): void {
+  window.dispatchEvent(new CustomEvent("jt-autofill-filling", { detail: true }));
   if (input instanceof HTMLSelectElement) {
     const lower = value.toLowerCase().trim();
     for (const opt of input.options) {
@@ -196,6 +201,9 @@ function fillFromSuggestion(
     setNativeValue(input, value);
   }
   highlightElement(input);
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent("jt-autofill-filling", { detail: false }));
+  }, 500);
 }
 
 function resetDismissTimer(): void {

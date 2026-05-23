@@ -1,4 +1,4 @@
-import type { AutofillData } from "@/lib/types";
+import type { AutofillData } from "./storage";
 
 interface FieldMap {
   profileKey: keyof AutofillData;
@@ -199,13 +199,13 @@ export function mapSingleField(
     );
 
     if (autocompleteMatch) {
-      bestMatch = { key: fieldMap.profileKey, confidence: 1.0 };
+      bestMatch = { profileKey: fieldMap.profileKey, confidence: 1.0 };
       break;
     }
 
     const keywordScore = textMatchesKeywords(inputText, fieldMap.keywords);
     if (keywordScore > 0 && (!bestMatch || keywordScore > bestMatch.confidence)) {
-      bestMatch = { key: fieldMap.profileKey, confidence: keywordScore };
+      bestMatch = { profileKey: fieldMap.profileKey, confidence: keywordScore };
     }
   }
 
