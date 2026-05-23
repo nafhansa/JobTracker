@@ -117,7 +117,7 @@ export default function App() {
     const tokenData = await readTokenFromAppTab();
     if (!tokenData) {
       setChecking(false);
-      setAuthError("No signed-in tab found. Make sure you're signed in on JobTracker.");
+      setAuthError("No signed-in tab found. Make sure you're signed in on JobTracker, then refresh that page and try again.");
       return;
     }
     await storeAuthFromToken(tokenData);

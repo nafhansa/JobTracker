@@ -1,7 +1,7 @@
 import type { AutofillData } from "@/lib/types";
 import type { MappedField } from "./mapper";
 
-const HIGHLIGHT_COLOR = "#22c55e";
+const HIGHLIGHT_COLOR = "#3B82F6";
 const HIGHLIGHT_DURATION = 2000;
 
 export function fillFields(
@@ -38,7 +38,7 @@ export function fillFields(
   return { filledCount, fields: filledFields };
 }
 
-function setNativeValue(
+export function setNativeValue(
   element: HTMLInputElement | HTMLTextAreaElement,
   value: string
 ): void {
@@ -88,7 +88,7 @@ function fillSelect(
   return false;
 }
 
-function highlightElement(
+export function highlightElement(
   element: HTMLElement
 ): void {
   const originalOutline = element.style.outline;
