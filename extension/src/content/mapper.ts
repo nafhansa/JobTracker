@@ -168,6 +168,54 @@ const FIELD_MAPS: FieldMap[] = [
   },
 ];
 
+export function mapSingleField(
+  input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+  data: AutofillData
+): { profileKey: keyof AutofillData; confidence: number } | null {
+  if (
+    input.type === "hidden" ||
+    input.type === "submit" ||
+    input.type === "button" ||
+    input.type === "file" ||
+    input.type === "password" ||
+    input.type === "checkbox" ||
+    input.type === "radio" ||
+    input.disabled
+  ) {
+    return null;
+  }
+
+  const form = input.closest("form") || document.body;
+  const inputText = getFullInputText(input, form);
+  let bestMatch: { key: keyof AutofillData; confidence: number } | null = null;
+
+  for (const fieldMap of FIELD_MAPS) {
+    const value = (data[fieldMap.profileKey] as string) || "";
+    if (!value) continue;
+
+    const autocompleteAttr = input.getAttribute("autocomplete") || "";
+    const autocompleteMatch = fieldMap.autocompleteValues.some(
+      (v) => autocompleteAttr === v
+    );
+
+    if (autocompleteMatch) {
+      bestMatch = { key: fieldMap.profileKey, confidence: 1.0 };
+      break;
+    }
+
+    const keywordScore = textMatchesKeywords(inputText, fieldMap.keywords);
+    if (keywordScore > 0 && (!bestMatch || keywordScore > bestMatch.confidence)) {
+      bestMatch = { key: fieldMap.profileKey, confidence: keywordScore };
+    }
+  }
+
+  if (bestMatch && bestMatch.confidence >= 0.6) {
+    return bestMatch;
+  }
+
+  return null;
+}
+
 export interface MappedField {
   element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
   profileKey: keyof AutofillData;

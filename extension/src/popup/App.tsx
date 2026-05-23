@@ -15,6 +15,8 @@ type AppState =
   | "filled"
   | "session_expired";
 
+const APP_URL = "https://jobtracker.id";
+
 export default function App() {
   const [state, setState] = useState<AppState>("loading");
   const [email, setEmail] = useState<string>("");
@@ -115,7 +117,7 @@ export default function App() {
     const tokenData = await readTokenFromAppTab();
     if (!tokenData) {
       setChecking(false);
-      setAuthError("No signed-in tab found. Make sure you're signed in on JobTracker.");
+      setAuthError("No signed-in tab found. Make sure you're signed in on JobTracker, then refresh that page and try again.");
       return;
     }
     await storeAuthFromToken(tokenData);
@@ -214,7 +216,7 @@ export default function App() {
         <Header />
         <div className="signin-prompt">
           <p>Sign in with Google on the opened tab.</p>
-          <p style={{ fontSize: 12, color: "#737373", marginTop: 8 }}>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
             This popup will auto-detect when you're signed in.
           </p>
           <button
@@ -328,7 +330,7 @@ export default function App() {
                 style={{ width: `${completeness * 100}%` }}
               />
             </div>
-            <div style={{ fontSize: 11, color: "#737373", marginTop: 4 }}>
+            <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>
               {Math.round(completeness * 100)}% complete
             </div>
           </div>
@@ -348,10 +350,7 @@ export default function App() {
       )}
 
       {!formDetected && state === "ready" && (
-        <div
-          className="section"
-          style={{ fontSize: 12, color: "#737373", textAlign: "center" }}
-        >
+          <div className="section text-muted">
           No job application form detected on this page
         </div>
       )}
@@ -405,7 +404,7 @@ export default function App() {
 function Header() {
   return (
     <div className="header">
-      <div className="logo">JT</div>
+      <img className="logo-img" src="logo-32.png" alt="JT" />
       <div className="header-text">
         <h1>JobTracker</h1>
         <p>Autofill</p>

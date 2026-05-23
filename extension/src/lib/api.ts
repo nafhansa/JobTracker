@@ -31,6 +31,49 @@ export async function fetchProfile(): Promise<Record<string, unknown> | null> {
   }
 }
 
+function isMissingReceiverError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /Receiving end does not exist|Could not establish connection/i.test(
+    error.message
+  );
+}
+
+async function ensureContentScript(tabId: number): Promise<boolean> {
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["assets/content.js"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function sendMessageWithRetry<T>(
+  tabId: number,
+  message: unknown
+): Promise<T | null> {
+  try {
+    return (await browser.tabs.sendMessage(tabId, message)) as T;
+  } catch (error) {
+    if (!isMissingReceiverError(error)) return null;
+
+    const injected = await ensureContentScript(tabId);
+    if (!injected) return null;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        return (await browser.tabs.sendMessage(tabId, message)) as T;
+      } catch (retryError) {
+        if (!isMissingReceiverError(retryError)) return null;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    }
+    return null;
+  }
+}
+
 export async function readTokenFromAppTab(): Promise<{
   idToken: string;
   uid: string;
@@ -40,24 +83,19 @@ export async function readTokenFromAppTab(): Promise<{
 
   for (const tab of tabs) {
     if (!tab.id) continue;
-    try {
-      const response = await browser.tabs.sendMessage(tab.id, {
-        type: "GET_AUTH_TOKEN",
-      });
-      const data = response as {
-        idToken: string | null;
-        uid: string | null;
-        email: string | null;
+
+    const response = await sendMessageWithRetry<{
+      idToken: string | null;
+      uid: string | null;
+      email: string | null;
+    }>(tab.id, { type: "GET_AUTH_TOKEN" });
+
+    if (response?.idToken && response?.uid) {
+      return {
+        idToken: response.idToken,
+        uid: response.uid,
+        email: response.email || "",
       };
-      if (data?.idToken && data?.uid) {
-        return {
-          idToken: data.idToken,
-          uid: data.uid,
-          email: data.email || "",
-        };
-      }
-    } catch {
-      continue;
     }
   }
 

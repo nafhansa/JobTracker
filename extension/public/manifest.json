@@ -3,7 +3,7 @@
   "name": "JobTracker Autofill",
   "version": "0.1.0",
   "description": "Auto-fill job application forms using your JobTracker profile",
-  "permissions": ["storage", "activeTab", "tabs"],
+  "permissions": ["storage", "activeTab", "tabs", "scripting"],
   "host_permissions": ["https://jobtracker.id/*", "http://localhost:*/*"],
   "content_scripts": [
     {
