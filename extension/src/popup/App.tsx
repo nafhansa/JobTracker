@@ -89,13 +89,77 @@ export default function App() {
         active: true,
         currentWindow: true,
       });
-      if (!tab?.id) return;
-      const response = await browser.tabs.sendMessage(tab.id, {
-        type: "CHECK_FORM",
+      if (!tab?.id || !tab.url) return;
+
+      if (
+        tab.url.startsWith("chrome://") ||
+        tab.url.startsWith("about:") ||
+        tab.url.startsWith("moz-extension://")
+      ) {
+        setFormDetected(false);
+        return;
+      }
+
+      const results = await browser.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          const forms = document.querySelectorAll("form");
+          if (forms.length === 0) return { detected: false, ats: null };
+
+          const keywords = [
+            "apply", "application", "job application", "employment",
+            "career", "position", "submit your application", "apply now",
+            "job opportunity",
+          ];
+          const pageText = document.body?.innerText?.toLowerCase() || "";
+          if (keywords.some((kw) => pageText.includes(kw))) {
+            return { detected: true, ats: null };
+          }
+
+          for (const form of forms) {
+            const inputs = form.querySelectorAll(
+              'input[type="text"], input[type="email"], input[type="tel"], input:not([type]), textarea, select'
+            );
+            const labels = Array.from(inputs).map((el) => {
+              const parts: string[] = [];
+              if (el.id) {
+                const label = document.querySelector(`label[for="${el.id}"]`);
+                if (label) parts.push(label.textContent || "");
+              }
+              const parent = el.closest("label");
+              if (parent) parts.push(parent.textContent || "");
+              const aria = el.getAttribute("aria-label");
+              if (aria) parts.push(aria);
+              const ph = el.getAttribute("placeholder");
+              if (ph) parts.push(ph);
+              const name = el.getAttribute("name");
+              if (name) parts.push(name.replace(/[_-]/g, " "));
+              return parts.join(" ").toLowerCase();
+            });
+
+            const hasName = labels.some((l) => l.includes("name") || l.includes("nama"));
+            const hasEmail = labels.some((l) => l.includes("email") || l.includes("e-mail"));
+            const hasPhone = labels.some((l) => l.includes("phone") || l.includes("tel") || l.includes("mobile"));
+
+            let score = 0;
+            if (hasName) score++;
+            if (hasEmail) score++;
+            if (hasPhone) score++;
+
+            const hasResume = form.querySelector(
+              'input[type="file"][accept*="pdf"], input[type="file"][accept*="doc"], input[name*="resume"], input[name*="cv"]'
+            );
+            if (hasResume) score += 2;
+
+            if (score >= 2) return { detected: true, ats: null };
+          }
+
+          return { detected: false, ats: null };
+        },
       });
-      setFormDetected(
-        (response as { detected: boolean }).detected
-      );
+
+      const result = results?.[0]?.result as { detected: boolean; ats: string | null } | undefined;
+      setFormDetected(result?.detected ?? false);
     } catch {
       setFormDetected(false);
     }
@@ -160,6 +224,15 @@ export default function App() {
         setState("ready");
         return;
       }
+
+      try {
+        await browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["assets/content.js"],
+        });
+        await new Promise((r) => setTimeout(r, 200));
+      } catch {}
+
       const response = await browser.tabs.sendMessage(tab.id, {
         type: "FILL_FORM",
         data: autofill,
