@@ -31,45 +31,36 @@ export async function fetchProfile(): Promise<Record<string, unknown> | null> {
   }
 }
 
-function isMissingReceiverError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  return /Receiving end does not exist|Could not establish connection/i.test(
-    error.message
-  );
-}
-
-async function ensureContentScript(tabId: number): Promise<boolean> {
+async function readTokenViaScripting(tabId: number): Promise<{
+  idToken: string;
+  uid: string;
+  email: string;
+} | null> {
   try {
-    await browser.scripting.executeScript({
+    const results = await browser.scripting.executeScript({
       target: { tabId },
-      files: ["assets/content.js"],
+      func: () => ({
+        idToken: localStorage.getItem("jt_ext_id_token"),
+        uid: localStorage.getItem("jt_ext_uid"),
+        email: localStorage.getItem("jt_ext_email"),
+      }),
     });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
-async function sendMessageWithRetry<T>(
-  tabId: number,
-  message: unknown
-): Promise<T | null> {
-  try {
-    return (await browser.tabs.sendMessage(tabId, message)) as T;
-  } catch (error) {
-    if (!isMissingReceiverError(error)) return null;
+    const data = results?.[0]?.result as {
+      idToken: string | null;
+      uid: string | null;
+      email: string | null;
+    } | undefined;
 
-    const injected = await ensureContentScript(tabId);
-    if (!injected) return null;
-
-    for (let attempt = 0; attempt < 4; attempt++) {
-      try {
-        return (await browser.tabs.sendMessage(tabId, message)) as T;
-      } catch (retryError) {
-        if (!isMissingReceiverError(retryError)) return null;
-        await new Promise((r) => setTimeout(r, 150));
-      }
+    if (data?.idToken && data?.uid) {
+      return {
+        idToken: data.idToken,
+        uid: data.uid,
+        email: data.email || "",
+      };
     }
+    return null;
+  } catch {
     return null;
   }
 }
@@ -83,20 +74,8 @@ export async function readTokenFromAppTab(): Promise<{
 
   for (const tab of tabs) {
     if (!tab.id) continue;
-
-    const response = await sendMessageWithRetry<{
-      idToken: string | null;
-      uid: string | null;
-      email: string | null;
-    }>(tab.id, { type: "GET_AUTH_TOKEN" });
-
-    if (response?.idToken && response?.uid) {
-      return {
-        idToken: response.idToken,
-        uid: response.uid,
-        email: response.email || "",
-      };
-    }
+    const tokenData = await readTokenViaScripting(tab.id);
+    if (tokenData) return tokenData;
   }
 
   return null;
