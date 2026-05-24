@@ -194,6 +194,37 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['generated_documents']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['generated_documents']['Insert']>;
       };
+      saved_jobs: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          company: string | null;
+          location: string | null;
+          city: string | null;
+          state: string | null;
+          country: string | null;
+          job_url: string | null;
+          job_url_direct: string | null;
+          description: string | null;
+          job_type: string | null;
+          is_remote: boolean;
+          min_amount: number | null;
+          max_amount: number | null;
+          currency: string | null;
+          salary_source: string | null;
+          salary_interval: string | null;
+          date_posted: string | null;
+          site: string | null;
+          company_url: string | null;
+          company_industry: string | null;
+          company_logo: string | null;
+          source_data: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['saved_jobs']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['saved_jobs']['Insert']>;
+      };
     };
   };
 };

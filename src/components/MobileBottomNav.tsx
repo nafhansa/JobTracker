@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2, Users, Sparkles, MoreHorizontal } from "lucide-react";
+import { BarChart3, Briefcase, User, Plus, Settings as SettingsIcon, Loader2, Users, Sparkles, MoreHorizontal, Search } from "lucide-react";
 import { useLanguage } from "@/lib/language/context";
 import { SidebarSection } from "@/components/Sidebar";
 import { TrackerMode } from "@/components/TrackerModeSwitcher";
@@ -40,7 +40,7 @@ export default function MobileBottomNav({
     { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
     { id: "applications", icon: Briefcase, label: t("sidebar.applications") },
     { id: "plus", isPlus: true },
-    { id: "ai-writer", icon: Sparkles, label: "AI Writer" },
+    { id: "job-search", icon: Search, label: t("sidebar.job_search") },
     { id: "more", icon: MoreHorizontal, label: t("sidebar.more") || "More" },
   ];
 
@@ -48,15 +48,16 @@ export default function MobileBottomNav({
     { id: "dashboard", icon: BarChart3, label: t("sidebar.dashboard") },
     { id: "clients", icon: Users, label: t("sidebar.clients") },
     { id: "plus", isPlus: true },
-    { id: "ai-writer", icon: Sparkles, label: "AI Writer" },
+    { id: "job-search", icon: Search, label: t("sidebar.job_search") },
     { id: "more", icon: MoreHorizontal, label: t("sidebar.more") || "More" },
   ];
 
   const navItems = trackerMode === "job" ? jobNavItems : clientNavItems;
 
-  const isMoreActive = activeSection === "profile" || activeSection === "settings";
+  const isMoreActive = activeSection === "profile" || activeSection === "settings" || activeSection === "ai-writer";
 
   const moreMenuItems = [
+    { id: "ai-writer" as SidebarSection, icon: Sparkles, label: "AI Writer" },
     { id: "profile" as SidebarSection, icon: User, label: t("sidebar.profile") || "Profile" },
     { id: "settings" as SidebarSection, icon: SettingsIcon, label: t("sidebar.settings") },
   ];

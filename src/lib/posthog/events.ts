@@ -77,3 +77,12 @@ export const trackSidebarSection = (section: string) =>
 
 export const trackTrackerModeSwitched = (mode: "job" | "client") =>
   posthog.capture("tracker_mode_switched", { mode });
+
+export const trackJobSearchPerformed = (sites: string[], resultsCount: number) =>
+  posthog.capture("job_search_performed", { sites, results_count: resultsCount });
+
+export const trackJobSearchBookmarked = (site: string, title: string) =>
+  posthog.capture("job_search_bookmarked", { site, title });
+
+export const trackJobSearchImported = (site: string) =>
+  posthog.capture("job_search_imported", { site });
