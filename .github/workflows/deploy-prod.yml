@@ -1,13 +1,9 @@
-name: VPS Staging Deployment
+name: VPS Production Deployment
 
 on:
   push:
     branches:
-<<<<<<< HEAD
-      - dev 
-=======
-      - dev
->>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71
+      - main
 
 jobs:
   check-quality:
@@ -40,20 +36,9 @@ jobs:
           script: |
             export NVM_DIR=~/.nvm
             source ~/.nvm/nvm.sh
-            cd ~/jobtracker-staging
-            git pull origin dev
+            cd ~/jobtracker-prod
+            git pull origin main
             npm install
-<<<<<<< HEAD
-<<<<<<<< HEAD:.github/workflows/deploy-staging.yml
-            npm run build
-            pm2 restart jobtracker-staging
-========
             NODE_OPTIONS="--max-old-space-size=4096" npm run build
             pm2 restart jobtracker-prod
             sudo rm -rf /var/cache/nginx/*
-            sleep 10
->>>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71:.github/workflows/deploy-prod.yml
-=======
-            pm2 restart jobtracker-staging
-            sudo rm -rf /var/cache/nginx/*
->>>>>>> ec4e944170bd7f2863617fbcd2c8b0d89b424d71
