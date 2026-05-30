@@ -161,6 +161,8 @@ export default function AdminPage() {
     }
   }, [timeFilter, pageFilter, isAdmin, loading, hasFetched, fetchAnalytics]); // Include all dependencies
 
+  const [now] = useState(Date.now);
+
   if (loading || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -168,8 +170,6 @@ export default function AdminPage() {
       </div>
     );
   }
-  
-  // Sisa kode tampilan ke bawah SAMA PERSIS, tidak perlu diubah.
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-foreground">
       <header className="bg-card/80 backdrop-blur-md sticky top-0 z-10 px-6 py-4 flex items-center justify-between shadow-lg border-b border-border">
@@ -478,7 +478,7 @@ export default function AdminPage() {
 
                       return analytics.visitorLogs.map((log) => {
                         const logDate = new Date(log.timestamp);
-                        const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
+                        const timeAgo = Math.floor((now - logDate.getTime()) / 1000);
                         const formatTimeAgo = () => {
                           if (timeAgo < 60) return `${timeAgo}s ago`;
                           if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
@@ -664,7 +664,7 @@ export default function AdminPage() {
                   ) : analytics?.loginLogs && analytics.loginLogs.length > 0 ? (
                     analytics.loginLogs.map((log) => {
                       const logDate = new Date(log.timestamp);
-                      const timeAgo = Math.floor((Date.now() - logDate.getTime()) / 1000);
+                      const timeAgo = Math.floor((now - logDate.getTime()) / 1000);
                       const formatTimeAgo = () => {
                         if (timeAgo < 60) return `${timeAgo}s ago`;
                         if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
@@ -807,7 +807,7 @@ export default function AdminPage() {
                   {lifetimePurchases.length > 0 ? (
                     lifetimePurchases.map((purchase) => {
                       const purchaseDate = new Date(purchase.purchased_at);
-                      const timeAgo = Math.floor((Date.now() - purchaseDate.getTime()) / 1000);
+                      const timeAgo = Math.floor((now - purchaseDate.getTime()) / 1000);
                       const formatTimeAgo = () => {
                         if (timeAgo < 60) return `${timeAgo}s ago`;
                         if (timeAgo < 3600) return `${Math.floor(timeAgo / 60)}m ago`;
