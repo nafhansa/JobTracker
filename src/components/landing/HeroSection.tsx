@@ -138,7 +138,10 @@ export default function HeroSection({ onCTAClick, onInstallClick }: HeroSectionP
 
       <div className="hero-content absolute inset-0 flex items-center justify-center z-20 opacity-0" style={{ willChange: "transform, opacity" }}>
         <div className="flex flex-col items-center text-center px-6 max-w-5xl mx-auto">
-          <h2 className="hero-content-child text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
+          <h1 className="hero-content-child text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
+            Job Tracker Indonesia — Track Lamaran Kerja & Generate AI Cover Letters
+          </h1>
+          <h2 className="hero-content-child text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-6 leading-tight">
             Track Your Job Applications With{" "}
             <br className="md:hidden" />
             <span className="text-blue-600 dark:text-blue-500">No Setup</span>
