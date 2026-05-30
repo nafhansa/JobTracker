@@ -34,6 +34,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Calculate isPro based on subscription
   const isPro = checkIsPro(subscription);
 
+  const loadSubscription = async (userId: string) => {
+    try {
+      const subData = await getSubscription(userId);
+      setSubscription(subData?.subscription || null);
+      setUpdatedAt(subData?.updatedAt || null);
+      setCreatedAt(subData?.createdAt || null);
+    } catch (error) {
+      console.error('Error loading subscription:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -68,19 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       authSubscription.unsubscribe();
     };
   }, []);
-
-  const loadSubscription = async (userId: string) => {
-    try {
-      const subData = await getSubscription(userId);
-      setSubscription(subData?.subscription || null);
-      setUpdatedAt(subData?.updatedAt || null);
-      setCreatedAt(subData?.createdAt || null);
-    } catch (error) {
-      console.error('Error loading subscription:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <AuthContext.Provider value={{ user, loading, subscription, isPro, updatedAt, createdAt }}>
