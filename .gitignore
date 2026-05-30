@@ -56,3 +56,5 @@ extension/dist/
 extension/node_modules/
 extension/.env
 sopan-extension-main/
+
+.claude
